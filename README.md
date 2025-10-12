@@ -45,7 +45,7 @@ tuti deploy production
 
 ---
 
-## ✨ Features
+## ✨ Future Features for Implementation
 
 - [ ] **Unified Local + Remote Management**
 Problem with existing tools:
