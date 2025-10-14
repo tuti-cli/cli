@@ -63,7 +63,7 @@ class InitCommand extends Command
         */
         $this->warn(' Detecting project type...');
         $projectType = spin(
-            callback: fn () => $this->detectProjectType(),
+            callback: fn() => $this->detectProjectType(),
             message: 'Detecting project type...'
         );
 
@@ -96,7 +96,8 @@ class InitCommand extends Command
                     </div>
                 </div>
             </div>
-        HTML);
+        HTML
+        );
 
         $nextStep = select(
             label: 'What would you like to do next?',
@@ -126,6 +127,10 @@ class InitCommand extends Command
                 file_get_contents(getcwd() . '/composer.json'),
                 true
             );
+
+            if (json_last_error() !== JSON_ERROR_NONE  || !is_array($composer)) {
+                return 'generic';
+            }
 
             if (isset($composer['require']['laravel/framework'])) {
                 return 'laravel';
@@ -173,8 +178,6 @@ class InitCommand extends Command
             $progress->advance();
 
             $messages[] = "Created {$label}";
-
-            sleep(1);
         }
 
         $progress->label('Done! Project is ready.');
@@ -192,7 +195,8 @@ class InitCommand extends Command
                 <span class="text-green-500">✓</span>
                 <span class="text-gray-200 ml-1">{$message}</span>
             </div>
-        HTML);
+        HTML
+        );
     }
 
     private function generateConfig(string $name, string $type): void
@@ -221,15 +225,19 @@ class InitCommand extends Command
 
         $yaml = Yaml::dump($config);
 
-        file_put_contents(
+        $result = file_put_contents(
             getcwd() . '/.tuti/config.yml',
             $yaml
         );
+
+        if ($result === false) {
+            throw new \RuntimeException('Failed to write config.yml. Check file permissions.');
+        }
     }
 
     private function getDefaultServices(string $type): array
     {
-        return match($type) {
+        return match ($type) {
             'laravel' => ['mysql', 'redis', 'mailhog'],
             'node.js' => ['postgres', 'redis'],
             default => [],
@@ -240,10 +248,14 @@ class InitCommand extends Command
     {
         // Docker compose generation logic
         $template = $this->getDockerComposeTemplate(strtolower($type));
-        file_put_contents(
+        $result = file_put_contents(
             getcwd() . '/.tuti/docker/docker-compose.yml',
             $template
         );
+
+        if ($result === false) {
+            throw new \RuntimeException('Failed to write docker-compose.yml. Check file permissions.');
+        }
     }
 
     private function getDockerComposeTemplate(string $type): string
@@ -254,7 +266,7 @@ version: '3.8'
 
 services:
   app:
-    image: php:8.3-fpm-alpine
+    image: php:8.4-fpm-alpine
     container_name: ${PROJECT_NAME:-app}_app
     working_dir: /var/www
     volumes:

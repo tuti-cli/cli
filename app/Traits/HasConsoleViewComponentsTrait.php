@@ -42,7 +42,7 @@ trait HasConsoleViewComponentsTrait
 
         render('
             <div class="pl-13 pt-1">
-                <span>Version: '. $tutiVersion .'</span> | <a href="https://laravel-zero.com">Documentation</a>
+                <span>Version: '. $tutiVersion .'</span> | <a href="https://tuti.cli">Documentation</a>
             </div>
         ');
 

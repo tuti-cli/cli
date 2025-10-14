@@ -24,7 +24,7 @@ class ManualTestesCommand extends Command
 
     public function handle()
     {
-        $process = new Process(['which ', 'docker']);
+        $process = new Process(['which', 'docker']);
         $process->run();
 
         // executes after the command finishes
