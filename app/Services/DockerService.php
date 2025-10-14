@@ -31,23 +31,23 @@ final class DockerService
 
     public function pullImages(): bool
     {
-        return $this->runCommand(['docker-compose', 'pull']);
+        return $this->runCommand(['docker', 'compose', 'pull']);
     }
 
     public function start(): bool
     {
-        return $this->runCommand(['docker-compose', 'up', '-d']);
+        return $this->runCommand(['docker', 'compose', 'up', '-d']);
     }
 
     public function stop(): bool
     {
-        return $this->runCommand(['docker-compose', 'down']);
+        return $this->runCommand(['docker', 'compose', 'down']);
     }
 
     public function exec(string $service, string $command): bool
     {
         return $this->runCommand([
-            'docker-compose', 'exec', '-T', $service,
+            'docker', 'compose', 'exec', '-T', $service,
             'sh', '-c', $command
         ]);
     }
