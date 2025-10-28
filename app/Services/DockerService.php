@@ -1,16 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use Symfony\Component\Process\Process;
 
-final class DockerService
+final readonly class DockerService
 {
     private string $composePath;
 
     public function __construct()
     {
-        $this->composePath = getcwd() . '/.tuti/docker/docker-compose.yml';
+        $this->composePath = getcwd().'/.tuti/docker/docker-compose.yml';
     }
 
     public function isRunning(): bool
@@ -48,7 +50,7 @@ final class DockerService
     {
         return $this->runCommand([
             'docker', 'compose', 'exec', '-T', $service,
-            'sh', '-c', $command
+            'sh', '-c', $command,
         ]);
     }
 

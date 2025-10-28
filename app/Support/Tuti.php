@@ -8,7 +8,8 @@ final class Tuti
 {
     public static function projectRoot(): ?string
     {
-        $path = getcwd() . '/.tuti';
+        $path = getcwd().'/.tuti';
+
         return file_exists($path) ? dirname($path) : null;
     }
 

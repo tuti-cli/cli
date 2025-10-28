@@ -7,8 +7,9 @@ namespace App\Commands;
 use App\Support\Tuti;
 use App\Traits\HasConsoleViewComponentsTrait;
 use LaravelZero\Framework\Commands\Command;
+use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
-use function Laravel\Prompts\multiselect;
+
 use function Laravel\Prompts\progress;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
@@ -16,7 +17,7 @@ use function Laravel\Prompts\table;
 use function Laravel\Prompts\text;
 use function Termwind\render;
 
-class InitCommand extends Command
+final class InitCommand extends Command
 {
     use HasConsoleViewComponentsTrait;
 
@@ -26,7 +27,7 @@ class InitCommand extends Command
     /* @var string */
     protected $description = 'Initialize Tuti CLI for the current project';
 
-    public function handle()
+    public function handle(): int
     {
         $this->welcomeBanner();
 
@@ -63,7 +64,7 @@ class InitCommand extends Command
         */
         $this->warn(' Detecting project type...');
         $projectType = spin(
-            callback: fn() => $this->detectProjectType(),
+            callback: $this->detectProjectType(...),
             message: 'Detecting project type...'
         );
 
@@ -73,7 +74,7 @@ class InitCommand extends Command
         );
 
         // Get project info
-        $randomName = sprintf('%s-%s', basename(getcwd()), rand(100, 999));
+        $randomName = sprintf('%s-%s', basename(getcwd()), random_int(100, 999));
 
         $projectName = text(
             label: 'What is the name of your project?',
@@ -81,13 +82,13 @@ class InitCommand extends Command
             default: $randomName,
             required: 'Project name is required',
             hint: 'Used for naming containers and networks',
-            transform: fn($value) => strtolower(str_replace(' ', '-', $value))
+            transform: fn ($value) => mb_strtolower(str_replace(' ', '-', $value))
         );
 
         $this->createConfigStructure($projectName, $projectType);
 
         // Success screen
-        render(<<<HTML
+        render(<<<'HTML'
             <div class="mx-2 my-1">
                 <div class="px-2 py-1 bg-green-600">
                     <div class="flex justify-between">
@@ -122,13 +123,13 @@ class InitCommand extends Command
     private function detectProjectType(): string
     {
 
-        if (file_exists(getcwd() . '/composer.json')) {
+        if (file_exists(getcwd().'/composer.json')) {
             $composer = json_decode(
-                file_get_contents(getcwd() . '/composer.json'),
+                file_get_contents(getcwd().'/composer.json'),
                 true
             );
 
-            if (json_last_error() !== JSON_ERROR_NONE  || !is_array($composer)) {
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($composer)) {
                 return 'generic';
             }
 
@@ -143,22 +144,21 @@ class InitCommand extends Command
             return 'php';
         }
 
-        if (file_exists(getcwd() . '/package.json')) {
+        if (file_exists(getcwd().'/package.json')) {
             return 'node-js';
         }
 
         return 'generic';
     }
 
-
     private function createConfigStructure(string $name, string $type): void
     {
         $steps = [
-            '.tuti directory' => fn() => mkdir(getcwd() . '/.tuti'),
-            'environments directory' => fn() => mkdir(getcwd() . '/.tuti/environments'),
-            'docker directory' => fn() => mkdir(getcwd() . '/.tuti/docker'),
-            'config.yml file' => fn() => $this->generateConfig($name, $type),
-            'docker-compose.yml file' => fn() => $this->generateDockerCompose($type),
+            '.tuti directory' => fn (): bool => mkdir(getcwd().'/.tuti'),
+            'environments directory' => fn (): bool => mkdir(getcwd().'/.tuti/environments'),
+            'docker directory' => fn (): bool => mkdir(getcwd().'/.tuti/docker'),
+            'config.yml file' => fn () => $this->generateConfig($name, $type),
+            'docker-compose.yml file' => fn () => $this->generateDockerCompose($type),
         ];
 
         $progress = progress(
@@ -204,13 +204,13 @@ class InitCommand extends Command
         $config = [
             'project' => [
                 'name' => $name,
-                'type' => strtolower($type),
+                'type' => mb_strtolower($type),
                 'version' => '1.0.0',
             ],
             'environments' => [
                 'local' => [
                     'type' => 'docker',
-                    'services' => $this->getDefaultServices(strtolower($type)),
+                    'services' => $this->getDefaultServices(mb_strtolower($type)),
                 ],
                 'staging' => [
                     'type' => 'remote',
@@ -226,12 +226,12 @@ class InitCommand extends Command
         $yaml = Yaml::dump($config);
 
         $result = file_put_contents(
-            getcwd() . '/.tuti/config.yml',
+            getcwd().'/.tuti/config.yml',
             $yaml
         );
 
         if ($result === false) {
-            throw new \RuntimeException('Failed to write config.yml. Check file permissions.');
+            throw new RuntimeException('Failed to write config.yml. Check file permissions.');
         }
     }
 
@@ -247,14 +247,14 @@ class InitCommand extends Command
     private function generateDockerCompose(string $type): void
     {
         // Docker compose generation logic
-        $template = $this->getDockerComposeTemplate(strtolower($type));
+        $template = $this->getDockerComposeTemplate(mb_strtolower($type));
         $result = file_put_contents(
-            getcwd() . '/.tuti/docker/docker-compose.yml',
+            getcwd().'/.tuti/docker/docker-compose.yml',
             $template
         );
 
         if ($result === false) {
-            throw new \RuntimeException('Failed to write docker-compose.yml. Check file permissions.');
+            throw new RuntimeException('Failed to write docker-compose.yml. Check file permissions.');
         }
     }
 
