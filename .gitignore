@@ -1,7 +1,38 @@
-/vendor
-/.idea
-/.vscode
+# Laravel Zero
+/builds
 /.vagrant
-.phpunit.result.cache
 /database/database.sqlite
 .env
+
+# Ideas
+/.idea
+/.vscode
+
+# Composer
+/vendor
+composer.phar
+composer.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PHPStan
+phpstan.neon
+.phpunit.cache
+
+# Coverage
+/coverage
+/.phpunit.cache
+.phpunit.result.cache
+
+# Logs
+*.log
+
+# Backup files
+*.backup
+*~
+
+# Build artifacts
+*.phar
+/box.json.dist
