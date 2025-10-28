@@ -25,6 +25,12 @@
         "no_superfluous_elseif": true,
         "no_useless_else": true,
         "no_multiple_statements_per_line": true,
+        "concat_space": {
+            "spacing": "one"
+        },
+        "method_argument_space": {
+            "on_multiline": "ensure_fully_multiline"
+        },
         "ordered_class_elements": {
             "order": [
                 "use_trait",
