@@ -1,6 +1,22 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
 parameters:
     level: 6
     paths:
         - app
 
     reportUnmatchedIgnoredErrors: true
+
+    # Ignore errors in these paths
+    excludePaths:
+        - app/Support/helpers.php
+
+    # Check missing typehints
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+
+    # Ignore errors
+    ignoreErrors:
+        - '#Unsafe usage of new static#'
+        - '#Access to an undefined property#'
