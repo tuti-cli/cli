@@ -42,7 +42,7 @@ trait HasConsoleViewComponentsTrait
 
         render('
             <div class="pl-13 pt-1">
-                <span>Version: '. $tutiVersion .'</span> | <a href="https://tuti.cli">Documentation</a>
+                <span>Version: '.$tutiVersion.'</span> | <a href="https://tuti.cli">Documentation</a>
             </div>
         ');
 
@@ -51,20 +51,20 @@ trait HasConsoleViewComponentsTrait
 
     private function dividerDouble(string $color = 'gray', int $width = 60): void
     {
-        $this->line(' <fg=' . $color . '>' . str_repeat('═', $width) . '</>');
+        $this->line(' <fg='.$color.'>'.str_repeat('═', $width).'</>');
     }
 
     private function dividerWithText(string $text, string $color = 'bright-cyan', int $width = 60): void
     {
         $textLength = mb_strlen($text);
         $padding = max(0, ($width - $textLength - 4) / 2);
-        $leftLine = str_repeat('─', (int)floor($padding));
-        $rightLine = str_repeat('─', (int)ceil($padding));
+        $leftLine = str_repeat('─', (int) floor($padding));
+        $rightLine = str_repeat('─', (int) ceil($padding));
 
         $this->line(
-            '<fg=' . $color . '>' . $leftLine .
-            '</> <fg=white;options=bold>' . $text .
-            '</> <fg=' . $color . '>' . $rightLine . '</>'
+            '<fg='.$color.'>'.$leftLine.
+            '</> <fg=white;options=bold>'.$text.
+            '</> <fg='.$color.'>'.$rightLine.'</>'
         );
     }
 }
