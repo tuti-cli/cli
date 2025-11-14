@@ -6,6 +6,7 @@ namespace App\Commands;
 
 use App\Support\Tuti;
 use App\Traits\HasConsoleViewComponentsTrait;
+use Symfony\Component\Process\Process;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
@@ -29,6 +30,34 @@ final class InitCommand extends Command
 
     public function handle(): int
     {
+        if ($this->option('force')) {
+            $choose = select(
+                label: 'Force reinitialization will delete existing configuration. What would you like to do?',
+                options: [
+                    true => 'Reinitialize project',
+                    false => 'Exit without changes',
+                ],
+                hint: 'Use [Enter] to select the action'
+            );
+
+            if ($choose) {
+                $this->warn(' Reinitializing project...');
+
+                if (is_dir(getcwd().'/.tuti')) {
+                    $this->newLine();
+                    $this->warn(' Removing existing .tuti directory...');
+
+                    $deleteOldConfig = new Process(['rm', '-rf', getcwd().'/.tuti']);
+                    $deleteOldConfig->run();
+
+                    $this->info(' Existing configuration removed.');
+                }
+            } else {
+                $this->info(' Exiting without changes.');
+                return self::SUCCESS;
+            }
+        }
+
         $this->welcomeBanner();
 
         if (Tuti::isInsideProject()) {
@@ -262,11 +291,9 @@ final class InitCommand extends Command
     {
         if ($type === 'laravel' || $type === 'laravel-zero') {
             return <<<'YAML'
-version: '3.8'
-
 services:
   app:
-    image: php:8.4-fpm-alpine
+    image: serversideup/php:8.4-cli
     container_name: ${PROJECT_NAME:-app}_app
     working_dir: /var/www
     volumes:
@@ -274,42 +301,42 @@ services:
     networks:
       - app-network
 
-  mysql:
-    image: mysql:8.0
-    container_name: ${PROJECT_NAME:-app}_mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
-    ports:
-      - "${DB_PORT:-3306}:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    networks:
-      - app-network
+#  mysql:
+#    image: mysql:8.0
+#    container_name: ${PROJECT_NAME:-app}_mysql
+#    environment:
+#      MYSQL_ROOT_PASSWORD: root
+#      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+#    ports:
+#      - "${DB_PORT:-3306}:3306"
+#    volumes:
+#      - mysql-data:/var/lib/mysql
+#    networks:
+#      - app-network
 
-  redis:
-    image: redis:7-alpine
-    container_name: ${PROJECT_NAME:-app}_redis
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    networks:
-      - app-network
-
-  mailhog:
-    image: mailhog/mailhog
-    container_name: ${PROJECT_NAME:-app}_mailhog
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    networks:
-      - app-network
+#  redis:
+#    image: redis:7-alpine
+#    container_name: ${PROJECT_NAME:-app}_redis
+#    ports:
+#      - "${REDIS_PORT:-6379}:6379"
+#    networks:
+#      - app-network
+#
+#  mailhog:
+#    image: mailhog/mailhog
+#    container_name: ${PROJECT_NAME:-app}_mailhog
+#    ports:
+#      - "1025:1025"
+#      - "8025:8025"
+#    networks:
+#      - app-network
 
 networks:
   app-network:
     driver: bridge
 
-volumes:
-  mysql-data:
+#  volumes:
+#  mysql-data:
 YAML;
         }
 
