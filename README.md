@@ -1,3 +1,6 @@
+> [!WARNING]
+> This project is **not released** and still **under development**.
+
 # Tuti CLI
 
 **An environment management and deployment tool that gets out of your way. ****
