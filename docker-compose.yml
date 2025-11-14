@@ -1,0 +1,41 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tuti-cli
+    working_dir: /var/www/html
+    user: "${PUID:-1000}:${PGID:-1000}"
+
+    volumes:
+      - .:/var/www/html:cached
+      - composer-cache:/home/webuser/.composer
+
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      SSL_MODE: "off"
+      PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-512M}
+      PHP_MAX_EXECUTION_TIME: ${PHP_MAX_EXECUTION_TIME:-120}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      DOCKER_HOST: unix:///var/run/docker.sock
+
+    networks:
+      - tuti-network
+
+    command: tail -f /dev/null
+
+    healthcheck:
+      test: ["CMD", "php", "-v"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  composer-cache:
+    driver: local
+
+networks:
+  tuti-network:
+    driver: bridge
