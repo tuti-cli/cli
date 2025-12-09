@@ -1,0 +1,81 @@
+{
+    "version": "1.0.0",
+    "description": "Tuti-CLI Shared Service Registry",
+    "services": {
+        "databases": {
+            "postgres": {
+                "name": "PostgreSQL",
+                "description": "PostgreSQL relational database",
+                "stub":  "databases/postgres.stub",
+                "compatible_with": ["laravel", "wordpress", "django", "nextjs"],
+                "volumes": ["postgres_data"],
+                "ports": {
+                    "internal": 5432,
+                    "external": null
+                },
+                "default_variables": {
+                    "POSTGRES_VERSION": "17",
+                    "DB_CONNECTION":  "pgsql",
+                    "DB_HOST": "postgres",
+                    "DB_PORT":  "5432"
+                },
+                "required_variables": [
+                    "DB_DATABASE",
+                    "DB_USERNAME",
+                    "DB_PASSWORD"
+                ],
+                "health_check": {
+                    "test": ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"],
+                    "interval": "10s",
+                    "timeout": "5s",
+                    "retries": 5
+                }
+            },
+            "mysql": {
+                "name": "MySQL",
+                "description": "MySQL relational database",
+                "stub": "databases/mysql.stub",
+                "compatible_with": ["laravel", "wordpress"],
+                "volumes": ["mysql_data"],
+                "ports": {
+                    "internal": 3306,
+                    "external": null
+                },
+                "default_variables": {
+                    "MYSQL_VERSION": "8.4",
+                    "DB_CONNECTION":  "mysql",
+                    "DB_HOST": "mysql",
+                    "DB_PORT": "3306"
+                },
+                "required_variables": [
+                    "DB_DATABASE",
+                    "DB_USERNAME",
+                    "DB_PASSWORD",
+                    "MYSQL_ROOT_PASSWORD"
+                ]
+            }
+        },
+        "cache":  {
+            "redis": {
+                "name": "Redis",
+                "description": "In-memory data structure store",
+                "stub": "cache/redis.stub",
+                "compatible_with": ["laravel", "wordpress", "django", "nextjs"],
+                "volumes": ["redis_data"],
+                "ports": {
+                    "internal": 6379,
+                    "external": null
+                },
+                "default_variables":  {
+                    "REDIS_VERSION": "7",
+                    "REDIS_HOST": "redis",
+                    "REDIS_PORT": "6379"
+                },
+                "required_variables": [],
+                "optional_variables": {
+                    "REDIS_PASSWORD":  "null"
+                }
+            }
+        }
+    }
+}

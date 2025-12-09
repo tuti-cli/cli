@@ -1,0 +1,18 @@
+postgres:
+  image: postgres:{{POSTGRES_VERSION}}-alpine
+  environment:
+    POSTGRES_DB: ${DB_DATABASE}
+    POSTGRES_USER: ${DB_USERNAME}
+    POSTGRES_PASSWORD: ${DB_PASSWORD}
+    PGDATA: /var/lib/postgresql/data/pgdata
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+  networks:
+    - {{NETWORK_NAME}}
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 10s
+  {{DEPLOY_CONFIG}}
