@@ -28,6 +28,30 @@ if (! function_exists('tuti_path')) {
     }
 }
 
+if (! function_exists('stub_path')) {
+    /**
+     * Get the stubs directory path
+     */
+    function stub_path(?string $path = null): string
+    {
+        $base = project_path('stubs');
+
+        return $path ? $base . '/' . ltrim($path, '/') : $base;
+    }
+}
+
+if (! function_exists('stack_path')) {
+    /**
+     * Get the stubs directory path
+     */
+    function stack_path(?string $path = null): string
+    {
+        $base = project_path('stacks');
+
+        return $path ? $base . '/' . ltrim($path, '/') : $base;
+    }
+}
+
 if (! function_exists('global_tuti_path')) {
     /**
      * Get the global ~/.tuti directory path
@@ -58,7 +82,7 @@ if (! function_exists('get_project_name')) {
     function get_project_name(): string
     {
         if (is_tuti_initialized()) {
-            $config = yaml_parse_file(project_path('.tuti.yml'));
+            $config = yaml_parse_file(tuti_path('.tuti.yml'));
 
             return $config['project']['name'] ?? basename(project_path());
         }
