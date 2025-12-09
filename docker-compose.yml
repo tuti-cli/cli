@@ -9,7 +9,10 @@ services:
 
     volumes:
       - .:/var/www/html:cached
-      - composer-cache:/home/webuser/.composer
+      - composer-cache:/home/www-data/.composer
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "1002"
 
     environment:
       APP_ENV: ${APP_ENV:-local}
@@ -18,7 +21,6 @@ services:
       PHP_MAX_EXECUTION_TIME: ${PHP_MAX_EXECUTION_TIME:-120}
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
-      DOCKER_HOST: unix:///var/run/docker.sock
 
     networks:
       - tuti-network
