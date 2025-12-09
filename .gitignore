@@ -3,6 +3,7 @@
 /.vagrant
 /database/database.sqlite
 .env
+tuti
 
 # Ideas
 /.idea
