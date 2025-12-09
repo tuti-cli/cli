@@ -31,10 +31,6 @@ RUN install-php-extensions \
     sodium \
     yaml
 
-# Add webuser to docker group (GID 999 is typical for docker group)
-RUN groupadd -g 999 docker || true \
-    && usermod -aG docker www-data
-
 WORKDIR /var/www/html
 
 USER www-data
