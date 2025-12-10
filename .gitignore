@@ -3,7 +3,6 @@
 /.vagrant
 /database/database.sqlite
 .env
-#tuti
 
 # Ideas
 /.idea
@@ -37,3 +36,4 @@ phpstan.neon
 # Build artifacts
 *.phar
 /box.json.dist
+/app/Commands/Test/docker-compose.test.yml
