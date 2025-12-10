@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Services\Stack\ServiceComposeStackBuilder;
+use App\Services\Stack\ServiceEnvGenerator;
 use App\Services\Stack\ServiceRegistryJsonReader;
 use App\Services\Stack\ServiceStackLoader;
 use App\Services\Stack\ServiceStubLoader;
@@ -32,10 +33,15 @@ final class AppServiceProvider extends ServiceProvider
             return new ServiceStackLoader();
         });
 
+        $this->app->singleton(ServiceEnvGenerator::class, function () {
+            return new ServiceEnvGenerator();
+        });
+
         $this->app->singleton(ServiceComposeStackBuilder::class, function ($app) {
             return new ServiceComposeStackBuilder(
-                $app->make(ServiceRegistryJsonReader::class),
-                $app->make(ServiceStubLoader::class)
+                registry:  $app->make(ServiceRegistryJsonReader::class),
+                stubLoader: $app->make(ServiceStubLoader::class),
+                stackLoader: $app->make(ServiceStackLoader::class)
             );
         });
     }
