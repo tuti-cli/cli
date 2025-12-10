@@ -64,7 +64,6 @@ return [
         Illuminate\Console\Scheduling\ScheduleListCommand::class,
         Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
         Illuminate\Foundation\Console\VendorPublishCommand::class,
-        LaravelZero\Framework\Commands\StubPublishCommand::class,
     ],
 
     /*
@@ -79,7 +78,7 @@ return [
     */
 
     'remove' => [
-        //
+        LaravelZero\Framework\Commands\StubPublishCommand::class,
     ],
 
 ];
