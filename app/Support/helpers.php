@@ -23,6 +23,9 @@ if (! function_exists('tuti_path')) {
     function tuti_path(?string $path = null): string
     {
         $base = project_path('.tuti');
+        if (! is_dir($base)) {
+            mkdir($base, 0755, true);
+        }
 
         return $path ? $base . '/' . ltrim($path, '/') : $base;
     }
