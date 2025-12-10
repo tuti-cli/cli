@@ -6,6 +6,10 @@ namespace App\Services\Stack;
 
 use RuntimeException;
 
+/**
+ * ServiceStubLoader is responsible for loading and processing
+ * stub files and replacing placeholders with actual values.
+ */
 final readonly class ServiceStubLoader
 {
     /**
