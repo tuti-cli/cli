@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Commands;
+
+use Illuminate\Console\Command;
+
+use function Laravel\Prompts\suggest;
+
+class TutiFindCommand extends Command
+{
+    protected $signature = 'find';
+
+    protected $description = 'Useful Tuti command to find other Tuti commands.';
+
+    public function handle(): int
+    {
+        $commands = collect($this->getApplication()->all())
+            ->keys()
+            ->filter(fn (string $key) => $key !== $this->signature)
+            ->map(fn ($key) => $key)
+            ->toArray();
+
+        $command = suggest(
+            'Which command do you want to run?',
+            options: $commands,
+            required: true,
+            hint: 'Insert part of the command name to filter the list.'
+        );
+
+        $this->call($command);
+
+        return self::SUCCESS;
+    }
+}
