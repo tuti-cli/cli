@@ -6,6 +6,10 @@ namespace App\Services\Stack;
 
 use RuntimeException;
 
+/**
+ * ServiceStackLoader is responsible for loading and processing
+ * stack manifest files (stack.json).
+ */
 final readonly class ServiceStackLoader
 {
     /**

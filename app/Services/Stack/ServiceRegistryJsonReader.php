@@ -6,6 +6,10 @@ namespace App\Services\Stack;
 
 use RuntimeException;
 
+/**
+ * ServiceRegistryJsonReader is responsible for reading and parsing
+ * the service registry.json file.
+ */
 final readonly class ServiceRegistryJsonReader
 {
     private array $registry;
