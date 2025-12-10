@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Str;
+use Symfony\Component\Yaml\Yaml;
 
 if (! function_exists('project_path')) {
     /**
@@ -85,7 +86,7 @@ if (! function_exists('get_project_name')) {
     function get_project_name(): string
     {
         if (is_tuti_initialized()) {
-            $config = yaml_parse_file(tuti_path('.tuti.yml'));
+            $config = Yaml::parse(file_get_contents(tuti_path('.tuti.yml')));
 
             return $config['project']['name'] ?? basename(project_path());
         }
