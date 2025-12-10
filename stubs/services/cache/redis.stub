@@ -1,17 +1,12 @@
 redis:
-  image:  redis:{{REDIS_VERSION}}-alpine
-  command: >
-    redis-server
-    {{REDIS_APPEND_ONLY}}
-    {{REDIS_MAX_MEMORY}}
-    {{REDIS_EVICTION_POLICY}}
-    {{REDIS_PASSWORD_CONFIG}}
+  image: redis:{{REDIS_VERSION}}-alpine
+  command: "redis-server {{REDIS_APPEND_ONLY}} {{REDIS_MAX_MEMORY}} {{REDIS_EVICTION_POLICY}} {{REDIS_PASSWORD_CONFIG}}"
   volumes:
     - redis_data:/data
   networks:
     - {{NETWORK_NAME}}
   healthcheck:
-    test: ["CMD", "redis-cli", "ping"]
+    test:  ["CMD", "redis-cli", "ping"]
     interval: 10s
     timeout: 3s
     retries: 5

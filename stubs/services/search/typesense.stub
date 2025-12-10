@@ -1,0 +1,17 @@
+typesense:
+  image: typesense/typesense:{{TYPESENSE_VERSION}}
+  environment:
+    TYPESENSE_DATA_DIR: /data
+    TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+    TYPESENSE_ENABLE_CORS: "true"
+  volumes:
+    - typesense_data:/data
+  networks:
+    - {{NETWORK_NAME}}
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
+    interval: 10s
+    timeout: 3s
+    retries: 5
+    start_period: 5s
+  {{DEPLOY_CONFIG}}

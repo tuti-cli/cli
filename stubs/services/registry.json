@@ -1,23 +1,23 @@
 {
     "version": "1.0.0",
     "description": "Tuti-CLI Shared Service Registry",
-    "services": {
+    "services":  {
         "databases": {
             "postgres": {
                 "name": "PostgreSQL",
                 "description": "PostgreSQL relational database",
-                "stub":  "databases/postgres.stub",
+                "stub": "databases/postgres.stub",
                 "compatible_with": ["laravel", "wordpress", "django", "nextjs"],
                 "volumes": ["postgres_data"],
                 "ports": {
                     "internal": 5432,
-                    "external": null
+                    "external":  null
                 },
                 "default_variables": {
                     "POSTGRES_VERSION": "17",
-                    "DB_CONNECTION":  "pgsql",
+                    "DB_CONNECTION": "pgsql",
                     "DB_HOST": "postgres",
-                    "DB_PORT":  "5432"
+                    "DB_PORT": "5432"
                 },
                 "required_variables": [
                     "DB_DATABASE",
@@ -53,9 +53,32 @@
                     "DB_PASSWORD",
                     "MYSQL_ROOT_PASSWORD"
                 ]
+            },
+            "mariadb": {
+                "name": "MariaDB",
+                "description": "MariaDB relational database",
+                "stub":  "databases/mariadb.stub",
+                "compatible_with":  ["laravel", "wordpress"],
+                "volumes": ["mariadb_data"],
+                "ports":  {
+                    "internal": 3306,
+                    "external": null
+                },
+                "default_variables": {
+                    "MARIADB_VERSION": "11.4",
+                    "DB_CONNECTION":  "mysql",
+                    "DB_HOST": "mariadb",
+                    "DB_PORT": "3306"
+                },
+                "required_variables":  [
+                    "DB_DATABASE",
+                    "DB_USERNAME",
+                    "DB_PASSWORD",
+                    "MARIADB_ROOT_PASSWORD"
+                ]
             }
         },
-        "cache":  {
+        "cache": {
             "redis": {
                 "name": "Redis",
                 "description": "In-memory data structure store",
@@ -64,9 +87,9 @@
                 "volumes": ["redis_data"],
                 "ports": {
                     "internal": 6379,
-                    "external": null
+                    "external":  null
                 },
-                "default_variables":  {
+                "default_variables": {
                     "REDIS_VERSION": "7",
                     "REDIS_HOST": "redis",
                     "REDIS_PORT": "6379"
@@ -75,6 +98,102 @@
                 "optional_variables": {
                     "REDIS_PASSWORD":  "null"
                 }
+            }
+        },
+        "search": {
+            "meilisearch": {
+                "name":  "Meilisearch",
+                "description": "Lightning-fast search engine",
+                "stub": "search/meilisearch.stub",
+                "compatible_with": ["laravel", "wordpress"],
+                "volumes": ["meilisearch_data"],
+                "ports": {
+                    "internal": 7700,
+                    "external": null
+                },
+                "default_variables": {
+                    "MEILISEARCH_VERSION": "v1.11",
+                    "MEILISEARCH_HOST": "http://meilisearch:7700",
+                    "SCOUT_DRIVER": "meilisearch"
+                },
+                "required_variables": [
+                    "MEILISEARCH_KEY"
+                ]
+            },
+            "typesense": {
+                "name": "Typesense",
+                "description": "Fast, typo-tolerant search engine",
+                "stub": "search/typesense.stub",
+                "compatible_with": ["laravel"],
+                "volumes": ["typesense_data"],
+                "ports": {
+                    "internal": 8108,
+                    "external": null
+                },
+                "default_variables": {
+                    "TYPESENSE_VERSION": "27.1",
+                    "TYPESENSE_HOST": "typesense",
+                    "TYPESENSE_PORT": "8108",
+                    "TYPESENSE_PROTOCOL": "http",
+                    "SCOUT_DRIVER": "typesense"
+                },
+                "required_variables": [
+                    "TYPESENSE_API_KEY"
+                ]
+            }
+        },
+        "storage": {
+            "minio": {
+                "name":  "MinIO",
+                "description": "S3-compatible object storage",
+                "stub": "storage/minio.stub",
+                "compatible_with":  ["laravel", "wordpress", "nextjs"],
+                "volumes": ["minio_data"],
+                "ports": {
+                    "internal":  9000,
+                    "console": 9001,
+                    "external":  null
+                },
+                "default_variables": {
+                    "MINIO_VERSION": "latest",
+                    "MINIO_HOST": "minio",
+                    "MINIO_PORT": "9000",
+                    "MINIO_CONSOLE_PORT": "9001",
+                    "AWS_ENDPOINT": "http://minio:9000",
+                    "AWS_USE_PATH_STYLE_ENDPOINT": "true",
+                    "FILESYSTEM_DISK": "s3"
+                },
+                "required_variables": [
+                    "MINIO_ROOT_USER",
+                    "MINIO_ROOT_PASSWORD",
+                    "AWS_ACCESS_KEY_ID",
+                    "AWS_SECRET_ACCESS_KEY",
+                    "AWS_BUCKET"
+                ]
+            }
+        },
+        "mail": {
+            "mailpit": {
+                "name":  "Mailpit",
+                "description": "Email testing tool with web UI",
+                "stub": "mail/mailpit.stub",
+                "compatible_with": ["laravel", "wordpress", "django", "nextjs"],
+                "volumes": [],
+                "ports": {
+                    "smtp": 1025,
+                    "http": 8025,
+                    "external": null
+                },
+                "default_variables": {
+                    "MAILPIT_VERSION": "latest",
+                    "MAIL_MAILER": "smtp",
+                    "MAIL_HOST": "mailpit",
+                    "MAIL_PORT": "1025",
+                    "MAIL_USERNAME": "null",
+                    "MAIL_PASSWORD": "null",
+                    "MAIL_ENCRYPTION": "null"
+                },
+                "required_variables": []
             }
         }
     }
