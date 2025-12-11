@@ -23,7 +23,7 @@ afterEach(function (): void {
 it('fails when no stack is provided in non-interactive mode', function (): void {
     $this->artisan('stack:init --no-interaction')
         ->assertFailed()
-        ->expectsOutput('No stack selected Exiting.');
+        ->expectsOutput('No stack selected. Exiting.');
 });
 
 it('fails when stack does not exist', function (): void {

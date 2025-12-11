@@ -24,8 +24,7 @@ final class InitCommand extends Command
                           {stack?  : Stack name (e.g., laravel or laravel-stack)}
                           {project-name? : Project name}
                           {--services=* : Pre-select services}
-                          {--env= : Environment (dev, staging, production)}
-                          {--no-interact : Run without prompts}';
+                          {--env= : Environment (dev, staging, production)}';
 
     protected $description = 'Initialize a new project with selected stack and services';
 
@@ -41,7 +40,7 @@ final class InitCommand extends Command
             $stackPath = $this->getStackPath();
 
             if ($stackPath === null) {
-                error('No stack selected.  Exiting.');
+                $this->error('No stack selected. Exiting.');
 
                 return self::FAILURE;
             }
@@ -65,14 +64,14 @@ final class InitCommand extends Command
             $selectedServices = $this->selectServices($registry, $stackLoader, $manifest);
 
             if (empty($selectedServices)) {
-                error('No services selected.  Exiting.');
+                $this->error('No services selected.  Exiting.');
 
                 return self:: FAILURE;
             }
 
             // Step 6: Confirm selection
             if (! $this->confirmSelection($projectName, $environment, $selectedServices)) {
-                warning('Initialization cancelled.');
+                $this->warn('Initialization cancelled.');
 
                 return self::SUCCESS;
             }
@@ -91,7 +90,7 @@ final class InitCommand extends Command
 
             return self::SUCCESS;
         } catch (RuntimeException $e) {
-            error('Initialization failed: ' . $e->getMessage());
+            $this->error('Initialization failed: ' . $e->getMessage());
 
             return self:: FAILURE;
         }
@@ -150,7 +149,7 @@ final class InitCommand extends Command
         $availableStacks = $this->discoverStacks();
 
         if (empty($availableStacks)) {
-            warning('No stacks found in:  ' . stack_path());
+            $this->warn('No stacks found in:  ' . stack_path());
 
             $customPath = text(
                 label:  'Enter stack name or path: ',
@@ -255,7 +254,7 @@ final class InitCommand extends Command
     {
         $envOption = $this->option('env');
 
-        if ($envOption !== null && in_array($envOption, ['dev', 'staging', 'production'], true)) {
+        if (in_array($envOption, ['dev', 'staging', 'production'], true)) {
             return $envOption;
         }
 
