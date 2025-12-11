@@ -3,56 +3,28 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Str;
-use Symfony\Component\Yaml\Yaml;
-
-if (! function_exists('project_path')) {
-    /**
-     * Get the project path
-     */
-    function project_path(?string $path = null): string
-    {
-        $base = getcwd();
-
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
-    }
-}
 
 if (! function_exists('tuti_path')) {
     /**
-     * Get the .tuti directory path
+     * Get the .tuti directory path for current project
+     *
      */
-    function tuti_path(?string $path = null): string
+    function tuti_path(?string $path = null, ?string $projectRoot = null): string
     {
-        $base = project_path('.tuti');
-        if (! is_dir($base)) {
-            mkdir($base, 0755, true);
-        }
+        $base = ($projectRoot ??  getcwd()) . '/.tuti';
 
         return $path ? $base . '/' . ltrim($path, '/') : $base;
     }
 }
 
-if (! function_exists('stub_path')) {
+if (! function_exists('is_tuti_exists')) {
     /**
-     * Get the stubs directory path
+     * Check if .tuti directory exists for current project
      */
-    function stub_path(?string $path = null): string
+    function is_tuti_exists(?string $projectRoot = null): bool
     {
-        $base = project_path('stubs');
-
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
-    }
-}
-
-if (! function_exists('stack_path')) {
-    /**
-     * Get the stubs directory path
-     */
-    function stack_path(?string $path = null): string
-    {
-        $base = project_path('stacks');
-
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
+        return is_dir(tuti_path(null, $projectRoot))
+            && file_exists(tuti_path('tuti.json', $projectRoot));
     }
 }
 
@@ -69,35 +41,151 @@ if (! function_exists('global_tuti_path')) {
     }
 }
 
-if (! function_exists('is_tuti_initialized')) {
+if (! function_exists('stub_path')) {
     /**
-     * Check if current project is initialized with Tuti
+     * Get the stubs directory path
      */
-    function is_tuti_initialized(): bool
+    function stub_path(?string $path = null): string
     {
-        return is_dir(tuti_path());
+        $base = base_path('stubs');
+
+        return $path ? $base . '/' . ltrim($path, '/') : $base;
     }
 }
 
-if (! function_exists('get_project_name')) {
+if (! function_exists('stack_path')) {
     /**
-     * Get current project name
+     * Get the stacks directory path
      */
-    function get_project_name(): string
+    function stack_path(?string $path = null): string
     {
-        if (is_tuti_initialized()) {
-            $config = Yaml::parse(file_get_contents(tuti_path('.tuti.yml')));
+        $base = base_path('stacks');
 
-            return $config['project']['name'] ?? basename(project_path());
+        return $path ? $base . '/' . ltrim($path, '/') : $base;
+    }
+}
+
+if (! function_exists('stack_name')) {
+    /**
+     * Get the display name from a stack path
+     *
+     * Converts full path to just the directory name
+     * Example: /path/to/stacks/laravel-stack → laravel-stack
+     */
+    function stack_name(string $path): string
+    {
+        return basename(rtrim($path, '/'));
+    }
+}
+
+if (! function_exists('discover_stacks')) {
+    /**
+     * Discover all available stacks in the stacks directory
+     * Example: discover_stacks() → ['laravel-stack' => '/path/to/stacks/laravel-stack', ...]
+     *
+     * @return array<string, string> Array of [stack-name => full-path]
+     */
+    function discover_stacks(): array
+    {
+        $stacksDir = stack_path();
+
+        if (! is_dir($stacksDir)) {
+            return [];
         }
 
-        return basename(project_path());
+        $stacks = [];
+        $directories = glob($stacksDir . '/*-stack', GLOB_ONLYDIR);
+
+        if ($directories === false) {
+            return [];
+        }
+
+        foreach ($directories as $dir) {
+            if (file_exists($dir . '/stack.json')) {
+                $name = stack_name($dir);
+                $stacks[$name] = $dir;
+            }
+        }
+
+        return $stacks;
+    }
+}
+
+if (! function_exists('stack_exists')) {
+    /**
+     * Check if a stack exists
+     */
+    function stack_exists(string $stack): bool
+    {
+        try {
+            resolve_stack_path($stack);
+
+            return true;
+        } catch (RuntimeException) {
+            return false;
+        }
+    }
+}
+
+if (! function_exists('resolve_stack_path')) {
+    /**
+     * Resolve stack name to full path
+     *
+     * Accepts:
+     * - Full path:  /absolute/path/to/laravel-stack
+     * - Stack name with suffix: laravel-stack
+     * - Stack name without suffix: laravel (auto-adds -stack)
+     * Example: resolve_stack_path('laravel') → /path/to/stacks/laravel-stack
+     */
+    function resolve_stack_path(string $stack): string
+    {
+        // If it's already a valid directory path with stack. json, return it
+        if (is_dir($stack) && file_exists($stack . '/stack.json')) {
+            return rtrim($stack, '/');
+        }
+
+        // Try to find in stacks directory
+        $stacksDir = stack_path();
+
+        $possibleNames = [
+            $stack,                                           // As provided (e.g., "laravel-stack")
+            "{$stack}-stack",                                 // With -stack suffix (e.g., "laravel" → "laravel-stack")
+            str_replace('-stack', '', $stack) . '-stack',     // Normalize
+        ];
+
+        foreach ($possibleNames as $name) {
+            $fullPath = "{$stacksDir}/{$name}";
+
+            if (is_dir($fullPath) && file_exists($fullPath . '/stack.json')) {
+                return $fullPath;
+            }
+        }
+
+        // Not found
+        throw new RuntimeException(
+            "Stack not found: {$stack}\n" .
+            "Searched in: {$stacksDir}\n" .
+            'Tried: ' . implode(', ', $possibleNames)
+        );
+    }
+}
+
+if (! function_exists('get_stack_manifest_path')) {
+    /**
+     * Get path to stack. json for a given stack
+     */
+    function get_stack_manifest_path(string $stack): string
+    {
+        $stackPath = resolve_stack_path($stack);
+
+        return $stackPath .  '/stack.json';
     }
 }
 
 if (! function_exists('mask_sensitive')) {
     /**
      * Mask sensitive values
+     * Example: mask_sensitive('DB_PASSWORD', 'mysecretpassword') → '********************'
      */
     function mask_sensitive(string $key, string $value): string
     {
@@ -116,6 +204,7 @@ if (! function_exists('mask_sensitive')) {
 if (! function_exists('time_ago')) {
     /**
      * Convert timestamp to human-readable format
+     * Example: time_ago(time() - 3600) → '1 hours ago'
      */
     function time_ago(int $timestamp): string
     {
@@ -135,6 +224,7 @@ if (! function_exists('time_ago')) {
 if (! function_exists('bytes_to_human')) {
     /**
      * Convert bytes to human-readable format
+     * Example: bytes_to_human(1048576) → '1.00 MB'
      */
     function bytes_to_human(int $bytes): string
     {
@@ -178,6 +268,7 @@ if (! function_exists('is_macos')) {
 if (! function_exists('expand_path')) {
     /**
      * Expand ~ in file paths
+     * Example: expand_path('~/folder') → '/home/user/folder'
      */
     function expand_path(string $path): string
     {
