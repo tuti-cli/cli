@@ -13,6 +13,8 @@ declare(strict_types=1);
 |
 */
 
+use Illuminate\Support\Facades\File;
+
 uses(Tests\TestCase::class)->in('Feature');
 
 /*
@@ -26,7 +28,26 @@ uses(Tests\TestCase::class)->in('Feature');
 |
 */
 
-expect()->extend('toBeOne', fn () => $this->toBe(1));
+expect()->extend('toBeValidJson', function () {
+    $decoded = json_decode($this->value, true);
+
+    expect(json_last_error())->toBe(JSON_ERROR_NONE)
+        ->and($decoded)->toBeArray();
+
+    return $this;
+});
+
+expect()->extend('toBeDirectory', function () {
+    expect(is_dir($this->value))->toBeTrue("Expected {$this->value} to be a directory");
+
+    return $this;
+});
+
+expect()->extend('toBeExecutable', function () {
+    expect(is_executable($this->value))->toBeTrue("Expected {$this->value} to be executable");
+
+    return $this;
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +60,17 @@ expect()->extend('toBeOne', fn () => $this->toBe(1));
 |
 */
 
-function something(): void
+function createTestDirectory(): string
 {
-    // ..
+    $dir = sys_get_temp_dir() . '/tuti-test-' . uniqid();
+    mkdir($dir);
+
+    return $dir;
+}
+
+function cleanupTestDirectory(string $dir): void
+{
+    if (is_dir($dir)) {
+        File::deleteDirectory($dir);
+    }
 }
