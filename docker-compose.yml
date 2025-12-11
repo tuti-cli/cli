@@ -9,6 +9,7 @@ services:
 
     volumes:
       - .:/var/www/html:cached
+      - ./.tmp:/tmp
       - composer-cache:/home/www-data/.composer
       - /var/run/docker.sock:/var/run/docker.sock
     group_add:
