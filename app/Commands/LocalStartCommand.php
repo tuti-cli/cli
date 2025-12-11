@@ -9,25 +9,25 @@ use Symfony\Component\Process\Process;
 
 class LocalStartCommand extends Command
 {
-    protected $signature = 'local:start';
+    protected $signature = 'local:test';
 
     protected $description = 'Start the local development environment';
 
-    public function handle(DockerService $docker): void
+    public function handle(): int
     {
-        $this->info('Starting local development environment');
+        $this->info('Testing dummy command execution...');
+        $this->newLine();
 
-        if ($docker->isRunning()) {
-            $this->info('Docker is running. Starting services...');
+        dd([
+            tuti_path(),
+            discover_stacks(),
+            is_tuti_exists(),
+            stub_path(),
+            mask_sensitive('Password123!', 'Password123!'),
+            stack_path(),
+            global_tuti_path(),
+        ]);
 
-            if ($docker->start()) {
-                $this->info('Local development environment started successfully.');
-                $docker->stop();
-            } else {
-                $this->error('Failed to start local development environment.');
-            }
-        } else {
-            $this->error('Docker is not running. Please start Docker and try again.');
-        }
+        return self::SUCCESS;
     }
 }

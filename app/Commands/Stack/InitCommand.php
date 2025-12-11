@@ -25,7 +25,7 @@ final class InitCommand extends Command
                           {project-name? : Project name}
                           {--services=* : Pre-select services}
                           {--env= : Environment (dev, staging, production)}
-                          {--no-iinteraction : Run without prompts}';
+                          {--no-interact : Run without prompts}';
 
     protected $description = 'Initialize a new project with selected stack and services';
 
@@ -118,8 +118,6 @@ final class InitCommand extends Command
                 stack_path($stackArg),                    // e.g., laravel-stack
                 stack_path("{$stackArg}-stack"),          // e.g., laravel → laravel-stack
             ];
-
-            dd($possiblePaths);
 
             foreach ($possiblePaths as $path) {
                 if (is_dir($path) && file_exists($path .  '/stack.json')) {
