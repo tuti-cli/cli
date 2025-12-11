@@ -6,7 +6,7 @@ namespace App\Services\Tuti;
 
 use RuntimeException;
 
-final class ServiceTutiDirectoryManager
+final class TutiDirectoryManagerService
 {
     /**
      * Project root directory

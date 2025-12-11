@@ -6,11 +6,11 @@ namespace App\Providers;
 
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackEnvGeneratorService;
-use App\Services\Stack\StackRegistryReaderService;
+use App\Services\Stack\StackJsonRegistryManagerService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackStubLoaderService;
-use App\Services\Tuti\ServiceTutiDirectoryManager;
-use App\Services\Tuti\ServiceTutiJsonMetadataManager;
+use App\Services\Tuti\TutiDirectoryManagerService;
+use App\Services\Tuti\TutiJsonMetadataManagerService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
@@ -26,8 +26,8 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Stack Management
-        $this->app->singleton(StackRegistryReaderService::class, function () {
-            return new StackRegistryReaderService('services/registry.json');
+        $this->app->singleton(StackJsonRegistryManagerService::class, function () {
+            return new StackJsonRegistryManagerService('services/registry.json');
         });
 
         $this->app->singleton(StackStubLoaderService::class, function () {
@@ -44,20 +44,20 @@ final class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(StackComposeBuilderService::class, function ($app) {
             return new StackComposeBuilderService(
-                registry:  $app->make(StackRegistryReaderService::class),
+                registry:  $app->make(StackJsonRegistryManagerService::class),
                 stubLoader: $app->make(StackStubLoaderService::class),
                 stackLoader: $app->make(StackLoaderService::class)
             );
         });
 
         // Tuti Directory Management
-        $this->app->bind(ServiceTutiDirectoryManager:: class, function (): ServiceTutiDirectoryManager {
-            return new ServiceTutiDirectoryManager();
+        $this->app->bind(TutiDirectoryManagerService:: class, function (): TutiDirectoryManagerService {
+            return new TutiDirectoryManagerService();
         });
 
-        $this->app->bind(ServiceTutiJsonMetadataManager::class, function ($app): ServiceTutiJsonMetadataManager {
-            return new ServiceTutiJsonMetadataManager(
-                $app->make(ServiceTutiDirectoryManager::class)
+        $this->app->bind(TutiJsonMetadataManagerService::class, function ($app): TutiJsonMetadataManagerService {
+            return new TutiJsonMetadataManagerService(
+                $app->make(TutiDirectoryManagerService::class)
             );
         });
     }

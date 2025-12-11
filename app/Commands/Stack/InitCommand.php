@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Commands\Stack;
 
 use App\Services\Stack\StackComposeBuilderService;
-use App\Services\Stack\StackRegistryReaderService;
+use App\Services\Stack\StackJsonRegistryManagerService;
 use App\Services\Stack\StackLoaderService;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
@@ -30,9 +30,9 @@ final class InitCommand extends Command
     protected $description = 'Initialize a new project with selected stack and services';
 
     public function handle(
-        StackRegistryReaderService $registry,
-        StackLoaderService         $stackLoader,
-        StackComposeBuilderService $builder
+        StackJsonRegistryManagerService $registry,
+        StackLoaderService              $stackLoader,
+        StackComposeBuilderService      $builder
     ): int {
         $this->displayHeader();
 
@@ -279,9 +279,9 @@ final class InitCommand extends Command
      * @return array<int, string>
      */
     private function selectServices(
-        StackRegistryReaderService $registry,
-        StackLoaderService         $stackLoader,
-        array                      $manifest
+        StackJsonRegistryManagerService $registry,
+        StackLoaderService              $stackLoader,
+        array                           $manifest
     ): array {
         $preSelected = $this->option('services');
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Commands\Test;
 
 use App\Services\Stack\StackComposeBuilderService;
-use App\Services\Stack\StackRegistryReaderService;
+use App\Services\Stack\StackJsonRegistryManagerService;
 use LaravelZero\Framework\Commands\Command;
 
 final class QuickValidateCommand extends Command
@@ -14,7 +14,7 @@ final class QuickValidateCommand extends Command
 
     protected $description = 'Quick validation check';
 
-    public function handle(StackRegistryReaderService $registry, StackComposeBuilderService $builder): int
+    public function handle(StackJsonRegistryManagerService $registry, StackComposeBuilderService $builder): int
     {
         $this->info('🚀 Quick Validation Check');
         $this->newLine();
