@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
-use App\Services\Stack\StackRegistryReaderService;
+use App\Services\Stack\StackJsonRegistryManagerService;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestRegistryCommand extends Command
@@ -13,7 +13,7 @@ final class TestRegistryCommand extends Command
 
     protected $description = 'Test service registry functionality';
 
-    public function handle(StackRegistryReaderService $registry): int
+    public function handle(StackJsonRegistryManagerService $registry): int
     {
         $this->info('🔍 Testing Service Registry...');
         $this->newLine();

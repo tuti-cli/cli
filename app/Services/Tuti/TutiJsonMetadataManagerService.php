@@ -6,10 +6,10 @@ namespace App\Services\Tuti;
 
 use RuntimeException;
 
-final readonly class ServiceTutiJsonMetadataManager
+final readonly class TutiJsonMetadataManagerService
 {
     public function __construct(
-        private ServiceTutiDirectoryManager $directoryManager
+        private TutiDirectoryManagerService $directoryManager
     ) {}
 
     /**
