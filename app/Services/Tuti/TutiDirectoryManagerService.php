@@ -11,15 +11,11 @@ final class TutiDirectoryManagerService
     /**
      * Project root directory
      */
-    private string $projectRoot {
-        get {
-            return $this->projectRoot;
-        }
-    }
+    private string $projectRoot;
 
     public function __construct(? string $projectRoot = null)
     {
-        $this->projectRoot = $projectRoot ?? getcwd();
+        $this->projectRoot = $projectRoot ?? base_path();
     }
 
     /**
@@ -78,6 +74,13 @@ final class TutiDirectoryManagerService
                 }
             }
         }
+
+        // TODO: Need create via StackJsonMetadataManagerService
+        $manifestPath = $this->getTutiPath('tuti.json');
+        file_put_contents($manifestPath, json_encode([
+            'version' => '1.0.0',
+            'created_at' => now()->toJSON(),
+        ], JSON_PRETTY_PRINT));
     }
 
     /**
@@ -155,5 +158,13 @@ final class TutiDirectoryManagerService
         }
 
         return rmdir($directory);
+    }
+
+    /**
+     * Get project root directory
+     */
+    public function getProjectRoot(): string
+    {
+        return $this->projectRoot;
     }
 }
