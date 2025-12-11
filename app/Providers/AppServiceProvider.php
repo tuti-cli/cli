@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackEnvGeneratorService;
+use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackJsonRegistryManagerService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackStubLoaderService;
@@ -26,23 +27,23 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Stack Management
-        $this->app->singleton(StackJsonRegistryManagerService::class, function () {
+        $this->app->singleton(abstract: StackJsonRegistryManagerService::class, concrete: function () {
             return new StackJsonRegistryManagerService('services/registry.json');
         });
 
-        $this->app->singleton(StackStubLoaderService::class, function () {
+        $this->app->singleton(abstract: StackStubLoaderService::class, concrete: function () {
             return new StackStubLoaderService();
         });
 
-        $this->app->singleton(StackLoaderService::class, function () {
+        $this->app->singleton(abstract: StackLoaderService::class, concrete: function () {
             return new StackLoaderService();
         });
 
-        $this->app->singleton(StackEnvGeneratorService::class, function () {
+        $this->app->singleton(abstract: StackEnvGeneratorService::class, concrete: function () {
             return new StackEnvGeneratorService();
         });
 
-        $this->app->singleton(StackComposeBuilderService::class, function ($app) {
+        $this->app->singleton(abstract: StackComposeBuilderService::class, concrete: function ($app) {
             return new StackComposeBuilderService(
                 registry:  $app->make(StackJsonRegistryManagerService::class),
                 stubLoader: $app->make(StackStubLoaderService::class),
@@ -51,13 +52,19 @@ final class AppServiceProvider extends ServiceProvider
         });
 
         // Tuti Directory Management
-        $this->app->bind(TutiDirectoryManagerService:: class, function (): TutiDirectoryManagerService {
+        $this->app->bind(abstract: TutiDirectoryManagerService:: class, concrete: function (): TutiDirectoryManagerService {
             return new TutiDirectoryManagerService();
         });
 
-        $this->app->bind(TutiJsonMetadataManagerService::class, function ($app): TutiJsonMetadataManagerService {
+        $this->app->bind(abstract: TutiJsonMetadataManagerService::class, concrete: function ($app): TutiJsonMetadataManagerService {
             return new TutiJsonMetadataManagerService(
-                $app->make(TutiDirectoryManagerService::class)
+                directoryManager: $app->make(TutiDirectoryManagerService::class)
+            );
+        });
+
+        $this->app->bind(StackFilesCopierService::class, function ($app): StackFilesCopierService {
+            return new StackFilesCopierService(
+                directoryManager: $app->make(TutiDirectoryManagerService::class)
             );
         });
     }
