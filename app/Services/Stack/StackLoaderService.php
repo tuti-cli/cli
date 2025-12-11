@@ -10,7 +10,7 @@ use RuntimeException;
  * ServiceStackLoader is responsible for loading and processing
  * stack manifest files (stack.json).
  */
-final readonly class ServiceStackLoader
+final readonly class StackLoaderService
 {
     /**
      * Load a stack manifest from a stack. json file

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Services\Stack\ServiceComposeStackBuilder;
-use App\Services\Stack\ServiceEnvGenerator;
-use App\Services\Stack\ServiceRegistryJsonReader;
-use App\Services\Stack\ServiceStackLoader;
-use App\Services\Stack\ServiceStubLoader;
+use App\Services\Stack\StackComposeBuilderService;
+use App\Services\Stack\StackEnvGeneratorService;
+use App\Services\Stack\StackRegistryReaderService;
+use App\Services\Stack\StackLoaderService;
+use App\Services\Stack\StackStubLoaderService;
 use App\Services\Tuti\ServiceTutiDirectoryManager;
 use App\Services\Tuti\ServiceTutiJsonMetadataManager;
 use Carbon\CarbonImmutable;
@@ -26,27 +26,27 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Stack Management
-        $this->app->singleton(ServiceRegistryJsonReader::class, function () {
-            return new ServiceRegistryJsonReader('services/registry.json');
+        $this->app->singleton(StackRegistryReaderService::class, function () {
+            return new StackRegistryReaderService('services/registry.json');
         });
 
-        $this->app->singleton(ServiceStubLoader::class, function () {
-            return new ServiceStubLoader();
+        $this->app->singleton(StackStubLoaderService::class, function () {
+            return new StackStubLoaderService();
         });
 
-        $this->app->singleton(ServiceStackLoader::class, function () {
-            return new ServiceStackLoader();
+        $this->app->singleton(StackLoaderService::class, function () {
+            return new StackLoaderService();
         });
 
-        $this->app->singleton(ServiceEnvGenerator::class, function () {
-            return new ServiceEnvGenerator();
+        $this->app->singleton(StackEnvGeneratorService::class, function () {
+            return new StackEnvGeneratorService();
         });
 
-        $this->app->singleton(ServiceComposeStackBuilder::class, function ($app) {
-            return new ServiceComposeStackBuilder(
-                registry:  $app->make(ServiceRegistryJsonReader::class),
-                stubLoader: $app->make(ServiceStubLoader::class),
-                stackLoader: $app->make(ServiceStackLoader::class)
+        $this->app->singleton(StackComposeBuilderService::class, function ($app) {
+            return new StackComposeBuilderService(
+                registry:  $app->make(StackRegistryReaderService::class),
+                stubLoader: $app->make(StackStubLoaderService::class),
+                stackLoader: $app->make(StackLoaderService::class)
             );
         });
 

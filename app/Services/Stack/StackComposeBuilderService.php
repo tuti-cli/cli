@@ -7,12 +7,12 @@ namespace App\Services\Stack;
 use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
 
-final readonly class ServiceComposeStackBuilder
+final readonly class StackComposeBuilderService
 {
     public function __construct(
-        private ServiceRegistryJsonReader $registry,
-        private ServiceStubLoader $stubLoader,
-        private ServiceStackLoader $stackLoader
+        private StackRegistryReaderService $registry,
+        private StackStubLoaderService     $stubLoader,
+        private StackLoaderService         $stackLoader
     ) {}
 
     /**

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Commands\Stack;
 
-use App\Services\Stack\ServiceComposeStackBuilder;
-use App\Services\Stack\ServiceRegistryJsonReader;
-use App\Services\Stack\ServiceStackLoader;
+use App\Services\Stack\StackComposeBuilderService;
+use App\Services\Stack\StackRegistryReaderService;
+use App\Services\Stack\StackLoaderService;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
 
@@ -30,9 +30,9 @@ final class InitCommand extends Command
     protected $description = 'Initialize a new project with selected stack and services';
 
     public function handle(
-        ServiceRegistryJsonReader $registry,
-        ServiceStackLoader $stackLoader,
-        ServiceComposeStackBuilder $builder
+        StackRegistryReaderService $registry,
+        StackLoaderService         $stackLoader,
+        StackComposeBuilderService $builder
     ): int {
         $this->displayHeader();
 
@@ -279,9 +279,9 @@ final class InitCommand extends Command
      * @return array<int, string>
      */
     private function selectServices(
-        ServiceRegistryJsonReader $registry,
-        ServiceStackLoader $stackLoader,
-        array $manifest
+        StackRegistryReaderService $registry,
+        StackLoaderService         $stackLoader,
+        array                      $manifest
     ): array {
         $preSelected = $this->option('services');
 
@@ -385,11 +385,11 @@ final class InitCommand extends Command
      * @param array<int, string> $selectedServices
      */
     private function generateDockerCompose(
-        ServiceComposeStackBuilder $builder,
-        string $stackPath,
-        array $selectedServices,
-        string $projectName,
-        string $environment
+        StackComposeBuilderService $builder,
+        string                     $stackPath,
+        array                      $selectedServices,
+        string                     $projectName,
+        string                     $environment
     ): void {
         info('Generating docker-compose.yml...');
 
