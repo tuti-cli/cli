@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
-use App\Services\Stack\ServiceComposeStackBuilder;
+use App\Services\Stack\StackComposeBuilderService;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestStackOverridesCommand extends Command
@@ -13,7 +13,7 @@ final class TestStackOverridesCommand extends Command
 
     protected $description = 'Test stack overrides functionality';
 
-    public function handle(ServiceComposeStackBuilder $builder): int
+    public function handle(StackComposeBuilderService $builder): int
     {
         $this->info('🔍 Testing Stack Overrides...');
         $this->newLine();
@@ -59,11 +59,11 @@ final class TestStackOverridesCommand extends Command
      * @param array<string, string> $projectConfig
      */
     private function testEnvironment(
-        ServiceComposeStackBuilder $builder,
-        string $stackPath,
-        array $selectedServices,
-        array $projectConfig,
-        string $environment
+        StackComposeBuilderService $builder,
+        string                     $stackPath,
+        array                      $selectedServices,
+        array                      $projectConfig,
+        string                     $environment
     ): void {
         $this->line("  Environment: {$environment}");
 

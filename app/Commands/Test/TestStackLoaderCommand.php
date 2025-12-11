@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
-use App\Services\Stack\ServiceStackLoader;
+use App\Services\Stack\StackLoaderService;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestStackLoaderCommand extends Command
@@ -13,7 +13,7 @@ final class TestStackLoaderCommand extends Command
 
     protected $description = 'Test stack loader functionality';
 
-    public function handle(ServiceStackLoader $loader): int
+    public function handle(StackLoaderService $loader): int
     {
         $this->info('🔍 Testing StackLoader.. .');
         $this->newLine();

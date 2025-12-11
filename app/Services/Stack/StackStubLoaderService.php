@@ -10,7 +10,7 @@ use RuntimeException;
  * ServiceStubLoader is responsible for loading and processing
  * stub files and replacing placeholders with actual values.
  */
-final readonly class ServiceStubLoader
+final readonly class StackStubLoaderService
 {
     /**
      * Load a stub file and replace placeholders

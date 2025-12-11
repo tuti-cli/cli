@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
-use App\Services\Stack\ServiceComposeStackBuilder;
-use App\Services\Stack\ServiceRegistryJsonReader;
+use App\Services\Stack\StackComposeBuilderService;
+use App\Services\Stack\StackRegistryReaderService;
 use LaravelZero\Framework\Commands\Command;
 
 final class QuickValidateCommand extends Command
@@ -14,7 +14,7 @@ final class QuickValidateCommand extends Command
 
     protected $description = 'Quick validation check';
 
-    public function handle(ServiceRegistryJsonReader $registry, ServiceComposeStackBuilder $builder): int
+    public function handle(StackRegistryReaderService $registry, StackComposeBuilderService $builder): int
     {
         $this->info('🚀 Quick Validation Check');
         $this->newLine();
@@ -60,7 +60,7 @@ final class QuickValidateCommand extends Command
         return self::FAILURE;
     }
 
-    private function testBuilder(ServiceComposeStackBuilder $builder): bool
+    private function testBuilder(StackComposeBuilderService $builder): bool
     {
         $compose = $builder->build(
             ['databases.postgres'],

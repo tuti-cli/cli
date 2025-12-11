@@ -6,7 +6,7 @@ namespace App\Services\Stack;
 
 use RuntimeException;
 
-final readonly class ServiceEnvGenerator
+final readonly class StackEnvGeneratorService
 {
     /**
      * Generate environment file from template and service requirements

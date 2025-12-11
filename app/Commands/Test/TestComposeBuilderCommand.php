@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
-use App\Services\Stack\ServiceComposeStackBuilder;
+use App\Services\Stack\StackComposeBuilderService;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestComposeBuilderCommand extends Command
@@ -13,7 +13,7 @@ final class TestComposeBuilderCommand extends Command
 
     protected $description = 'Test compose builder functionality';
 
-    public function handle(ServiceComposeStackBuilder $builder): int
+    public function handle(StackComposeBuilderService $builder): int
     {
         $this->info('🔍 Testing ComposeBuilder...');
         $this->newLine();
