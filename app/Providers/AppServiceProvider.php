@@ -52,13 +52,18 @@ final class AppServiceProvider extends ServiceProvider
         });
 
         // Tuti Directory Management
-        $this->app->bind(abstract: TutiDirectoryManagerService:: class, concrete: function (): TutiDirectoryManagerService {
-            return new TutiDirectoryManagerService();
+        $this->app->bind(TutiDirectoryManagerService::class, function ($app, $params) {
+            return new TutiDirectoryManagerService($params['projectRoot'] ?? null);
         });
 
-        $this->app->bind(abstract: TutiJsonMetadataManagerService::class, concrete: function ($app): TutiJsonMetadataManagerService {
+        $this->app->bind(TutiJsonMetadataManagerService::class, function ($app, $params) {
+            // If we are resolving this manually with a specific directory manager, use it
+            if (isset($params['directoryManager'])) {
+                return new TutiJsonMetadataManagerService($params['directoryManager']);
+            }
+
             return new TutiJsonMetadataManagerService(
-                directoryManager: $app->make(TutiDirectoryManagerService::class)
+                $app->make(TutiDirectoryManagerService::class)
             );
         });
 

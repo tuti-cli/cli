@@ -17,7 +17,7 @@ final readonly class TutiJsonMetadataManagerService
      *
      * @param array<string, mixed> $data
      */
-    public function create(array $data): void
+    public function create(array $data = []): void
     {
         if ($this->exists()) {
             throw new RuntimeException('Project metadata already exists.');

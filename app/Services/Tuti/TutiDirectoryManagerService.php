@@ -49,6 +49,9 @@ final class TutiDirectoryManagerService
         }
 
         $this->createBaseStructure();
+
+        $metadataService = new TutiJsonMetadataManagerService($this);
+        $metadataService->create();
     }
 
     /**
@@ -76,11 +79,11 @@ final class TutiDirectoryManagerService
         }
 
         // TODO: Need create via StackJsonMetadataManagerService
-        $manifestPath = $this->getTutiPath('tuti.json');
-        file_put_contents($manifestPath, json_encode([
-            'version' => '1.0.0',
-            'created_at' => now()->toJSON(),
-        ], JSON_PRETTY_PRINT));
+//        $manifestPath = $this->getTutiPath('tuti.json');
+//        file_put_contents($manifestPath, json_encode([
+//            'version' => '1.0.0',
+//            'created_at' => now()->toJSON(),
+//        ], JSON_PRETTY_PRINT));
     }
 
     /**
