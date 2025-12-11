@@ -11,7 +11,9 @@ if (! function_exists('tuti_path')) {
      */
     function tuti_path(?string $path = null, ?string $projectRoot = null): string
     {
-        $base = ($projectRoot ??  getcwd()) . '/.tuti';
+        $projectRoot = dirname(__DIR__, 2);
+
+        $base = $projectRoot . '/.tuti';
 
         return $path ? $base . '/' . ltrim($path, '/') : $base;
     }
