@@ -4,6 +4,7 @@
 /database/database.sqlite
 .env
 .tuti/*
+stacks/*
 
 # Ideas
 /.idea
