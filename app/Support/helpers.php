@@ -11,7 +11,8 @@ if (! function_exists('tuti_path')) {
      */
     function tuti_path(?string $path = null, ?string $projectRoot = null): string
     {
-        $projectRoot = dirname(__DIR__, 2);
+        // Use provided projectRoot or default to app root (2 levels up from this file)
+        $projectRoot = $projectRoot ?? dirname(__DIR__, 2);
 
         $base = $projectRoot . '/.tuti';
 
@@ -103,6 +104,11 @@ if (! function_exists('discover_stacks')) {
         }
 
         foreach ($directories as $dir) {
+            $name = basename($dir);
+            if (! str_ends_with($name, '-stack')) {
+                continue;
+            }
+
             if (file_exists($dir . '/stack.json')) {
                 $name = stack_name($dir);
                 $stacks[$name] = $dir;
