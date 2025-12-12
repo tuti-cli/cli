@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace App\Commands\Stack;
 
 use App\Services\Stack\StackComposeBuilderService;
+use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackJsonRegistryManagerService;
 use App\Services\Stack\StackLoaderService;
+use App\Services\Tuti\TutiDirectoryManagerService;
+use App\Services\Tuti\TutiJsonMetadataManagerService;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
 
 use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\error;
-use function Laravel\Prompts\info;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\select;
+use function Laravel\Prompts\spin;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\warning;
 
@@ -24,19 +26,34 @@ final class InitCommand extends Command
                           {stack?  : Stack name (e.g., laravel or laravel-stack)}
                           {project-name? : Project name}
                           {--services=* : Pre-select services}
-                          {--env= : Environment (dev, staging, production)}';
+                          {--env= :  Environment (dev, staging, production)}
+                          {--force :  Force initialization even if .tuti exists}';
 
     protected $description = 'Initialize a new project with selected stack and services';
 
     public function handle(
         StackJsonRegistryManagerService $registry,
-        StackLoaderService              $stackLoader,
-        StackComposeBuilderService      $builder
+        StackLoaderService $stackLoader,
+        StackComposeBuilderService $builder,
+        TutiDirectoryManagerService $directoryManager,
+        TutiJsonMetadataManagerService $metadata,
+        StackFilesCopierService $copier
     ): int {
         $this->displayHeader();
 
         try {
-            // Step 1: Get stack path
+            if ($directoryManager->exists() && !$this->option('force')) {
+                $this->error('Project already initialized. .tuti directory already exists.');
+                $this->line('Use --force to reinitialize (this will remove existing configuration)');
+
+                return self::FAILURE;
+            }
+
+            if ($directoryManager->exists() && $this->option('force')) {
+                $this->warn('Removing existing .tuti directory...');
+                $directoryManager->clean();
+            }
+
             $stackPath = $this->getStackPath();
 
             if ($stackPath === null) {
@@ -45,55 +62,115 @@ final class InitCommand extends Command
                 return self::FAILURE;
             }
 
-            $this->line('Using stack: ' . basename($stackPath));
+            $this->info('Using stack: ' . basename($stackPath));
             $this->newLine();
 
-            // Step 2: Load stack manifest
             $manifest = $stackLoader->load($stackPath);
             $stackLoader->validate($manifest);
 
             $this->displayStackInfo($manifest);
 
-            // Step 3: Get project name
             $projectName = $this->getProjectName();
-
-            // Step 4: Get environment
             $environment = $this->getEnvironment();
-
-            // Step 5: Select services
             $selectedServices = $this->selectServices($registry, $stackLoader, $manifest);
 
             if (empty($selectedServices)) {
-                $this->error('No services selected.  Exiting.');
+                $this->error('No services selected. Exiting.');
 
-                return self:: FAILURE;
+                return self::FAILURE;
             }
 
-            // Step 6: Confirm selection
+            $selectedServices = array_values(array_unique($selectedServices));
+
             if (! $this->confirmSelection($projectName, $environment, $selectedServices)) {
                 $this->warn('Initialization cancelled.');
 
                 return self::SUCCESS;
             }
 
-            // Step 7: Generate docker-compose.yml
-            $this->generateDockerCompose(
+            $this->initializeProject(
+                $directoryManager,
+                $copier,
+                $metadata,
                 $builder,
                 $stackPath,
-                $selectedServices,
+                $stackLoader,
+                $manifest,
                 $projectName,
-                $environment
+                $environment,
+                $selectedServices
             );
 
-            // Step 8: Display next steps
             $this->displayNextSteps($projectName, $environment);
 
-            return self::SUCCESS;
+            return self:: SUCCESS;
         } catch (RuntimeException $e) {
-            $this->error('Initialization failed: ' . $e->getMessage());
+            $this->error('Initialization failed:  ' . $e->getMessage());
+
+            if ($directoryManager->exists()) {
+                $this->newLine();
+                $this->warn('Cleaning up partial initialization...');
+                $directoryManager->clean();
+                $this->info('✓ Cleanup complete');
+            }
 
             return self:: FAILURE;
         }
+    }
+
+    private function initializeProject(
+        TutiDirectoryManagerService $directoryManager,
+        StackFilesCopierService $copier,
+        TutiJsonMetadataManagerService $metadata,
+        StackComposeBuilderService $builder,
+        string $stackPath,
+        StackLoaderService $stackLoader,
+        array $manifest,
+        string $projectName,
+        string $environment,
+        array $selectedServices
+    ): void {
+        spin(
+            fn (): bool => $directoryManager->initialize(),
+            'Creating .tuti directory structure...'
+        );
+        $this->components->info('✓ .tuti directory created');
+
+        spin(
+            fn (): bool => $copier->copyFromStack($stackPath),
+            'Copying stack files...'
+        );
+        $this->components->info('✓ Stack files copied');
+
+        spin(
+            function () use ($metadata, $stackLoader, $manifest, $projectName, $environment, $selectedServices): bool {
+                $metadata->create([
+                    'stack' => $stackLoader->getStackName($manifest),
+                    'stack_version' => $manifest['version'],
+                    'project_name' => $projectName,
+                    'environment' => $environment,
+                    'services' => $this->groupServices($selectedServices),
+                ]);
+
+                return true;
+            },
+            'Creating project metadata...'
+        );
+        $this->components->info('✓ Project metadata created');
+
+        $this->generateDockerCompose($builder, $stackPath, $selectedServices, $projectName, $environment);
+    }
+
+    private function groupServices(array $selectedServices): array
+    {
+        $grouped = [];
+
+        foreach ($selectedServices as $serviceKey) {
+            [$category, $service] = explode('.', $serviceKey);
+            $grouped[$category][] = $service;
+        }
+
+        return $grouped;
     }
 
     private function displayHeader(): void
@@ -112,27 +189,23 @@ final class InitCommand extends Command
         $stackArg = $this->argument('stack');
 
         if ($stackArg !== null) {
-            // Try as short name (e.g., "laravel") or full name (e.g., "laravel-stack")
             $possiblePaths = [
-                stack_path($stackArg),                    // e.g., laravel-stack
-                stack_path("{$stackArg}-stack"),          // e.g., laravel → laravel-stack
+                stack_path($stackArg),
+                stack_path("{$stackArg}-stack"),
             ];
 
             foreach ($possiblePaths as $path) {
-                if (is_dir($path) && file_exists($path .  '/stack.json')) {
+                if (is_dir($path) && file_exists($path . '/stack.json')) {
                     return $path;
                 }
             }
 
-            // Check if it's an absolute path
             if (is_dir($stackArg) && file_exists($stackArg . '/stack.json')) {
                 return $stackArg;
             }
 
-            warning("Stack not found: {$stackArg}");
-
-            if ($this->option('no-interaction')) {
-                return null;
+            if (! $this->option('no-interaction')) {
+                warning("Stack not found:  {$stackArg}");
             }
         }
 
@@ -140,7 +213,6 @@ final class InitCommand extends Command
             return null;
         }
 
-        // Interactive:  Discover and select
         return $this->selectStackInteractively();
     }
 
@@ -152,11 +224,10 @@ final class InitCommand extends Command
             $this->warn('No stacks found in:  ' . stack_path());
 
             $customPath = text(
-                label:  'Enter stack name or path: ',
+                label: 'Enter stack name or path:',
                 required: true
             );
 
-            // Try to resolve custom path
             $possiblePaths = [
                 stack_path($customPath),
                 stack_path("{$customPath}-stack"),
@@ -169,13 +240,13 @@ final class InitCommand extends Command
                 }
             }
 
-            error('Invalid stack path');
+            $this->error('Invalid stack path');
 
             return null;
         }
 
-        // Show only stack names (not full paths)
         $options = [];
+
         foreach ($availableStacks as $path) {
             $name = basename($path);
             $options[$name] = $name;
@@ -189,14 +260,11 @@ final class InitCommand extends Command
         return $availableStacks[array_search($selected, array_keys($options), true)];
     }
 
-    /**
-     * @return array<int, string>
-     */
     private function discoverStacks(): array
     {
         $stacksDir = stack_path();
 
-        if (! is_dir($stacksDir)) {
+        if (!is_dir($stacksDir)) {
             return [];
         }
 
@@ -216,12 +284,9 @@ final class InitCommand extends Command
         return $stacks;
     }
 
-    /**
-     * @param array<string, mixed> $manifest
-     */
     private function displayStackInfo(array $manifest): void
     {
-        info('Stack:  ' . $manifest['name']);
+        $this->info('Stack:  ' . $manifest['name']);
         $this->line('  Type: ' . $manifest['type']);
         $this->line('  Framework: ' . $manifest['framework']);
         $this->line('  Description: ' . $manifest['description']);
@@ -244,7 +309,7 @@ final class InitCommand extends Command
             label: 'Project name:',
             default: 'myapp',
             required: true,
-            validate: fn (string $value): ? string => preg_match('/^[a-z0-9_-]+$/', $value)
+            validate: fn (string $value): ?string => preg_match('/^[a-z0-9_-]+$/', $value)
                 ? null
                 : 'Project name must contain only lowercase letters, numbers, hyphens, and underscores'
         );
@@ -254,7 +319,7 @@ final class InitCommand extends Command
     {
         $envOption = $this->option('env');
 
-        if (in_array($envOption, ['dev', 'staging', 'production'], true)) {
+        if ($envOption !== null && in_array($envOption, ['dev', 'staging', 'production'], true)) {
             return $envOption;
         }
 
@@ -273,18 +338,14 @@ final class InitCommand extends Command
         );
     }
 
-    /**
-     * @param array<string, mixed> $manifest
-     * @return array<int, string>
-     */
     private function selectServices(
         StackJsonRegistryManagerService $registry,
-        StackLoaderService              $stackLoader,
-        array                           $manifest
+        StackLoaderService $stackLoader,
+        array $manifest
     ): array {
         $preSelected = $this->option('services');
 
-        if (!  empty($preSelected)) {
+        if (! empty($preSelected)) {
             return $preSelected;
         }
 
@@ -292,26 +353,22 @@ final class InitCommand extends Command
             return $stackLoader->getDefaultServices($manifest);
         }
 
-        // Build service selection options
-        $options = [];
         $defaults = [];
-
-        // Required services
         $required = $stackLoader->getRequiredServices($manifest);
+
         foreach ($required as $key => $config) {
             $category = $config['category'];
             $serviceOptions = $config['options'];
             $defaultOption = $config['default'];
 
             if (count($serviceOptions) === 1) {
-                // Only one option - auto-select
                 $defaults[] = "{$category}.{$serviceOptions[0]}";
+
                 continue;
             }
 
-            // Multiple options - let user choose
             $selected = select(
-                label: $config['prompt'] ??  "Select {$key}:",
+                label: $config['prompt'] ?? "Select {$key}:",
                 options: array_combine(
                     $serviceOptions,
                     array_map(
@@ -325,8 +382,10 @@ final class InitCommand extends Command
             $defaults[] = "{$category}.{$selected}";
         }
 
-        // Optional services
         $optional = $stackLoader->getOptionalServices($manifest);
+        $optionalChoices = [];
+        $optionalDefaults = [];
+
         foreach ($optional as $key => $config) {
             $category = $config['category'];
             $serviceOptions = $config['options'];
@@ -334,79 +393,74 @@ final class InitCommand extends Command
             foreach ($serviceOptions as $service) {
                 $serviceConfig = $registry->getService($category, $service);
                 $serviceKey = "{$category}.{$service}";
-                $options[$serviceKey] = "{$serviceConfig['name']} - {$serviceConfig['description']}";
+                $optionalChoices[$serviceKey] = "{$serviceConfig['name']} - {$serviceConfig['description']}";
 
-                if ($config['default'] === $service) {
-                    $defaults[] = $serviceKey;
+                if (($config['default'] ?? null) === $service) {
+                    $optionalDefaults[] = $serviceKey;
                 }
             }
         }
 
-        if (empty($options)) {
+        if (empty($optionalChoices)) {
             return $defaults;
         }
 
-        // Let user select optional services
-        $selected = multiselect(
+        $selectedOptional = multiselect(
             label: 'Select optional services:',
-            options: $options,
-            default: $defaults,
+            options: $optionalChoices,
+            default: $optionalDefaults,
         );
 
-        return array_merge($defaults, $selected);
+        return array_merge($defaults, $selectedOptional);
     }
 
-    /**
-     * @param array<int, string> $selectedServices
-     */
-    private function confirmSelection(
-        string $projectName,
-        string $environment,
-        array $selectedServices
-    ): bool {
+    private function confirmSelection(string $projectName, string $environment, array $selectedServices): bool
+    {
         if ($this->option('no-interaction')) {
             return true;
         }
 
-        info('Configuration Summary:');
-        $this->line("  Project: {$projectName}");
+        $this->info('Configuration Summary:');
+        $this->line("  Project:  {$projectName}");
         $this->line("  Environment: {$environment}");
         $this->line('  Services: ');
+
         foreach ($selectedServices as $service) {
             $this->line("    - {$service}");
         }
+
         $this->newLine();
 
         return confirm('Proceed with initialization?', true);
     }
 
-    /**
-     * @param array<int, string> $selectedServices
-     */
     private function generateDockerCompose(
         StackComposeBuilderService $builder,
-        string                     $stackPath,
-        array                      $selectedServices,
-        string                     $projectName,
-        string                     $environment
+        string $stackPath,
+        array $selectedServices,
+        string $projectName,
+        string $environment
     ): void {
-        info('Generating docker-compose.yml...');
+        spin(
+            function () use ($builder, $stackPath, $selectedServices, $projectName, $environment): bool {
+                $projectConfig = ['PROJECT_NAME' => $projectName];
 
-        $projectConfig = [
-            'PROJECT_NAME' => $projectName,
-        ];
+                $compose = $builder->buildWithStack(
+                    $stackPath,
+                    $selectedServices,
+                    $projectConfig,
+                    $environment
+                );
 
-        $compose = $builder->buildWithStack(
-            $stackPath,
-            $selectedServices,
-            $projectConfig,
-            $environment
+                $outputPath = tuti_path('docker-compose.yml');
+                $builder->writeToFile($compose, $outputPath);
+
+                return true;
+            },
+            'Generating docker-compose.yml...'
         );
 
-        $outputPath = tuti_path() . '/docker-compose.yml';
-        $builder->writeToFile($compose, $outputPath);
-
-        $this->components->info("✓ Generated: {$outputPath}");
+        $this->components->info('✓ docker-compose.yml generated');
     }
 
     private function displayNextSteps(string $projectName, string $environment): void
@@ -415,16 +469,16 @@ final class InitCommand extends Command
         $this->components->info('✅ Stack initialized successfully!');
         $this->newLine();
 
-        info('Next Steps:');
-        $this->line('  1. Review and update environment variables in .env');
-        $this->line('  2. Generate secure passwords for databases');
-        $this->line('  3. Deploy the stack: ');
+        $this->info('Next Steps:');
+        $this->line('  1.Review stack configuration in .tuti/');
+        $this->line('  2.Generate environment variables');
+        $this->line('  3.Deploy the stack: ');
         $this->newLine();
 
         if ($environment === 'dev') {
-            $this->line('     docker compose up -d');
+            $this->line('     docker compose -f .tuti/docker-compose.yml up -d');
         } else {
-            $this->line("     docker stack deploy -c docker-compose.yml {$projectName}_{$environment}");
+            $this->line("     docker stack deploy -c .tuti/docker-compose.yml {$projectName}_{$environment}");
         }
 
         $this->newLine();
