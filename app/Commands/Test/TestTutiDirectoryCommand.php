@@ -6,6 +6,7 @@ namespace App\Commands\Test;
 
 use App\Services\Tuti\TutiDirectoryManagerService;
 use App\Services\Tuti\TutiJsonMetadataManagerService;
+use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestTutiDirectoryCommand extends Command
@@ -15,7 +16,7 @@ final class TestTutiDirectoryCommand extends Command
     protected $description = 'Test . tuti directory management';
 
     public function handle(
-        TutiDirectoryManagerService    $directoryManager,
+        TutiDirectoryManagerService $directoryManager,
         TutiJsonMetadataManagerService $metadata
     ): int {
         $this->info('🔍 Testing .tuti Directory Management.. .');
@@ -31,7 +32,7 @@ final class TestTutiDirectoryCommand extends Command
 
             // Test 1: Check non-existence
             $this->info('Test 1: Check . tuti does not exist initially');
-            if (!  $testManager->exists()) {
+            if (! $testManager->exists()) {
                 $this->components->info('✓ PASSED');
             } else {
                 $this->components->error('✗ FAILED');
@@ -60,7 +61,7 @@ final class TestTutiDirectoryCommand extends Command
             foreach ($requiredDirs as $dir) {
                 $path = $testManager->getTutiPath($dir);
 
-                if (!in_array($dir, $requiredDirs)) {
+                if (! in_array($dir, $requiredDirs)) {
                     $this->error("  Validation error: Unexpected directory {$dir}/ found.");
                 }
 
@@ -168,8 +169,8 @@ final class TestTutiDirectoryCommand extends Command
             $this->info('✅ All tests passed! ');
 
             return self::SUCCESS;
-        } catch (\Exception $e) {
-            $this->error('❌ Test failed: ' .  $e->getMessage());
+        } catch (Exception $e) {
+            $this->error('❌ Test failed: ' . $e->getMessage());
             $this->line($e->getTraceAsString());
 
             return self::FAILURE;

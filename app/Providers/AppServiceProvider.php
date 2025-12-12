@@ -18,7 +18,6 @@ use Illuminate\Support\ServiceProvider;
 
 final class AppServiceProvider extends ServiceProvider
 {
-
     public function boot(): void
     {
         $this->configureDates();
@@ -45,7 +44,7 @@ final class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(abstract: StackComposeBuilderService::class, concrete: function ($app) {
             return new StackComposeBuilderService(
-                registry:  $app->make(StackJsonRegistryManagerService::class),
+                registry: $app->make(StackJsonRegistryManagerService::class),
                 stubLoader: $app->make(StackStubLoaderService::class),
                 stackLoader: $app->make(StackLoaderService::class)
             );

@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Concerns;
 
+use ReflectionClass;
+
 trait CreatesHelperTestEnvironment
 {
     protected string $testDir;
+
     protected string $stacksDir;
+
     protected array $tempDirs = [];
 
     protected function setupHelperEnvironment(): void
@@ -38,12 +42,12 @@ trait CreatesHelperTestEnvironment
     {
         $stackPath = $this->stacksDir . '/' . $name;
 
-        if (!is_dir($stackPath)) {
+        if (! is_dir($stackPath)) {
             mkdir($stackPath, 0755, true);
         }
 
         // Create default stack.json if not provided
-        if (!isset($files['stack.json'])) {
+        if (! isset($files['stack.json'])) {
             $files['stack.json'] = json_encode([
                 'name' => $name,
                 'description' => 'Test stack',
@@ -54,7 +58,7 @@ trait CreatesHelperTestEnvironment
             $filePath = $stackPath . '/' . $filename;
             $dir = dirname($filePath);
 
-            if (!is_dir($dir)) {
+            if (! is_dir($dir)) {
                 mkdir($dir, 0755, true);
             }
 
@@ -82,7 +86,7 @@ trait CreatesHelperTestEnvironment
         $app = app();
 
         // Method 1: Use reflection to set protected property
-        $reflection = new \ReflectionClass($app);
+        $reflection = new ReflectionClass($app);
         if ($reflection->hasProperty('basePath')) {
             $property = $reflection->getProperty('basePath');
             $property->setAccessible(true);
@@ -95,7 +99,7 @@ trait CreatesHelperTestEnvironment
 
     private function removeDirectory(string $dir): void
     {
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             return;
         }
 

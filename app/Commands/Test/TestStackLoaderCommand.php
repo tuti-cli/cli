@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Commands\Test;
 
 use App\Services\Stack\StackLoaderService;
+use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestStackLoaderCommand extends Command
@@ -47,7 +48,7 @@ final class TestStackLoaderCommand extends Command
             $this->info('📋 Stack Information:');
             $this->line('  Name: ' . $loader->getStackName($manifest));
             $this->line('  Type: ' . $loader->getStackType($manifest));
-            $this->line('  Framework: ' .  $loader->getFramework($manifest));
+            $this->line('  Framework: ' . $loader->getFramework($manifest));
             $this->line('  Version: ' . $manifest['version']);
             $this->newLine();
 
@@ -56,7 +57,7 @@ final class TestStackLoaderCommand extends Command
             foreach ($loader->getRequiredServices($manifest) as $key => $config) {
                 $this->line("  {$key}:");
                 $this->line("    Category: {$config['category']}");
-                $this->line("    Options: " . implode(', ', $config['options']));
+                $this->line('    Options: ' . implode(', ', $config['options']));
                 $this->line("    Default:  {$config['default']}");
             }
             $this->newLine();
@@ -67,7 +68,7 @@ final class TestStackLoaderCommand extends Command
                 $default = $config['default'] ?? 'none';
                 $this->line("  {$key}:");
                 $this->line("    Category:  {$config['category']}");
-                $this->line("    Options: " . implode(', ', $config['options']));
+                $this->line('    Options: ' . implode(', ', $config['options']));
                 $this->line("    Default:  {$default}");
             }
             $this->newLine();
@@ -100,8 +101,8 @@ final class TestStackLoaderCommand extends Command
             $this->info('✅ All tests passed! ');
 
             return self::SUCCESS;
-        } catch (\Exception $e) {
-            $this->error('❌ Test failed: ' .  $e->getMessage());
+        } catch (Exception $e) {
+            $this->error('❌ Test failed: ' . $e->getMessage());
 
             return self::FAILURE;
         }

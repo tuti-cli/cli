@@ -11,17 +11,17 @@ final readonly class StackComposeBuilderService
 {
     public function __construct(
         private StackJsonRegistryManagerService $registry,
-        private StackStubLoaderService          $stubLoader,
-        private StackLoaderService              $stackLoader
+        private StackStubLoaderService $stubLoader,
+        private StackLoaderService $stackLoader
     ) {}
 
     /**
      * Build a docker-compose.yml from selected services with stack overrides
      *
-     * @param string $stackPath Path to stack directory
-     * @param array<int, string> $selectedServices Array of service keys
-     * @param array<string, string> $projectConfig Project configuration
-     * @param string $environment Environment (dev, staging, production)
+     * @param  string  $stackPath  Path to stack directory
+     * @param  array<int, string>  $selectedServices  Array of service keys
+     * @param  array<string, string>  $projectConfig  Project configuration
+     * @param  string  $environment  Environment (dev, staging, production)
      * @return array<string, mixed> Composed docker-compose array
      */
     public function buildWithStack(
@@ -43,10 +43,10 @@ final readonly class StackComposeBuilderService
     /**
      * Build a docker-compose.yml from selected services
      *
-     * @param array<int, string> $selectedServices Array of service keys
-     * @param array<string, string> $projectConfig Project configuration
-     * @param string $environment Environment (dev, staging, production)
-     * @param array<string, mixed>|null $stackManifest Optional stack manifest for overrides
+     * @param  array<int, string>  $selectedServices  Array of service keys
+     * @param  array<string, string>  $projectConfig  Project configuration
+     * @param  string  $environment  Environment (dev, staging, production)
+     * @param  array<string, mixed>|null  $stackManifest  Optional stack manifest for overrides
      * @return array<string, mixed> Composed docker-compose array
      */
     public function build(
@@ -73,9 +73,35 @@ final readonly class StackComposeBuilderService
     }
 
     /**
+     * Convert compose array to YAML string
+     *
+     * @param  array<string, mixed>  $compose
+     */
+    public function toYaml(array $compose): string
+    {
+        return Yaml::dump($compose, 10, 2, Yaml::DUMP_OBJECT_AS_MAP);
+    }
+
+    /**
+     * Write compose configuration to file
+     *
+     * @param  array<string, mixed>  $compose
+     */
+    public function writeToFile(array $compose, string $outputPath): void
+    {
+        $yaml = $this->toYaml($compose);
+
+        $result = file_put_contents($outputPath, $yaml);
+
+        if ($result === false) {
+            throw new RuntimeException("Failed to write compose file to:  {$outputPath}");
+        }
+    }
+
+    /**
      * Get base docker-compose structure
      *
-     * @param array<string, string> $projectConfig
+     * @param  array<string, string>  $projectConfig
      * @return array<string, mixed>
      */
     private function getBaseStructure(array $projectConfig): array
@@ -96,11 +122,11 @@ final readonly class StackComposeBuilderService
     /**
      * Add a service to the compose configuration
      *
-     * @param array<string, mixed> $compose Current compose configuration
-     * @param string $serviceKey Service key (e.g., 'databases.postgres')
-     * @param array<string, string> $projectConfig Project configuration
-     * @param string $environment Environment
-     * @param array<string, mixed>|null $stackManifest Stack manifest
+     * @param  array<string, mixed>  $compose  Current compose configuration
+     * @param  string  $serviceKey  Service key (e.g., 'databases.postgres')
+     * @param  array<string, string>  $projectConfig  Project configuration
+     * @param  string  $environment  Environment
+     * @param  array<string, mixed>|null  $stackManifest  Stack manifest
      * @return array<string, mixed> Updated compose configuration
      */
     private function addService(
@@ -151,7 +177,7 @@ final readonly class StackComposeBuilderService
         }
 
         // Apply resource overrides to the parsed service
-        if (!  empty($environmentOverrides['resources'])) {
+        if (! empty($environmentOverrides['resources'])) {
             $serviceParsed = $this->applyResourceOverrides(
                 $serviceParsed,
                 $serviceName,
@@ -200,12 +226,11 @@ final readonly class StackComposeBuilderService
     /**
      * Prepare placeholder replacements for stub
      *
-     * @param string $serviceKey Service key (e.g., 'cache.redis')
-     * @param array<string, mixed> $serviceConfig
-     * @param array<string, string> $projectConfig
-     * @param string $environment
-     * @param array<string, mixed> $stackOverrides
-     * @param array<string, mixed> $environmentOverrides
+     * @param  string  $serviceKey  Service key (e.g., 'cache.redis')
+     * @param  array<string, mixed>  $serviceConfig
+     * @param  array<string, string>  $projectConfig
+     * @param  array<string, mixed>  $stackOverrides
+     * @param  array<string, mixed>  $environmentOverrides
      * @return array<string, string>
      */
     private function prepareReplacements(
@@ -260,10 +285,9 @@ final readonly class StackComposeBuilderService
     /**
      * Add Redis-specific replacements based on environment
      *
-     * @param array<string, string> $replacements
-     * @param string $environment
-     * @param array<string, mixed> $stackOverrides
-     * @param array<string, mixed> $environmentOverrides
+     * @param  array<string, string>  $replacements
+     * @param  array<string, mixed>  $stackOverrides
+     * @param  array<string, mixed>  $environmentOverrides
      * @return array<string, string>
      */
     private function addRedisReplacements(
@@ -276,7 +300,7 @@ final readonly class StackComposeBuilderService
         if (isset($stackOverrides['variables'])) {
             // Stack provides its own Redis configuration - already merged
             // But ensure command parts are set if missing
-            if (!  isset($replacements['REDIS_APPEND_ONLY'])) {
+            if (! isset($replacements['REDIS_APPEND_ONLY'])) {
                 $replacements['REDIS_APPEND_ONLY'] = '--appendonly yes';
             }
             if (! isset($replacements['REDIS_EVICTION_POLICY'])) {
@@ -293,7 +317,7 @@ final readonly class StackComposeBuilderService
         }
 
         // Set memory based on environment (can be overridden by stack)
-        if (!  isset($replacements['REDIS_MAX_MEMORY'])) {
+        if (! isset($replacements['REDIS_MAX_MEMORY'])) {
             $replacements['REDIS_MAX_MEMORY'] = match ($environment) {
                 'dev' => '--maxmemory 256mb',
                 'staging' => '--maxmemory 512mb',
@@ -308,9 +332,8 @@ final readonly class StackComposeBuilderService
     /**
      * Apply resource overrides to service configuration
      *
-     * @param array<string, mixed> $serviceParsed
-     * @param string $serviceName
-     * @param array<string, mixed> $resources
+     * @param  array<string, mixed>  $serviceParsed
+     * @param  array<string, mixed>  $resources
      * @return array<string, mixed>
      */
     private function applyResourceOverrides(
@@ -318,7 +341,7 @@ final readonly class StackComposeBuilderService
         string $serviceName,
         array $resources
     ): array {
-        if (!  isset($serviceParsed[$serviceName]['deploy'])) {
+        if (! isset($serviceParsed[$serviceName]['deploy'])) {
             $serviceParsed[$serviceName]['deploy'] = [];
         }
 
@@ -338,9 +361,8 @@ final readonly class StackComposeBuilderService
     /**
      * Apply deploy overrides to service configuration
      *
-     * @param array<string, mixed> $serviceParsed
-     * @param string $serviceName
-     * @param array<string, mixed> $deploy
+     * @param  array<string, mixed>  $serviceParsed
+     * @param  array<string, mixed>  $deploy
      * @return array<string, mixed>
      */
     private function applyDeployOverrides(
@@ -364,8 +386,8 @@ final readonly class StackComposeBuilderService
     /**
      * Deep merge arrays without converting scalar values to arrays
      *
-     * @param array<string, mixed> $array1
-     * @param array<string, mixed> $array2
+     * @param  array<string, mixed>  $array1
+     * @param  array<string, mixed>  $array2
      * @return array<string, mixed>
      */
     private function deepMerge(array $array1, array $array2): array
@@ -439,9 +461,9 @@ YAML,
     /**
      * Add volumes to compose configuration
      *
-     * @param array<string, mixed> $compose
-     * @param array<int, string> $volumes
-     * @param array<string, string> $projectConfig
+     * @param  array<string, mixed>  $compose
+     * @param  array<int, string>  $volumes
+     * @param  array<string, string>  $projectConfig
      * @return array<string, mixed>
      */
     private function addVolumes(array $compose, array $volumes, array $projectConfig): array
@@ -449,7 +471,7 @@ YAML,
         $projectName = $projectConfig['PROJECT_NAME'] ?? 'app';
 
         foreach ($volumes as $volume) {
-            if (!  isset($compose['volumes'][$volume])) {
+            if (! isset($compose['volumes'][$volume])) {
                 $compose['volumes'][$volume] = [
                     'driver' => 'local',
                     'name' => "{$projectName}_{$volume}",
@@ -458,34 +480,5 @@ YAML,
         }
 
         return $compose;
-    }
-
-    /**
-     * Convert compose array to YAML string
-     *
-     * @param array<string, mixed> $compose
-     * @return string
-     */
-    public function toYaml(array $compose): string
-    {
-        return Yaml::dump($compose, 10, 2, Yaml::DUMP_OBJECT_AS_MAP);
-    }
-
-    /**
-     * Write compose configuration to file
-     *
-     * @param array<string, mixed> $compose
-     * @param string $outputPath
-     * @return void
-     */
-    public function writeToFile(array $compose, string $outputPath): void
-    {
-        $yaml = $this->toYaml($compose);
-
-        $result = file_put_contents($outputPath, $yaml);
-
-        if ($result === false) {
-            throw new RuntimeException("Failed to write compose file to:  {$outputPath}");
-        }
     }
 }

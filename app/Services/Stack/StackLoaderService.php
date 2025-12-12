@@ -15,14 +15,14 @@ final readonly class StackLoaderService
     /**
      * Load a stack manifest from a stack. json file
      *
-     * @param string $stackPath Path to the stack directory
+     * @param  string  $stackPath  Path to the stack directory
      * @return array<string, mixed>
      */
     public function load(string $stackPath): array
     {
-        $manifestPath = rtrim($stackPath, '/') . '/stack.json';
+        $manifestPath = mb_rtrim($stackPath, '/') . '/stack.json';
 
-        if (!  file_exists($manifestPath)) {
+        if (! file_exists($manifestPath)) {
             throw new RuntimeException("Stack manifest not found at: {$manifestPath}");
         }
 
@@ -34,7 +34,7 @@ final readonly class StackLoaderService
 
         /** @var array<string, mixed> */
         return json_decode(
-            json:  $content,
+            json: $content,
             associative: true,
             flags: JSON_THROW_ON_ERROR
         );
@@ -43,8 +43,8 @@ final readonly class StackLoaderService
     /**
      * Get service overrides for a specific service
      *
-     * @param array<string, mixed> $stackManifest
-     * @param string $serviceKey Service key (e.g., 'cache.redis')
+     * @param  array<string, mixed>  $stackManifest
+     * @param  string  $serviceKey  Service key (e.g., 'cache.redis')
      * @return array<string, mixed>
      */
     public function getServiceOverrides(array $stackManifest, string $serviceKey): array
@@ -55,9 +55,7 @@ final readonly class StackLoaderService
     /**
      * Get environment-specific overrides for a service
      *
-     * @param array<string, mixed> $stackManifest
-     * @param string $serviceKey
-     * @param string $environment
+     * @param  array<string, mixed>  $stackManifest
      * @return array<string, mixed>
      */
     public function getEnvironmentOverrides(
@@ -73,7 +71,7 @@ final readonly class StackLoaderService
     /**
      * Get required services from stack manifest
      *
-     * @param array<string, mixed> $stackManifest
+     * @param  array<string, mixed>  $stackManifest
      * @return array<string, array<string, mixed>>
      */
     public function getRequiredServices(array $stackManifest): array
@@ -84,7 +82,7 @@ final readonly class StackLoaderService
     /**
      * Get optional services from stack manifest
      *
-     * @param array<string, mixed> $stackManifest
+     * @param  array<string, mixed>  $stackManifest
      * @return array<string, array<string, mixed>>
      */
     public function getOptionalServices(array $stackManifest): array
@@ -95,7 +93,7 @@ final readonly class StackLoaderService
     /**
      * Get default services (required + default optional)
      *
-     * @param array<string, mixed> $stackManifest
+     * @param  array<string, mixed>  $stackManifest
      * @return array<int, string>
      */
     public function getDefaultServices(array $stackManifest): array
@@ -124,8 +122,7 @@ final readonly class StackLoaderService
     /**
      * Validate stack manifest structure
      *
-     * @param array<string, mixed> $stackManifest
-     * @return bool
+     * @param  array<string, mixed>  $stackManifest
      */
     public function validate(array $stackManifest): bool
     {
@@ -143,7 +140,7 @@ final readonly class StackLoaderService
     /**
      * Get stack name
      *
-     * @param array<string, mixed> $stackManifest
+     * @param  array<string, mixed>  $stackManifest
      */
     public function getStackName(array $stackManifest): string
     {
@@ -153,7 +150,7 @@ final readonly class StackLoaderService
     /**
      * Get stack type (php, python, node, etc.)
      *
-     * @param array<string, mixed> $stackManifest
+     * @param  array<string, mixed>  $stackManifest
      */
     public function getStackType(array $stackManifest): string
     {
@@ -163,7 +160,7 @@ final readonly class StackLoaderService
     /**
      * Get framework name (laravel, wordpress, django, etc.)
      *
-     * @param array<string, mixed> $stackManifest
+     * @param  array<string, mixed>  $stackManifest
      */
     public function getFramework(array $stackManifest): string
     {

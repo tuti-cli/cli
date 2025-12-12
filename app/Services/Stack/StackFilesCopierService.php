@@ -26,6 +26,31 @@ final readonly class StackFilesCopierService
         return true;
     }
 
+    public function getFileList(string $stackPath): array
+    {
+        $files = [];
+
+        $directories = ['docker', 'environments', 'scripts'];
+
+        foreach ($directories as $dir) {
+            $path = $stackPath . '/' . $dir;
+
+            if (is_dir($path)) {
+                $files[$dir] = $this->getDirectoryFiles($path);
+            }
+        }
+
+        $individualFiles = ['deploy.sh', 'PREDEPLOYMENT-CHECKLIST.md', 'stack.json'];
+
+        foreach ($individualFiles as $file) {
+            if (file_exists($stackPath . '/' . $file)) {
+                $files['root'][] = $file;
+            }
+        }
+
+        return $files;
+    }
+
     private function copyDirectories(string $stackPath): void
     {
         $directories = [
@@ -71,7 +96,7 @@ final readonly class StackFilesCopierService
     private function copyDirectory(string $source, string $destination): void
     {
         if (! is_dir($destination)) {
-            if (!mkdir($destination, 0755, true)) {
+            if (! mkdir($destination, 0755, true)) {
                 throw new RuntimeException("Failed to create directory:  {$destination}");
             }
         }
@@ -93,7 +118,7 @@ final readonly class StackFilesCopierService
             if (is_dir($srcPath)) {
                 $this->copyDirectory($srcPath, $destPath);
             } else {
-                if (!copy($srcPath, $destPath)) {
+                if (! copy($srcPath, $destPath)) {
                     throw new RuntimeException("Failed to copy:  {$item}");
                 }
             }
@@ -117,31 +142,6 @@ final readonly class StackFilesCopierService
         foreach ($scripts as $script) {
             chmod($script, 0755);
         }
-    }
-
-    public function getFileList(string $stackPath): array
-    {
-        $files = [];
-
-        $directories = ['docker', 'environments', 'scripts'];
-
-        foreach ($directories as $dir) {
-            $path = $stackPath .'/' . $dir;
-
-            if (is_dir($path)) {
-                $files[$dir] = $this->getDirectoryFiles($path);
-            }
-        }
-
-        $individualFiles = ['deploy.sh', 'PREDEPLOYMENT-CHECKLIST.md', 'stack.json'];
-
-        foreach ($individualFiles as $file) {
-            if (file_exists($stackPath . '/' . $file)) {
-                $files['root'][] = $file;
-            }
-        }
-
-        return $files;
     }
 
     private function getDirectoryFiles(string $directory): array

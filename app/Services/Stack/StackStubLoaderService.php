@@ -15,8 +15,8 @@ final readonly class StackStubLoaderService
     /**
      * Load a stub file and replace placeholders
      *
-     * @param string $stubPath Full path to stub file
-     * @param array<string, string> $replacements Key-value pairs for placeholder replacement
+     * @param  string  $stubPath  Full path to stub file
+     * @param  array<string, string>  $replacements  Key-value pairs for placeholder replacement
      * @return string Processed stub content
      */
     public function load(string $stubPath, array $replacements = []): string
@@ -35,24 +35,6 @@ final readonly class StackStubLoaderService
     }
 
     /**
-     * Replace placeholders in content
-     *
-     * Placeholders format: {{PLACEHOLDER_NAME}}
-     *
-     * @param string $content Content with placeholders
-     * @param array<string, string> $replacements Replacement values
-     * @return string Processed content
-     */
-    private function replacePlaceholders(string $content, array $replacements): string
-    {
-        foreach ($replacements as $key => $value) {
-            $content = str_replace('{{' . $key . '}}', $value, $content);
-        }
-
-        return $content;
-    }
-
-    /**
      * Check if content has unreplaced placeholders
      *
      * @return array<int, string> List of unreplaced placeholders
@@ -67,7 +49,7 @@ final readonly class StackStubLoaderService
     /**
      * Load multiple stubs and combine them
      *
-     * @param array<string, array<string, string>> $stubs Array of ['path' => 'stub_path', 'replacements' => [... ]]
+     * @param  array<string, array<string, string>>  $stubs  Array of ['path' => 'stub_path', 'replacements' => [... ]]
      * @return string Combined stub content
      */
     public function loadMultiple(array $stubs): string
@@ -80,5 +62,23 @@ final readonly class StackStubLoaderService
         }
 
         return $combined;
+    }
+
+    /**
+     * Replace placeholders in content
+     *
+     * Placeholders format: {{PLACEHOLDER_NAME}}
+     *
+     * @param  string  $content  Content with placeholders
+     * @param  array<string, string>  $replacements  Replacement values
+     * @return string Processed content
+     */
+    private function replacePlaceholders(string $content, array $replacements): string
+    {
+        foreach ($replacements as $key => $value) {
+            $content = str_replace('{{' . $key . '}}', $value, $content);
+        }
+
+        return $content;
     }
 }

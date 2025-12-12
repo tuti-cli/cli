@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Services\Tuti\TutiDirectoryManagerService;
 
 beforeEach(function (): void {
-    $this->testDir = sys_get_temp_dir() . '/tuti-test-' .  uniqid();
+    $this->testDir = sys_get_temp_dir() . '/tuti-test-' . uniqid();
     mkdir($this->testDir);
 
     $this->manager = new TutiDirectoryManagerService($this->testDir);
@@ -56,7 +56,7 @@ it('throws exception when initializing twice', function (): void {
 it('can get tuti path', function (): void {
     $path = $this->manager->getTutiPath();
 
-    expect($path)->toBe($this->testDir .  '/.tuti');
+    expect($path)->toBe($this->testDir . '/.tuti');
 });
 
 it('can get tuti path with subdirectory', function (): void {

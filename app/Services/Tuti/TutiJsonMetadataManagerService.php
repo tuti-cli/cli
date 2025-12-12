@@ -15,7 +15,7 @@ final readonly class TutiJsonMetadataManagerService
     /**
      * Create initial project metadata
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function create(array $data = []): void
     {
@@ -32,12 +32,12 @@ final readonly class TutiJsonMetadataManagerService
             'project_name' => $data['project_name'] ?? 'myapp',
             'created_at' => now()->toJSON(),
             'updated_at' => now()->toJSON(),
-            'services' => $data['services'] ??  [],
+            'services' => $data['services'] ?? [],
             'environments' => [
                 'current' => $data['environment'] ?? 'dev',
                 'configured' => [$data['environment'] ?? 'dev'],
             ],
-            'features' => $data['features'] ??  [],
+            'features' => $data['features'] ?? [],
         ];
 
         $this->write($metadata);
@@ -70,7 +70,7 @@ final readonly class TutiJsonMetadataManagerService
     /**
      * Update project metadata
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function update(array $data): void
     {
@@ -95,27 +95,6 @@ final readonly class TutiJsonMetadataManagerService
     public function getPath(): string
     {
         return $this->directoryManager->getTutiPath('tuti.json');
-    }
-
-    /**
-     * Write metadata to file
-     *
-     * @param array<string, mixed> $metadata
-     */
-    private function write(array $metadata): void
-    {
-        $path = $this->getPath();
-        $json = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        if ($json === false) {
-            throw new RuntimeException('Failed to encode metadata as JSON');
-        }
-
-        $result = file_put_contents($path, $json);
-
-        if ($result === false) {
-            throw new RuntimeException("Failed to write metadata file: {$path}");
-        }
     }
 
     /**
@@ -167,5 +146,26 @@ final readonly class TutiJsonMetadataManagerService
         $metadata['updated_at'] = now()->toJSON();
 
         $this->write($metadata);
+    }
+
+    /**
+     * Write metadata to file
+     *
+     * @param  array<string, mixed>  $metadata
+     */
+    private function write(array $metadata): void
+    {
+        $path = $this->getPath();
+        $json = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        if ($json === false) {
+            throw new RuntimeException('Failed to encode metadata as JSON');
+        }
+
+        $result = file_put_contents($path, $json);
+
+        if ($result === false) {
+            throw new RuntimeException("Failed to write metadata file: {$path}");
+        }
     }
 }

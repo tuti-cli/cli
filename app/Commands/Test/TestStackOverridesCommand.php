@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Commands\Test;
 
 use App\Services\Stack\StackComposeBuilderService;
+use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestStackOverridesCommand extends Command
@@ -55,15 +56,15 @@ final class TestStackOverridesCommand extends Command
     }
 
     /**
-     * @param array<int, string> $selectedServices
-     * @param array<string, string> $projectConfig
+     * @param  array<int, string>  $selectedServices
+     * @param  array<string, string>  $projectConfig
      */
     private function testEnvironment(
         StackComposeBuilderService $builder,
-        string                     $stackPath,
-        array                      $selectedServices,
-        array                      $projectConfig,
-        string                     $environment
+        string $stackPath,
+        array $selectedServices,
+        array $projectConfig,
+        string $environment
     ): void {
         $this->line("  Environment: {$environment}");
 
@@ -105,14 +106,14 @@ final class TestStackOverridesCommand extends Command
                     $limits = $postgres['deploy']['resources']['limits'] ?? [];
                     $this->line('  ✓ PostgreSQL production resources applied');
                     $this->line('    CPU: ' . ($limits['cpus'] ?? 'not set'));
-                    $this->line('    Memory: ' .  ($limits['memory'] ?? 'not set'));
+                    $this->line('    Memory: ' . ($limits['memory'] ?? 'not set'));
                 }
             }
 
             $this->line('  ✅ Test passed');
             $this->newLine();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error("  ❌ Test failed:  {$e->getMessage()}");
             $this->newLine();
         }

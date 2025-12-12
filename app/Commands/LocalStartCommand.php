@@ -1,13 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Commands;
 
-use App\Services\DockerService;
-use App\Support\SystemEnvironment;
 use LaravelZero\Framework\Commands\Command;
-use Symfony\Component\Process\Process;
 
-class LocalStartCommand extends Command
+final class LocalStartCommand extends Command
 {
     protected $signature = 'local:test';
 

@@ -10,9 +10,13 @@ use App\Services\Tuti\TutiDirectoryManagerService;
 trait CreatesTestStackEnvironment
 {
     protected string $testDir;
+
     protected string $stackDir;
+
     protected array $tempDirs = [];
+
     protected TutiDirectoryManagerService $manager;
+
     protected StackFilesCopierService $copier;
 
     protected function setupStackEnvironment(): void
@@ -119,7 +123,7 @@ trait CreatesTestStackEnvironment
 
         foreach ($structure['directories'] ?? [] as $dir) {
             $fullPath = $tempStackDir . '/' . $dir;
-            if (!is_dir($fullPath)) {
+            if (! is_dir($fullPath)) {
                 mkdir($fullPath, 0755, true);
             }
         }
@@ -128,7 +132,7 @@ trait CreatesTestStackEnvironment
             $fullPath = $tempStackDir . '/' . $file;
             $dir = dirname($fullPath);
 
-            if (!is_dir($dir)) {
+            if (! is_dir($dir)) {
                 mkdir($dir, 0755, true);
             }
 
@@ -178,7 +182,7 @@ trait CreatesTestStackEnvironment
 
     private function removeDirectory(string $dir): void
     {
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             return;
         }
 
