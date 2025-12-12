@@ -31,7 +31,7 @@ final class TutiDirectoryManagerService
      */
     public function exists(): bool
     {
-        return is_tuti_exists($this->projectRoot);
+        return tuti_exists($this->projectRoot);
     }
 
     /**
@@ -40,7 +40,7 @@ final class TutiDirectoryManagerService
      * @return void
      * @throws RuntimeException If .tuti already exists
      */
-    public function initialize(): void
+    public function initialize(): bool
     {
         if ($this->exists()) {
             throw new RuntimeException(
@@ -50,8 +50,7 @@ final class TutiDirectoryManagerService
 
         $this->createBaseStructure();
 
-        $metadataService = new TutiJsonMetadataManagerService($this);
-        $metadataService->create();
+        return true;
     }
 
     /**
