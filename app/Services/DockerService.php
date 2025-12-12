@@ -6,7 +6,7 @@ namespace App\Services;
 
 use Symfony\Component\Process\Process;
 
-final class DockerService
+final readonly class DockerService
 {
     private string $composePath;
 
@@ -84,10 +84,12 @@ final class DockerService
 
         // Docker Compose v2 returns NDJSON (newline-delimited JSON)
         foreach (explode("\n", mb_trim($output)) as $line) {
-            if (empty($line)) {
+            if ($line === '') {
                 continue;
             }
-
+            if ($line === '0') {
+                continue;
+            }
             $service = json_decode($line, true);
             if ($service) {
                 $services[] = [
@@ -149,7 +151,7 @@ final class DockerService
         if ($callback) {
             $process->run($callback);
         } else {
-            $process->run(fn ($type, $buffer) => print_r($buffer, true));
+            $process->run(fn ($type, $buffer): string => print_r($buffer, true));
         }
     }
 

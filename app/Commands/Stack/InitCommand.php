@@ -74,7 +74,7 @@ final class InitCommand extends Command
             $environment = $this->getEnvironment();
             $selectedServices = $this->selectServices($registry, $stackLoader, $manifest);
 
-            if (empty($selectedServices)) {
+            if ($selectedServices === []) {
                 $this->error('No services selected. Exiting.');
 
                 return self::FAILURE;
@@ -166,7 +166,7 @@ final class InitCommand extends Command
         $grouped = [];
 
         foreach ($selectedServices as $serviceKey) {
-            [$category, $service] = explode('.', $serviceKey);
+            [$category, $service] = explode('.', (string) $serviceKey);
             $grouped[$category][] = $service;
         }
 
@@ -220,7 +220,7 @@ final class InitCommand extends Command
     {
         $availableStacks = $this->discoverStacks();
 
-        if (empty($availableStacks)) {
+        if ($availableStacks === []) {
             $this->warn('No stacks found in:  ' . stack_path());
 
             $customPath = text(
@@ -248,7 +248,7 @@ final class InitCommand extends Command
         $options = [];
 
         foreach ($availableStacks as $path) {
-            $name = basename($path);
+            $name = basename((string) $path);
             $options[$name] = $name;
         }
 
@@ -386,7 +386,7 @@ final class InitCommand extends Command
         $optionalChoices = [];
         $optionalDefaults = [];
 
-        foreach ($optional as $key => $config) {
+        foreach ($optional as $config) {
             $category = $config['category'];
             $serviceOptions = $config['options'];
 
@@ -401,7 +401,7 @@ final class InitCommand extends Command
             }
         }
 
-        if (empty($optionalChoices)) {
+        if ($optionalChoices === []) {
             return $defaults;
         }
 

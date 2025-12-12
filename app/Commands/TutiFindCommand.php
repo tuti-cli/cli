@@ -18,8 +18,8 @@ final class TutiFindCommand extends Command
     {
         $commands = collect($this->getApplication()->all())
             ->keys()
-            ->filter(fn (string $key) => $key !== $this->signature)
-            ->map(fn ($key) => $key)
+            ->filter(fn (string $key): bool => $key !== $this->signature)
+            ->map(fn ($key): int|string => $key)
             ->toArray();
 
         $command = suggest(

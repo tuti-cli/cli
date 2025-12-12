@@ -101,14 +101,14 @@ final readonly class StackLoaderService
         $services = [];
 
         // Add required services (use defaults)
-        foreach ($this->getRequiredServices($stackManifest) as $key => $config) {
+        foreach ($this->getRequiredServices($stackManifest) as $config) {
             $category = $config['category'];
             $default = $config['default'];
             $services[] = "{$category}.{$default}";
         }
 
         // Add optional services that have defaults
-        foreach ($this->getOptionalServices($stackManifest) as $key => $config) {
+        foreach ($this->getOptionalServices($stackManifest) as $config) {
             if ($config['default'] !== null) {
                 $category = $config['category'];
                 $default = $config['default'];

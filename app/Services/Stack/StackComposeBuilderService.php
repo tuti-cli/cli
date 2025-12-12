@@ -199,7 +199,7 @@ final readonly class StackComposeBuilderService
 
         // Add volumes if needed
         if (! empty($serviceConfig['volumes'])) {
-            $compose = $this->addVolumes($compose, $serviceConfig['volumes'], $projectConfig);
+            return $this->addVolumes($compose, $serviceConfig['volumes'], $projectConfig);
         }
 
         return $compose;
@@ -273,7 +273,7 @@ final readonly class StackComposeBuilderService
 
         // Add service-specific configurations based on service name
         if ($serviceName === 'redis') {
-            $replacements = $this->addRedisReplacements($replacements, $environment, $stackOverrides, $environmentOverrides);
+            $replacements = $this->addRedisReplacements($replacements, $environment, $stackOverrides);
         }
 
         // Add environment-specific deploy config
@@ -287,14 +287,12 @@ final readonly class StackComposeBuilderService
      *
      * @param  array<string, string>  $replacements
      * @param  array<string, mixed>  $stackOverrides
-     * @param  array<string, mixed>  $environmentOverrides
      * @return array<string, string>
      */
     private function addRedisReplacements(
         array $replacements,
         string $environment,
-        array $stackOverrides = [],
-        array $environmentOverrides = []
+        array $stackOverrides = []
     ): array {
         // Check if stack provides Redis config (Laravel style)
         if (isset($stackOverrides['variables'])) {
