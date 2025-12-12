@@ -97,7 +97,7 @@ final readonly class StackComposeBuilderService
      * Add a service to the compose configuration
      *
      * @param array<string, mixed> $compose Current compose configuration
-     * @param string $serviceKey Service key (e.g., 'databases. postgres')
+     * @param string $serviceKey Service key (e.g., 'databases.postgres')
      * @param array<string, string> $projectConfig Project configuration
      * @param string $environment Environment
      * @param array<string, mixed>|null $stackManifest Stack manifest
@@ -159,7 +159,7 @@ final readonly class StackComposeBuilderService
             );
         }
 
-        // Apply deploy overrides
+        // Apply to deploy overrides
         if (! empty($environmentOverrides['deploy'])) {
             $serviceParsed = $this->applyDeployOverrides(
                 $serviceParsed,
