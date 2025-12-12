@@ -11,7 +11,7 @@ if (! function_exists('tuti_path')) {
     function tuti_path(?string $path = null, ?string $projectRoot = null): string
     {
         // Use provided projectRoot or default to app root (2 levels up from this file)
-        $projectRoot = $projectRoot ?? dirname(__DIR__, 2);
+        $projectRoot ??= dirname(__DIR__, 2);
 
         $base = $projectRoot . '/.tuti';
 

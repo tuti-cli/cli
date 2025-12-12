@@ -14,7 +14,7 @@ afterEach(function (): void {
     $this->cleanupHelperEnvironment();
 });
 
-describe('tuti_path', function () {
+describe('tuti_path', function (): void {
     it('returns base .tuti path', function (): void {
         // tuti_path hardcodes dirname(__DIR__, 2), so we test actual behavior
         $path = tuti_path();
@@ -43,7 +43,7 @@ describe('tuti_path', function () {
     });
 });
 
-describe('tuti_exists', function () {
+describe('tuti_exists', function (): void {
     it('returns false when .tuti does not exist', function (): void {
         // Test with a path that definitely doesn't have .tuti
         $nonExistentPath = sys_get_temp_dir() . '/no-tuti-' . uniqid();
@@ -72,7 +72,7 @@ describe('tuti_exists', function () {
     });
 });
 
-describe('global_tuti_path', function () {
+describe('global_tuti_path', function (): void {
     it('returns home directory .tuti path', function (): void {
         $path = global_tuti_path();
         $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? '/root';
@@ -95,7 +95,7 @@ describe('global_tuti_path', function () {
     });
 });
 
-describe('stub_path', function () {
+describe('stub_path', function (): void {
     it('returns base stubs path', function (): void {
         $path = stub_path();
 
@@ -116,7 +116,7 @@ describe('stub_path', function () {
     });
 });
 
-describe('stack_path', function () {
+describe('stack_path', function (): void {
     it('returns base stacks path', function (): void {
         $path = stack_path();
 
@@ -137,7 +137,7 @@ describe('stack_path', function () {
     });
 });
 
-describe('stack_name', function () {
+describe('stack_name', function (): void {
     it('extracts name from full path', function (): void {
         $name = stack_name('/path/to/stacks/laravel-stack');
 
@@ -163,7 +163,7 @@ describe('stack_name', function () {
     });
 });
 
-describe('discover_stacks', function () {
+describe('discover_stacks', function (): void {
     it('returns empty array when stacks directory does not exist', function (): void {
         // Test actual behavior when stacks dir doesn't exist
         $stacks = discover_stacks();
@@ -219,7 +219,7 @@ describe('discover_stacks', function () {
     });
 });
 
-describe('stack_exists', function () {
+describe('stack_exists', function (): void {
     it('returns true for existing stack', function (): void {
         $this->createStack('laravel-stack');
 
@@ -237,7 +237,7 @@ describe('stack_exists', function () {
     });
 });
 
-describe('resolve_stack_path', function () {
+describe('resolve_stack_path', function (): void {
     it('returns path for valid full path', function (): void {
         $stackPath = $this->createStack('laravel-stack');
 
@@ -271,7 +271,7 @@ describe('resolve_stack_path', function () {
     });
 
     it('throws exception for non-existent stack', function (): void {
-        expect(fn () => resolve_stack_path('non-existent'))
+        expect(fn (): string => resolve_stack_path('non-existent'))
             ->toThrow(RuntimeException::class, 'Stack not found');
     });
 
@@ -285,7 +285,7 @@ describe('resolve_stack_path', function () {
     });
 });
 
-describe('get_stack_manifest_path', function () {
+describe('get_stack_manifest_path', function (): void {
     it('returns stack.json path for valid stack', function (): void {
         $stackPath = $this->createStack('laravel-stack');
 
@@ -304,12 +304,12 @@ describe('get_stack_manifest_path', function () {
     });
 
     it('throws exception for non-existent stack', function (): void {
-        expect(fn () => get_stack_manifest_path('non-existent'))
+        expect(fn (): string => get_stack_manifest_path('non-existent'))
             ->toThrow(RuntimeException::class);
     });
 });
 
-describe('mask_sensitive', function () {
+describe('mask_sensitive', function (): void {
     it('masks password values', function (): void {
         $masked = mask_sensitive('DB_PASSWORD', 'mysecret123');
 
@@ -368,7 +368,7 @@ describe('mask_sensitive', function () {
     });
 });
 
-describe('time_ago', function () {
+describe('time_ago', function (): void {
     it('returns "Just now" for recent timestamps', function (): void {
         $result = time_ago(time() - 30);
 
@@ -406,7 +406,7 @@ describe('time_ago', function () {
     });
 });
 
-describe('bytes_to_human', function () {
+describe('bytes_to_human', function (): void {
     it('formats bytes', function (): void {
         expect(bytes_to_human(500))->toBe('500.00 B');
     });
@@ -436,7 +436,7 @@ describe('bytes_to_human', function () {
     });
 });
 
-describe('platform detection', function () {
+describe('platform detection', function (): void {
     it('detects windows', function (): void {
         $result = is_windows();
 
@@ -463,7 +463,7 @@ describe('platform detection', function () {
     });
 });
 
-describe('expand_path', function () {
+describe('expand_path', function (): void {
     it('expands tilde to home directory', function (): void {
         $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? '/root';
         $expanded = expand_path('~/documents');

@@ -6,7 +6,7 @@ namespace App\Services\Tuti;
 
 use RuntimeException;
 
-final class TutiDirectoryManagerService
+final readonly class TutiDirectoryManagerService
 {
     /**
      * Project root directory
@@ -37,7 +37,6 @@ final class TutiDirectoryManagerService
     /**
      * Initialize .tuti directory structure
      *
-     * @return void
      *
      * @throws RuntimeException If .tuti already exists
      */
@@ -123,10 +122,8 @@ final class TutiDirectoryManagerService
         foreach ($directories as $dir) {
             $path = $this->getTutiPath($dir);
 
-            if (! is_dir($path)) {
-                if (! mkdir($path, 0755, true)) {
-                    throw new RuntimeException("Failed to create directory: {$path}");
-                }
+            if (!is_dir($path) && ! mkdir($path, 0755, true)) {
+                throw new RuntimeException("Failed to create directory: {$path}");
             }
         }
 

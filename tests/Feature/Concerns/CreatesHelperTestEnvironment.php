@@ -89,7 +89,6 @@ trait CreatesHelperTestEnvironment
         $reflection = new ReflectionClass($app);
         if ($reflection->hasProperty('basePath')) {
             $property = $reflection->getProperty('basePath');
-            $property->setAccessible(true);
             $property->setValue($app, $path);
         }
 
@@ -105,10 +104,12 @@ trait CreatesHelperTestEnvironment
 
         $items = scandir($dir);
         foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
+            if ($item === '.') {
                 continue;
             }
-
+            if ($item === '..') {
+                continue;
+            }
             $path = $dir . '/' . $item;
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);
         }

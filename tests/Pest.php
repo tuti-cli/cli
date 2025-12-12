@@ -29,7 +29,7 @@ uses(Tests\TestCase::class)->in('Feature', 'Unit');
 */
 
 expect()->extend('toBeValidJson', function () {
-    $decoded = json_decode($this->value, true);
+    $decoded = json_decode((string) $this->value, true);
 
     expect(json_last_error())->toBe(JSON_ERROR_NONE)
         ->and($decoded)->toBeArray();

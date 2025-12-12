@@ -71,7 +71,7 @@ final readonly class StackEnvGeneratorService
         // Generate random passwords for CHANGE_THIS placeholders
         $content = preg_replace_callback(
             '/CHANGE_THIS(? :_IN_PRODUCTION)?/',
-            fn (): string => $this->generateSecurePassword(),
+            $this->generateSecurePassword(...),
             $content
         );
 

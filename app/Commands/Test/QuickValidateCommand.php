@@ -21,11 +21,11 @@ final class QuickValidateCommand extends Command
         $this->newLine();
 
         $checks = [
-            'Registry loads' => fn () => $registry->getVersion() !== null,
-            'PostgreSQL service exists' => fn () => $registry->hasService('databases', 'postgres'),
-            'Redis service exists' => fn () => $registry->hasService('cache', 'redis'),
-            'MySQL service exists' => fn () => $registry->hasService('databases', 'mysql'),
-            'Compose builder works' => fn () => $this->testBuilder($builder),
+            'Registry loads' => fn (): true => $registry->getVersion() !== null,
+            'PostgreSQL service exists' => fn (): bool => $registry->hasService('databases', 'postgres'),
+            'Redis service exists' => fn (): bool => $registry->hasService('cache', 'redis'),
+            'MySQL service exists' => fn (): bool => $registry->hasService('databases', 'mysql'),
+            'Compose builder works' => fn (): bool => $this->testBuilder($builder),
         ];
 
         $passed = 0;

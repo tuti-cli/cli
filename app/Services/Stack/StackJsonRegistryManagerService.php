@@ -126,7 +126,6 @@ final readonly class StackJsonRegistryManagerService
             throw new RuntimeException("Failed to read service registry:  {$fullPath}");
         }
 
-        /** @var array{version: string, description: string, services: array<string, array<string, array<string, mixed>>>} */
         $this->registry = json_decode(
             json: $content,
             associative: true,

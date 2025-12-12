@@ -95,10 +95,8 @@ final readonly class StackFilesCopierService
 
     private function copyDirectory(string $source, string $destination): void
     {
-        if (! is_dir($destination)) {
-            if (! mkdir($destination, 0755, true)) {
-                throw new RuntimeException("Failed to create directory:  {$destination}");
-            }
+        if (!is_dir($destination) && ! mkdir($destination, 0755, true)) {
+            throw new RuntimeException("Failed to create directory:  {$destination}");
         }
 
         $items = scandir($source);
@@ -108,19 +106,19 @@ final readonly class StackFilesCopierService
         }
 
         foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
+            if ($item === '.') {
                 continue;
             }
-
+            if ($item === '..') {
+                continue;
+            }
             $srcPath = $source . '/' . $item;
             $destPath = $destination . '/' . $item;
 
             if (is_dir($srcPath)) {
                 $this->copyDirectory($srcPath, $destPath);
-            } else {
-                if (! copy($srcPath, $destPath)) {
-                    throw new RuntimeException("Failed to copy:  {$item}");
-                }
+            } elseif (! copy($srcPath, $destPath)) {
+                throw new RuntimeException("Failed to copy:  {$item}");
             }
         }
     }
@@ -154,10 +152,12 @@ final readonly class StackFilesCopierService
         }
 
         foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
+            if ($item === '.') {
                 continue;
             }
-
+            if ($item === '..') {
+                continue;
+            }
             $path = $directory . '/' . $item;
 
             if (is_dir($path)) {
