@@ -20,7 +20,9 @@ final readonly class TutiJsonMetadataManagerService
     public function create(array $data = []): void
     {
         if ($this->exists()) {
-            throw new RuntimeException('Project metadata already exists.');
+            throw new RuntimeException(
+                'Project already initialized. .tuti directory already exists.'
+            );
         }
 
         $metadata = [
