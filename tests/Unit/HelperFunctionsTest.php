@@ -43,28 +43,15 @@ describe('tuti_path', function () {
     });
 });
 
-describe('is_tuti_exists', function () {
+describe('tuti_exists', function () {
     it('returns false when .tuti does not exist', function (): void {
         // Test with a path that definitely doesn't have .tuti
         $nonExistentPath = sys_get_temp_dir() . '/no-tuti-' . uniqid();
         mkdir($nonExistentPath);
 
-        $result = is_tuti_exists($nonExistentPath);
+        $result = tuti_exists($nonExistentPath);
 
         rmdir($nonExistentPath);
-
-        expect($result)->toBeFalse();
-    });
-
-    it('returns false when .tuti exists but no tuti.json', function (): void {
-        $testPath = sys_get_temp_dir() . '/tuti-no-json-' . uniqid();
-        mkdir($testPath);
-        mkdir($testPath . '/.tuti');
-
-        $result = is_tuti_exists($testPath);
-
-        rmdir($testPath . '/.tuti');
-        rmdir($testPath);
 
         expect($result)->toBeFalse();
     });
@@ -75,7 +62,7 @@ describe('is_tuti_exists', function () {
         mkdir($testPath . '/.tuti');
         file_put_contents($testPath . '/.tuti/tuti.json', '{"version":"1.0"}');
 
-        $result = is_tuti_exists($testPath);
+        $result = tuti_exists($testPath);
 
         unlink($testPath . '/.tuti/tuti.json');
         rmdir($testPath . '/.tuti');

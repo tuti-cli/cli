@@ -147,7 +147,7 @@ final class TestTutiDirectoryCommand extends Command
             $dockerPath = tuti_path('docker', $testDir);
             $this->line("  tuti_path('docker'): {$dockerPath}");
 
-            if (is_tuti_exists($testDir)) {
+            if (tuti_exists($testDir)) {
                 $this->components->info('✓ Helper functions work');
             } else {
                 $this->components->error('✗ Helper functions failed');

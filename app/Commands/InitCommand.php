@@ -60,7 +60,7 @@ final class InitCommand extends Command
 
         $this->welcomeBanner();
 
-        if (is_tuti_exists()) {
+        if (tuti_exists()) {
             render(<<<'HTML'
                 <div class="mx-2 my-1">
                     <div class="px-2 py-1 bg-yellow-500 flex justify-between">

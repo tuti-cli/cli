@@ -21,7 +21,7 @@ class LocalStartCommand extends Command
         dd([
             tuti_path(),
             discover_stacks(),
-            is_tuti_exists(),
+            tuti_exists(),
             stub_path(),
             mask_sensitive('Password123!', 'Password123!'),
             stack_path(),

@@ -20,14 +20,13 @@ if (! function_exists('tuti_path')) {
     }
 }
 
-if (! function_exists('is_tuti_exists')) {
+if (! function_exists('tuti_exists')) {
     /**
      * Check if .tuti directory exists for current project
      */
-    function is_tuti_exists(?string $projectRoot = null): bool
+    function tuti_exists(?string $projectRoot = null): bool
     {
-        return is_dir(tuti_path(null, $projectRoot))
-            && file_exists(tuti_path('tuti.json', $projectRoot));
+        return is_dir(tuti_path(null, $projectRoot));
     }
 }
 
