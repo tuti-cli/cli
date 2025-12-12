@@ -65,7 +65,7 @@ final readonly class StackJsonRegistryManagerService
     {
         if (! isset($this->registry['services'][$category][$service])) {
             throw new RuntimeException(
-                "Service {$category}. {$service} not found in registry"
+                "Service {$category}.{$service} not found in registry"
             );
         }
 
