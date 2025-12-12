@@ -13,7 +13,7 @@ final readonly class StackFilesCopierService
         private TutiDirectoryManagerService $directoryManager
     ) {}
 
-    public function copyFromStack(string $stackPath): void
+    public function copyFromStack(string $stackPath): bool
     {
         if (! is_dir($stackPath)) {
             throw new RuntimeException("Stack directory not found: {$stackPath}");
@@ -22,6 +22,8 @@ final readonly class StackFilesCopierService
         $this->copyDirectories($stackPath);
         $this->copyIndividualFiles($stackPath);
         $this->makeScriptsExecutable();
+
+        return true;
     }
 
     private function copyDirectories(string $stackPath): void
