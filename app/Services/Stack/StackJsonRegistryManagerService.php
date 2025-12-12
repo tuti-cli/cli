@@ -20,31 +20,6 @@ final readonly class StackJsonRegistryManagerService
     }
 
     /**
-     * Load the service registry from JSON file
-     */
-    private function loadRegistry(): void
-    {
-        $fullPath = stub_path($this->registryPath);
-
-        if (! file_exists($fullPath)) {
-            throw new RuntimeException("Service registry not found at:  {$fullPath}");
-        }
-
-        $content = file_get_contents($fullPath);
-
-        if ($content === false) {
-            throw new RuntimeException("Failed to read service registry:  {$fullPath}");
-        }
-
-        /** @var array{version: string, description: string, services: array<string, array<string, array<string, mixed>>>} */
-        $this->registry = json_decode(
-            json:  $content,
-            associative: true,
-            flags:  JSON_THROW_ON_ERROR
-        );
-    }
-
-    /**
      * Get all available services grouped by category
      *
      * @return array<string, array<string, array<string, mixed>>>
@@ -57,8 +32,8 @@ final readonly class StackJsonRegistryManagerService
     /**
      * Get a specific service by category and name
      *
-     * @param string $category Service category (e.g., 'databases', 'cache')
-     * @param string $service Service name (e.g., 'postgres', 'redis')
+     * @param  string  $category  Service category (e.g., 'databases', 'cache')
+     * @param  string  $service  Service name (e.g., 'postgres', 'redis')
      * @return array<string, mixed>
      */
     public function getService(string $category, string $service): array
@@ -75,7 +50,7 @@ final readonly class StackJsonRegistryManagerService
     /**
      * Get all services in a specific category
      *
-     * @param string $category Service category (e.g., 'databases', 'cache')
+     * @param  string  $category  Service category (e.g., 'databases', 'cache')
      * @return array<string, array<string, mixed>>
      */
     public function getCategory(string $category): array
@@ -116,7 +91,7 @@ final readonly class StackJsonRegistryManagerService
     /**
      * Get all services compatible with a specific stack
      *
-     * @param string $stackType Stack type (e.g., 'laravel', 'wordpress')
+     * @param  string  $stackType  Stack type (e.g., 'laravel', 'wordpress')
      * @return array<string, array<string, array<string, mixed>>>
      */
     public function getCompatibleServices(string $stackType): array
@@ -132,5 +107,30 @@ final readonly class StackJsonRegistryManagerService
         }
 
         return $compatible;
+    }
+
+    /**
+     * Load the service registry from JSON file
+     */
+    private function loadRegistry(): void
+    {
+        $fullPath = stub_path($this->registryPath);
+
+        if (! file_exists($fullPath)) {
+            throw new RuntimeException("Service registry not found at:  {$fullPath}");
+        }
+
+        $content = file_get_contents($fullPath);
+
+        if ($content === false) {
+            throw new RuntimeException("Failed to read service registry:  {$fullPath}");
+        }
+
+        /** @var array{version: string, description: string, services: array<string, array<string, array<string, mixed>>>} */
+        $this->registry = json_decode(
+            json: $content,
+            associative: true,
+            flags: JSON_THROW_ON_ERROR
+        );
     }
 }

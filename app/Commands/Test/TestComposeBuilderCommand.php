@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Commands\Test;
 
 use App\Services\Stack\StackComposeBuilderService;
+use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestComposeBuilderCommand extends Command
@@ -72,7 +73,7 @@ final class TestComposeBuilderCommand extends Command
             $this->info('✅ All tests passed!');
 
             return self::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('❌ Test failed: ' . $e->getMessage());
             $this->line('Trace: ' . $e->getTraceAsString());
 

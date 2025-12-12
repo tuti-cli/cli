@@ -42,7 +42,7 @@ final class InitCommand extends Command
         $this->displayHeader();
 
         try {
-            if ($directoryManager->exists() && !$this->option('force')) {
+            if ($directoryManager->exists() && ! $this->option('force')) {
                 $this->error('Project already initialized. .tuti directory already exists.');
                 $this->line('Use --force to reinitialize (this will remove existing configuration)');
 
@@ -103,7 +103,7 @@ final class InitCommand extends Command
 
             $this->displayNextSteps($projectName, $environment);
 
-            return self:: SUCCESS;
+            return self::SUCCESS;
         } catch (RuntimeException $e) {
             $this->error('Initialization failed:  ' . $e->getMessage());
 
@@ -114,7 +114,7 @@ final class InitCommand extends Command
                 $this->info('✓ Cleanup complete');
             }
 
-            return self:: FAILURE;
+            return self::FAILURE;
         }
     }
 
@@ -264,7 +264,7 @@ final class InitCommand extends Command
     {
         $stacksDir = stack_path();
 
-        if (!is_dir($stacksDir)) {
+        if (! is_dir($stacksDir)) {
             return [];
         }
 

@@ -6,6 +6,7 @@ namespace App\Commands\Test;
 
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackJsonRegistryManagerService;
+use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 final class QuickValidateCommand extends Command
@@ -41,7 +42,7 @@ final class QuickValidateCommand extends Command
                     $this->components->error("{$name}");
                     $failed++;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->components->error("{$name}:  {$e->getMessage()}");
                 $failed++;
             }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Support\SystemEnvironment;
 use Symfony\Component\Process\Process;
 
 final class DockerService
@@ -84,7 +83,7 @@ final class DockerService
         $services = [];
 
         // Docker Compose v2 returns NDJSON (newline-delimited JSON)
-        foreach (explode("\n", trim($output)) as $line) {
+        foreach (explode("\n", mb_trim($output)) as $line) {
             if (empty($line)) {
                 continue;
             }
@@ -191,7 +190,7 @@ final class DockerService
             return null;
         }
 
-        $ip = trim($process->getOutput());
+        $ip = mb_trim($process->getOutput());
 
         return $ip !== '' ? $ip : null;
     }
@@ -316,12 +315,12 @@ final class DockerService
         $process->run();
 
         if ($process->isSuccessful()) {
-            $pid = trim($process->getOutput());
+            $pid = mb_trim($process->getOutput());
             if ($pid !== '') {
                 $psProcess = new Process(['ps', '-p', $pid, '-o', 'comm=']);
                 $psProcess->run();
 
-                $name = trim($psProcess->getOutput());
+                $name = mb_trim($psProcess->getOutput());
 
                 return $name !== '' ? $name : 'unknown';
             }

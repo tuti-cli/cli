@@ -71,7 +71,7 @@ it('handles missing optional directories gracefully', function (): void {
     $tempStackDir = $this->createStackWithoutDocker();
 
     // The service should not throw an exception when optional directories are missing
-    expect(fn() => $isolated['copier']->copyFromStack($tempStackDir))
+    expect(fn () => $isolated['copier']->copyFromStack($tempStackDir))
         ->not->toThrow(RuntimeException::class);
 
     $dockerPath = $isolated['manager']->getTutiPath('docker');

@@ -7,7 +7,6 @@ use Illuminate\Support\Str;
 if (! function_exists('tuti_path')) {
     /**
      * Get the .tuti directory path for current project
-     *
      */
     function tuti_path(?string $path = null, ?string $projectRoot = null): string
     {
@@ -16,7 +15,7 @@ if (! function_exists('tuti_path')) {
 
         $base = $projectRoot . '/.tuti';
 
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
+        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }
 }
 
@@ -39,7 +38,7 @@ if (! function_exists('global_tuti_path')) {
         $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? '/root';
         $base = $home . '/.tuti';
 
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
+        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }
 }
 
@@ -51,7 +50,7 @@ if (! function_exists('stub_path')) {
     {
         $base = base_path('stubs');
 
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
+        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }
 }
 
@@ -63,7 +62,7 @@ if (! function_exists('stack_path')) {
     {
         $base = base_path('stacks');
 
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
+        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }
 }
 
@@ -76,7 +75,7 @@ if (! function_exists('stack_name')) {
      */
     function stack_name(string $path): string
     {
-        return basename(rtrim($path, '/'));
+        return basename(mb_rtrim($path, '/'));
     }
 }
 
@@ -148,7 +147,7 @@ if (! function_exists('resolve_stack_path')) {
     {
         // If it's already a valid directory path with stack. json, return it
         if (is_dir($stack) && file_exists($stack . '/stack.json')) {
-            return rtrim($stack, '/');
+            return mb_rtrim($stack, '/');
         }
 
         // Try to find in stacks directory
@@ -185,7 +184,7 @@ if (! function_exists('get_stack_manifest_path')) {
     {
         $stackPath = resolve_stack_path($stack);
 
-        return $stackPath .  '/stack.json';
+        return $stackPath . '/stack.json';
     }
 }
 
@@ -199,8 +198,8 @@ if (! function_exists('mask_sensitive')) {
         $sensitive = ['PASSWORD', 'SECRET', 'KEY', 'TOKEN', 'API', 'PRIVATE'];
 
         foreach ($sensitive as $word) {
-            if (Str::contains(strtoupper($key), $word)) {
-                return str_repeat('*', min(strlen($value), 20));
+            if (Str::contains(mb_strtoupper($key), $word)) {
+                return str_repeat('*', min(mb_strlen($value), 20));
             }
         }
 

@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Commands;
 
 use Illuminate\Console\Command;
 
 use function Laravel\Prompts\suggest;
 
-class TutiFindCommand extends Command
+final class TutiFindCommand extends Command
 {
     protected $signature = 'find';
 

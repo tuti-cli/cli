@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support;
 
-class SystemEnvironment
+final class SystemEnvironment
 {
     public static function detect(): string
     {
@@ -31,7 +33,7 @@ class SystemEnvironment
 
     public static function isWindows(): bool
     {
-        return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        return mb_strtoupper(mb_substr(PHP_OS, 0, 3)) === 'WIN';
     }
 
     public static function isMacOS(): bool
@@ -54,7 +56,7 @@ class SystemEnvironment
         // Fallback check
         if (is_readable('/proc/version')) {
             $version = file_get_contents('/proc/version');
-            if (stripos($version, 'microsoft') !== false || stripos($version, 'wsl') !== false) {
+            if (mb_stripos($version, 'microsoft') !== false || mb_stripos($version, 'wsl') !== false) {
                 return true;
             }
         }

@@ -271,7 +271,7 @@ describe('resolve_stack_path', function () {
     });
 
     it('throws exception for non-existent stack', function (): void {
-        expect(fn() => resolve_stack_path('non-existent'))
+        expect(fn () => resolve_stack_path('non-existent'))
             ->toThrow(RuntimeException::class, 'Stack not found');
     });
 
@@ -304,7 +304,7 @@ describe('get_stack_manifest_path', function () {
     });
 
     it('throws exception for non-existent stack', function (): void {
-        expect(fn() => get_stack_manifest_path('non-existent'))
+        expect(fn () => get_stack_manifest_path('non-existent'))
             ->toThrow(RuntimeException::class);
     });
 });

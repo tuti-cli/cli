@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
-use App\Support\Tuti;
 use App\Traits\HasConsoleViewComponentsTrait;
-use Symfony\Component\Process\Process;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
 
 use function Laravel\Prompts\progress;
@@ -43,17 +42,18 @@ final class InitCommand extends Command
             if ($choose) {
                 $this->warn(' Reinitializing project...');
 
-                if (is_dir(getcwd().'/.tuti')) {
+                if (is_dir(getcwd() . '/.tuti')) {
                     $this->newLine();
                     $this->warn(' Removing existing .tuti directory...');
 
-                    $deleteOldConfig = new Process(['rm', '-rf', getcwd().'/.tuti']);
+                    $deleteOldConfig = new Process(['rm', '-rf', getcwd() . '/.tuti']);
                     $deleteOldConfig->run();
 
                     $this->info(' Existing configuration removed.');
                 }
             } else {
                 $this->info(' Exiting without changes.');
+
                 return self::SUCCESS;
             }
         }
@@ -61,7 +61,8 @@ final class InitCommand extends Command
         $this->welcomeBanner();
 
         if (tuti_exists()) {
-            render(<<<'HTML'
+            render(
+                <<<'HTML'
                 <div class="mx-2 my-1">
                     <div class="px-2 py-1 bg-yellow-500 flex justify-between">
                         <span class="text-black font-bold">⚠ WARNING:</span>
@@ -117,7 +118,8 @@ final class InitCommand extends Command
         $this->createConfigStructure($projectName, $projectType);
 
         // Success screen
-        render(<<<'HTML'
+        render(
+            <<<'HTML'
             <div class="mx-2 my-1">
                 <div class="px-2 py-1 bg-green-600">
                     <div class="flex justify-between">
@@ -152,9 +154,9 @@ final class InitCommand extends Command
     private function detectProjectType(): string
     {
 
-        if (file_exists(getcwd().'/composer.json')) {
+        if (file_exists(getcwd() . '/composer.json')) {
             $composer = json_decode(
-                file_get_contents(getcwd().'/composer.json'),
+                file_get_contents(getcwd() . '/composer.json'),
                 true
             );
 
@@ -173,7 +175,7 @@ final class InitCommand extends Command
             return 'php';
         }
 
-        if (file_exists(getcwd().'/package.json')) {
+        if (file_exists(getcwd() . '/package.json')) {
             return 'node-js';
         }
 
@@ -183,9 +185,9 @@ final class InitCommand extends Command
     private function createConfigStructure(string $name, string $type): void
     {
         $steps = [
-            '.tuti directory' => fn (): bool => mkdir(getcwd().'/.tuti'),
-            'environments directory' => fn (): bool => mkdir(getcwd().'/.tuti/environments'),
-            'docker directory' => fn (): bool => mkdir(getcwd().'/.tuti/docker'),
+            '.tuti directory' => fn (): bool => mkdir(getcwd() . '/.tuti'),
+            'environments directory' => fn (): bool => mkdir(getcwd() . '/.tuti/environments'),
+            'docker directory' => fn (): bool => mkdir(getcwd() . '/.tuti/docker'),
             'config.yml file' => fn () => $this->generateConfig($name, $type),
             'docker-compose.yml file' => fn () => $this->generateDockerCompose($type),
         ];
@@ -219,7 +221,8 @@ final class InitCommand extends Command
 
     private function renderProgressStep(string $message): void
     {
-        render(<<<HTML
+        render(
+            <<<HTML
             <div class="mx-2">
                 <span class="text-green-500">✓</span>
                 <span class="text-gray-200 ml-1">{$message}</span>
@@ -255,7 +258,7 @@ final class InitCommand extends Command
         $yaml = Yaml::dump($config);
 
         $result = file_put_contents(
-            getcwd().'/.tuti/config.yml',
+            getcwd() . '/.tuti/config.yml',
             $yaml
         );
 
@@ -278,7 +281,7 @@ final class InitCommand extends Command
         // Docker compose generation logic
         $template = $this->getDockerComposeTemplate(mb_strtolower($type));
         $result = file_put_contents(
-            getcwd().'/.tuti/docker/docker-compose.yml',
+            getcwd() . '/.tuti/docker/docker-compose.yml',
             $template
         );
 

@@ -13,7 +13,7 @@ final class TutiDirectoryManagerService
      */
     private string $projectRoot;
 
-    public function __construct(? string $projectRoot = null)
+    public function __construct(?string $projectRoot = null)
     {
         $this->projectRoot = $projectRoot ?? base_path();
     }
@@ -38,6 +38,7 @@ final class TutiDirectoryManagerService
      * Initialize .tuti directory structure
      *
      * @return void
+     *
      * @throws RuntimeException If .tuti already exists
      */
     public function initialize(): bool
@@ -51,38 +52,6 @@ final class TutiDirectoryManagerService
         $this->createBaseStructure();
 
         return true;
-    }
-
-    /**
-     * Create base .tuti directory structure
-     *
-     * @return void
-     */
-    private function createBaseStructure(): void
-    {
-        $directories = [
-            '',                 // .tuti itself
-            'docker',
-            'environments',
-            'scripts',
-        ];
-
-        foreach ($directories as $dir) {
-            $path = $this->getTutiPath($dir);
-
-            if (!  is_dir($path)) {
-                if (!  mkdir($path, 0755, true)) {
-                    throw new RuntimeException("Failed to create directory: {$path}");
-                }
-            }
-        }
-
-        // TODO: Need create via StackJsonMetadataManagerService
-//        $manifestPath = $this->getTutiPath('tuti.json');
-//        file_put_contents($manifestPath, json_encode([
-//            'version' => '1.0.0',
-//            'created_at' => now()->toJSON(),
-//        ], JSON_PRETTY_PRINT));
     }
 
     /**
@@ -101,8 +70,6 @@ final class TutiDirectoryManagerService
 
     /**
      * Validate .tuti directory structure
-     *
-     * @return bool
      */
     public function validate(): bool
     {
@@ -121,8 +88,6 @@ final class TutiDirectoryManagerService
 
     /**
      * Clean/remove .tuti directory (use with caution)
-     *
-     * @return bool
      */
     public function clean(): bool
     {
@@ -136,10 +101,45 @@ final class TutiDirectoryManagerService
     }
 
     /**
+     * Get project root directory
+     */
+    public function getProjectRoot(): string
+    {
+        return $this->projectRoot;
+    }
+
+    /**
+     * Create base .tuti directory structure
+     */
+    private function createBaseStructure(): void
+    {
+        $directories = [
+            '',                 // .tuti itself
+            'docker',
+            'environments',
+            'scripts',
+        ];
+
+        foreach ($directories as $dir) {
+            $path = $this->getTutiPath($dir);
+
+            if (! is_dir($path)) {
+                if (! mkdir($path, 0755, true)) {
+                    throw new RuntimeException("Failed to create directory: {$path}");
+                }
+            }
+        }
+
+        // TODO: Need create via StackJsonMetadataManagerService
+        //        $manifestPath = $this->getTutiPath('tuti.json');
+        //        file_put_contents($manifestPath, json_encode([
+        //            'version' => '1.0.0',
+        //            'created_at' => now()->toJSON(),
+        //        ], JSON_PRETTY_PRINT));
+    }
+
+    /**
      * Recursively remove directory
-     *
-     * @param string $directory
-     * @return bool
      */
     private function removeDirectory(string $directory): bool
     {
@@ -150,7 +150,7 @@ final class TutiDirectoryManagerService
         $items = array_diff(scandir($directory) ?: [], ['.', '..']);
 
         foreach ($items as $item) {
-            $path = $directory .  DIRECTORY_SEPARATOR . $item;
+            $path = $directory . DIRECTORY_SEPARATOR . $item;
 
             if (is_dir($path)) {
                 $this->removeDirectory($path);
@@ -160,13 +160,5 @@ final class TutiDirectoryManagerService
         }
 
         return rmdir($directory);
-    }
-
-    /**
-     * Get project root directory
-     */
-    public function getProjectRoot(): string
-    {
-        return $this->projectRoot;
     }
 }

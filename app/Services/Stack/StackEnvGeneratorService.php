@@ -11,10 +11,10 @@ final readonly class StackEnvGeneratorService
     /**
      * Generate environment file from template and service requirements
      *
-     * @param string $templatePath Path to . env.example template
-     * @param array<int, string> $selectedServices Selected services
-     * @param array<string, string> $projectConfig Project configuration
-     * @param string $outputPath Output path for . env file
+     * @param  string  $templatePath  Path to . env.example template
+     * @param  array<int, string>  $selectedServices  Selected services
+     * @param  array<string, string>  $projectConfig  Project configuration
+     * @param  string  $outputPath  Output path for . env file
      */
     public function generate(
         string $templatePath,
@@ -47,7 +47,15 @@ final readonly class StackEnvGeneratorService
     }
 
     /**
-     * @param array<string, string> $projectConfig
+     * Check if .env file already exists
+     */
+    public function exists(string $path): bool
+    {
+        return file_exists($path);
+    }
+
+    /**
+     * @param  array<string, string>  $projectConfig
      */
     private function replaceProjectVariables(string $content, array $projectConfig): string
     {
@@ -73,13 +81,5 @@ final readonly class StackEnvGeneratorService
     private function generateSecurePassword(int $length = 32): string
     {
         return bin2hex(random_bytes($length / 2));
-    }
-
-    /**
-     * Check if .env file already exists
-     */
-    public function exists(string $path): bool
-    {
-        return file_exists($path);
     }
 }
