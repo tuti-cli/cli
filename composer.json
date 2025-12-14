@@ -17,18 +17,18 @@
     ],
     "require": {
         "php": "^8.4",
-        "illuminate/database": "^12.38.1",
-        "laravel-zero/framework": "^12.0.3",
-        "symfony/yaml": "^7.4"
+        "illuminate/database": "^12.42.0",
+        "laravel-zero/framework": "^12.0.4",
+        "symfony/yaml": "^7.4.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
-        "laravel/pint": "^1.25.1",
+        "laravel/pint": "^1.26.0",
         "mockery/mockery": "^1.6.12",
-        "pestphp/pest": "^3.8.4|^4.1.3",
+        "pestphp/pest": "^3.8.4|^4.1.6",
         "phpacker/phpacker": "^0.6.4",
-        "phpstan/phpstan": "^2.1.32",
-        "rector/rector": "^2.2.8"
+        "phpstan/phpstan": "^2.1.33",
+        "rector/rector": "^2.2.14"
     },
     "autoload": {
         "psr-4": {
