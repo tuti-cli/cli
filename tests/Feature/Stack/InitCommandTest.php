@@ -7,8 +7,6 @@ use App\Services\Tuti\TutiDirectoryManagerService;
 beforeEach(function (): void {
     $this->testDir = sys_get_temp_dir() . '/tuti-feature-test-' . uniqid();
     mkdir($this->testDir);
-
-    // Change to test directory
     chdir($this->testDir);
 });
 
@@ -21,6 +19,13 @@ afterEach(function (): void {
 });
 
 it('fails when no stack is provided in non-interactive mode', function (): void {
+    if (tuti_exists()) {
+        $this->artisan('stack:init --no-interaction')
+            ->assertFailed()
+            ->expectsOutput('Project already initialized. ".tuti/" directory already exists in your project root.');
+        return;
+    }
+
     $this->artisan('stack:init --no-interaction')
         ->assertFailed()
         ->expectsOutput('No stack selected. Exiting.');

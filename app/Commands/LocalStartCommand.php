@@ -17,16 +17,6 @@ final class LocalStartCommand extends Command
         $this->info('Testing dummy command execution...');
         $this->newLine();
 
-        dd([
-            tuti_path(),
-            discover_stacks(),
-            tuti_exists(),
-            stub_path(),
-            mask_sensitive('Password123!', 'Password123!'),
-            stack_path(),
-            global_tuti_path(),
-        ]);
-
         return self::SUCCESS;
     }
 }

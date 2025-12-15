@@ -95,7 +95,6 @@ final class TestStackLoaderCommand extends Command
             // Show environment-specific overrides
             $this->info('🌍 Production Overrides for cache.redis:');
             $envOverrides = $loader->getEnvironmentOverrides($manifest, 'cache.redis', 'production');
-            dump($envOverrides);
 
             $this->newLine();
             $this->info('✅ All tests passed! ');
