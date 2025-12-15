@@ -64,6 +64,42 @@ return [
         Illuminate\Console\Scheduling\ScheduleListCommand::class,
         Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
         Illuminate\Foundation\Console\VendorPublishCommand::class,
+        LaravelZero\Framework\Commands\StubPublishCommand::class,
+        LaravelZero\Framework\Commands\TestMakeCommand::class,
+        NunoMaduro\Collision\Adapters\Laravel\Commands\TestCommand::class,
+
+        // --- 1. The Migration & Seed Commands from your dump ---
+        Illuminate\Database\Console\Migrations\MigrateCommand::class,
+        Illuminate\Database\Console\Migrations\FreshCommand::class,
+        Illuminate\Database\Console\Migrations\InstallCommand::class,
+        Illuminate\Database\Console\Migrations\RefreshCommand::class,
+        Illuminate\Database\Console\Migrations\ResetCommand::class,
+        Illuminate\Database\Console\Migrations\RollbackCommand::class,
+        Illuminate\Database\Console\Migrations\StatusCommand::class,
+        Illuminate\Database\Console\Seeds\SeedCommand::class,
+        Illuminate\Database\Console\WipeCommand::class,
+
+        // --- 2. The Make Commands from your dump ---
+        Illuminate\Database\Console\Migrations\MigrateMakeCommand::class,
+        Illuminate\Database\Console\Factories\FactoryMakeCommand::class,
+        Illuminate\Database\Console\Seeds\SeederMakeCommand::class,
+        Illuminate\Foundation\Console\ModelMakeCommand::class,
+
+        // --- 3. Scheduling & System Commands from your dump ---
+        Illuminate\Console\Scheduling\ScheduleRunCommand::class,
+        Illuminate\Console\Scheduling\ScheduleListCommand::class,
+        Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
+        Illuminate\Foundation\Console\VendorPublishCommand::class,
+        Illuminate\Foundation\Console\ConfigPublishCommand::class,
+        Symfony\Component\Console\Command\DumpCompletionCommand::class,
+
+        // --- 4. Standard Laravel Zero Commands (Recommended to keep list clean) ---
+        LaravelZero\Framework\Commands\BuildCommand::class,
+        LaravelZero\Framework\Commands\InstallCommand::class,
+        LaravelZero\Framework\Commands\RenameCommand::class,
+        LaravelZero\Framework\Commands\StubPublishCommand::class,
+        LaravelZero\Framework\Commands\MakeCommand::class,
+
     ],
 
     /*
@@ -78,7 +114,10 @@ return [
     */
 
     'remove' => [
-        LaravelZero\Framework\Commands\StubPublishCommand::class,
+        LaravelZero\Framework\Commands\BuildCommand::class,
+        LaravelZero\Framework\Commands\InstallCommand::class,
+        LaravelZero\Framework\Commands\RenameCommand::class,
+
     ],
 
 ];
