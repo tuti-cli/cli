@@ -9,6 +9,7 @@ use App\Domain\Project\Project;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use LaravelZero\Framework\Commands\Command;
+use Throwable;
 
 final class StatusCommand extends Command
 {
@@ -32,6 +33,7 @@ final class StatusCommand extends Command
 
             if (empty($services)) {
                 $this->warn('No running services found.');
+
                 return self::SUCCESS;
             }
 
@@ -43,7 +45,7 @@ final class StatusCommand extends Command
                     $service['Service'] ?? '?',
                     $service['State'] ?? '?',
                     $service['Status'] ?? '?',
-                    $service['Publishers'] ?? ($service['Ports'] ?? '')
+                    $service['Publishers'] ?? ($service['Ports'] ?? ''),
                 ];
             }
 
@@ -54,8 +56,9 @@ final class StatusCommand extends Command
 
             return self::SUCCESS;
 
-        } catch (\Throwable $e) {
-            $this->error("Failed to check status: " . $e->getMessage());
+        } catch (Throwable $e) {
+            $this->error('Failed to check status: ' . $e->getMessage());
+
             return self::FAILURE;
         }
     }

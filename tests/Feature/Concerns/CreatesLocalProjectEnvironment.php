@@ -46,11 +46,11 @@ trait CreatesLocalProjectEnvironment
         }
     }
 
-    protected function createDockerCompose(? string $content = null): void
+    protected function createDockerCompose(?string $content = null): void
     {
         $dockerDir = $this->testProjectDir . '/.tuti/docker';
 
-        if (!  is_dir($dockerDir)) {
+        if (! is_dir($dockerDir)) {
             mkdir($dockerDir, 0755, true);
         }
 
@@ -83,12 +83,12 @@ YAML;
 
         file_put_contents(
             $dockerDir . '/docker-compose.yml',
-            $content ??  $defaultContent
+            $content ?? $defaultContent
         );
     }
 
     /**
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed>  $config
      */
     protected function createProjectConfig(array $config = []): void
     {

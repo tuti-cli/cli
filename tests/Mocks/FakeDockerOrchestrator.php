@@ -34,11 +34,11 @@ final class FakeDockerOrchestrator implements OrchestratorInterface
     /** @var array<int, array<string, mixed>> */
     public array $statusResponse = [];
 
-    public ? Project $lastProject = null;
+    public ?Project $lastProject = null;
 
-    public ? string $lastService = null;
+    public ?string $lastService = null;
 
-    public ? bool $lastFollow = null;
+    public ?bool $lastFollow = null;
 
     public function start(Project $project): bool
     {
@@ -56,7 +56,7 @@ final class FakeDockerOrchestrator implements OrchestratorInterface
         return $this->stopResult;
     }
 
-    public function restart(Project $project, ? string $service = null): bool
+    public function restart(Project $project, ?string $service = null): bool
     {
         $this->restartCalled = true;
         $this->lastProject = $project;

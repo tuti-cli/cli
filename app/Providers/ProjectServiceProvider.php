@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use Illuminate\Support\ServiceProvider;
 
-class ProjectServiceProvider extends ServiceProvider
+final class ProjectServiceProvider extends ServiceProvider
 {
     public function register(): void
     {

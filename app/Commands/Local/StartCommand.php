@@ -9,6 +9,7 @@ use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use App\Services\Project\ProjectStateManagerService;
 use LaravelZero\Framework\Commands\Command;
+use Throwable;
 
 final class StartCommand extends Command
 {
@@ -34,16 +35,18 @@ final class StartCommand extends Command
             // 2. Delegate to Business Logic (State Manager)
             $this->task("Starting containers for {$project->getName()}", function () use ($stateManager, $project) {
                 $stateManager->start($project);
+
                 return true;
             });
 
-            $this->info("Project is running! 🚀");
+            $this->info('Project is running! 🚀');
             $this->comment("Run 'tuti local:status' to see details.");
 
             return self::SUCCESS;
 
-        } catch (\Throwable $e) {
-            $this->error("Failed to start project: " . $e->getMessage());
+        } catch (Throwable $e) {
+            $this->error('Failed to start project: ' . $e->getMessage());
+
             return self::FAILURE;
         }
     }

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Services\Project\ProjectMetadataService;
 use App\Services\Project\ProjectDirectoryService;
+use App\Services\Project\ProjectMetadataService;
 
 beforeEach(function (): void {
     $this->testDir = sys_get_temp_dir() . '/tuti-test-' . uniqid();

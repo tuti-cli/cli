@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
-use App\Services\Project\ProjectMetadataService;
 use App\Services\Project\ProjectDirectoryService;
+use App\Services\Project\ProjectMetadataService;
 use Exception;
 use LaravelZero\Framework\Commands\Command;
 
@@ -17,7 +17,7 @@ final class TestTutiDirectoryCommand extends Command
 
     public function handle(
         ProjectDirectoryService $directoryManager,
-        ProjectMetadataService  $metadata
+        ProjectMetadataService $metadata
     ): int {
         $this->info('🔍 Testing .tuti Directory Management.. .');
         $this->newLine();

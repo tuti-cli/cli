@@ -9,6 +9,7 @@ use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use App\Services\Project\ProjectStateManagerService;
 use LaravelZero\Framework\Commands\Command;
+use Throwable;
 
 final class StopCommand extends Command
 {
@@ -29,21 +30,25 @@ final class StopCommand extends Command
             // Sync state first to know if we are actually running
             $stateManager->syncState($project);
 
-            if (!$project->getState()->isRunning()) {
+            if (! $project->getState()->isRunning()) {
                 $this->comment('Project is already stopped.');
+
                 return self::SUCCESS;
             }
 
-            $this->task("Stopping containers", function () use ($stateManager, $project) {
+            $this->task('Stopping containers', function () use ($stateManager, $project) {
                 $stateManager->stop($project);
+
                 return true;
             });
 
             $this->info('Project stopped successfully.');
+
             return self::SUCCESS;
 
-        } catch (\Throwable $e) {
-            $this->error("Failed to stop project: " . $e->getMessage());
+        } catch (Throwable $e) {
+            $this->error('Failed to stop project: ' . $e->getMessage());
+
             return self::FAILURE;
         }
     }

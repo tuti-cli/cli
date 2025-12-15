@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Project;
 
-
 use App\Domain\Project\ValueObjects\ProjectConfigurationVO;
+use JsonException;
 use RuntimeException;
 
 /**
@@ -18,8 +18,7 @@ final readonly class ProjectMetadataService
 {
     public function __construct(
         private ProjectDirectoryService $directoryService
-    ) {
-    }
+    ) {}
 
     /**
      * Load the current project configuration.
@@ -30,7 +29,7 @@ final readonly class ProjectMetadataService
         $path = $this->directoryService->getTutiPath('config.json');
 
         // Fallback for transition: Check root if not directly in .tuti
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             // Check for legacy tuti.json in root
             $rootPath = $this->directoryService->getProjectRoot() . '/tuti.json';
 
@@ -50,8 +49,8 @@ final readonly class ProjectMetadataService
 
         try {
             $data = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            throw new RuntimeException("Invalid JSON in config file: " . $e->getMessage());
+        } catch (JsonException $e) {
+            throw new RuntimeException('Invalid JSON in config file: ' . $e->getMessage());
         }
 
         return ProjectConfigurationVO::fromArray($data);
@@ -64,6 +63,7 @@ final readonly class ProjectMetadataService
     {
         try {
             $this->directoryService->getProjectRoot();
+
             return true;
         } catch (RuntimeException) {
             return false;

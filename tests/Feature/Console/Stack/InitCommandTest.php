@@ -23,6 +23,7 @@ it('fails when no stack is provided in non-interactive mode', function (): void 
         $this->artisan('stack:init --no-interaction')
             ->assertFailed()
             ->expectsOutput('Project already initialized. ".tuti/" directory already exists in your project root.');
+
         return;
     }
 
