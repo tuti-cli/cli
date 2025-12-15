@@ -44,10 +44,10 @@ One CLI for the entire development lifecycle: local development → staging → 
 stateDiagram-v2
     [*] --> Uninitialized
     Uninitialized --> Ready : tuti init
-    Ready --> Starting : tuti local:start
+    Ready --> Starting : tuti local start
     Starting --> Running : success
     Starting --> Error : failure
-    Running --> Stopping : tuti local:stop
+    Running --> Stopping : tuti local stop
     Running --> Deploying : tuti deploy
     Stopping --> Ready : success
     Deploying --> Deployed : success
