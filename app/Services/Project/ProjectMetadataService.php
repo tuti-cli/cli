@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Project;
 
 use App\Domain\Project\ValueObjects\ProjectConfigurationVO;
+use Illuminate\Support\Facades\Log;
 use JsonException;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
@@ -17,35 +19,29 @@ use RuntimeException;
 final readonly class ProjectMetadataService
 {
     public function __construct(
-        private ProjectDirectoryService $directoryService
-    ) {}
+        private ProjectDirectoryService $directoryService,
+        private LoggerInterface $logger
+    ) {
+    }
 
     /**
      * Load the current project configuration.
      */
     public function load(): ProjectConfigurationVO
     {
-        // Try config.json in .tuti folder (new standard)
         $path = $this->directoryService->getTutiPath('config.json');
 
-        // Fallback for transition: Check root if not directly in .tuti
-        if (! file_exists($path)) {
-            // Check for legacy tuti.json in root
-            $rootPath = $this->directoryService->getProjectRoot() . '/tuti.json';
-
-            // If legacy exists, use it
-            if (file_exists($rootPath)) {
-                $path = $rootPath;
-            } else {
-                // If neither exists, we stick to the primary path for the error message
-                throw new RuntimeException("Configuration file not found at: {$path}");
-            }
+        if (!file_exists($path)) {
+            throw new RuntimeException("Configuration file not found at: {$path}");
         }
 
         $content = file_get_contents($path);
         if ($content === false) {
             throw new RuntimeException("Failed to read config file at {$path}");
         }
+
+        // Resolve any template variables in the content
+        $content = $this->resolveVariables($content);
 
         try {
             $data = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
@@ -63,7 +59,7 @@ final readonly class ProjectMetadataService
      */
     public function create(array $config): void
     {
-        $configPath = $this->directoryService->getTutiPath('config. json');
+        $configPath = $this->directoryService->getTutiPath('config.json');
 
         if (file_exists($configPath)) {
             throw new RuntimeException('Configuration file already exists');
@@ -73,6 +69,44 @@ final readonly class ProjectMetadataService
             $configPath,
             json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
         );
+    }
+
+    /**
+     * Resolve template variables in the configuration content.
+     */
+    private function resolveVariables(string $content): string
+    {
+        $variables = [
+            'SYSTEM_USER' => $this->getSystemUser(),
+            'PROJECT_ROOT' => $this->directoryService->getProjectRoot(),
+            // Add more variables as needed
+        ];
+
+        // Replace both {{ VAR }} and {{VAR}} formats
+        foreach ($variables as $key => $value) {
+            $content = str_replace("{{ {$key} }}", $value, $content);
+            $content = str_replace("{{{$key}}}", $value, $content);
+        }
+
+        return $content;
+    }
+
+    /**
+     * Get the current system user.
+     */
+    private function getSystemUser(): string
+    {
+        $user = getenv('USER');
+
+        if ($user !== false && $user !== '') {
+            return $user;
+        }
+
+        if (isset($_SERVER['USER']) && $_SERVER['USER'] !== '') {
+            return $_SERVER['USER'];
+        }
+
+        return 'tuti';
     }
 
     /**

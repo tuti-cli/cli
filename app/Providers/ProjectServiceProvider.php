@@ -13,7 +13,7 @@ final class ProjectServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(ProjectDirectoryService::class);
+        $this->app->bind(ProjectDirectoryService::class);
         $this->app->singleton(ProjectMetadataService::class);
         $this->app->singleton(ProjectInitializationService::class);
     }

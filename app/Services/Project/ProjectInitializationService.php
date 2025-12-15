@@ -32,6 +32,8 @@ final readonly class ProjectInitializationService
      */
     public function initialize(string $projectName, string $environment): bool
     {
+        $this->directoryService->setInitializationRoot(base_path());
+
         // 1. Create directory structure
         $this->directoryService->initialize();
 
@@ -61,10 +63,12 @@ final readonly class ProjectInitializationService
                 'version' => '1.0.0',
             ],
             'environments' => [
-                'current' => $environment,
-                $environment => [
-                    'domain' => "{$projectName}.test",
-                ],
+                'local' => [
+                    'type' => $environment,
+                    'services' => [],
+                    'host' => "{$projectName}.test",
+                    'user' => '{{SYSTEM_USER}}',
+                ]
             ],
             'initialized_at' => now()->toIso8601String(),
         ];

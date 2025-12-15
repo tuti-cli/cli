@@ -7,7 +7,6 @@ namespace App\Commands;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectInitializationService;
 use LaravelZero\Framework\Commands\Command;
-use RuntimeException;
 use Throwable;
 
 use function Laravel\Prompts\select;
@@ -16,10 +15,12 @@ use function Laravel\Prompts\text;
 
 final class InitCommand extends Command
 {
+    // already defined in base Command class
+    // {--env=dev :   Environment (dev, staging, production)}
+    // {--no-interaction :   Run in non-interactive mode}
     protected $signature = 'init
                           {project-name?  : Project name}
-                          {--env=dev : Environment (dev, staging, production)}
-                          {--force :  Force initialization even if . tuti exists}';
+                          {--force :  Force initialization even if .tuti exists}';
 
     protected $description = 'Initialize a new Tuti project';
 
@@ -32,14 +33,14 @@ final class InitCommand extends Command
         try {
             // 1. Pre-flight checks
             if ($directoryService->exists() && !$this->option('force')) {
-                $this->error('Project already initialized. ". tuti/" directory already exists.');
+                $this->error('Project already initialized. ".tuti/" directory already exists.');
                 $this->line('Use --force to reinitialize (this will remove existing configuration)');
 
                 return self:: FAILURE;
             }
 
             if ($directoryService->exists() && $this->option('force')) {
-                $this->warn('Removing existing . tuti directory...');
+                $this->warn('Removing existing .tuti directory...');
                 $directoryService->clean();
             }
 
@@ -110,7 +111,7 @@ final class InitCommand extends Command
     {
         $envOption = $this->option('env');
 
-        if ($envOption !== null && in_array($envOption, ['dev', 'staging', 'production'], true)) {
+        if (in_array($envOption, ['dev', 'staging', 'production'], true)) {
             return $envOption;
         }
 
@@ -136,14 +137,14 @@ final class InitCommand extends Command
         $this->newLine();
 
         $this->info('Next Steps:');
-        $this->line('  1. Place your docker-compose.yml in . tuti/docker/');
-        $this->line('  2. Start your environment:  tuti local: start');
+        $this->line('  1. Place your docker-compose.yml in .tuti/docker/');
+        $this->line('  2.Start your environment:  tuti local: start');
         $this->line('  3. Or use a stack template: tuti stack:init laravel');
         $this->newLine();
 
         $this->comment('📂 Project structure created: ');
-        $this->line('  . tuti/');
-        $this->line('  ├── config. json      ✓');
+        $this->line('  .tuti/');
+        $this->line('  ├── config.json      ✓');
         $this->line('  ├── docker/          ✓');
         $this->line('  ├── environments/    ✓');
         $this->line('  └── scripts/         ✓');
