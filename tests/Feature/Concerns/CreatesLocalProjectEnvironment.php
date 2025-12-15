@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\File;
  * Trait CreatesLocalProjectEnvironment
  *
  * Provides reusable setup for testing Local commands.
- * Creates a minimal project structure with tuti directory and configjson.
+ * Creates a minimal project structure with .tuti directory and config.json.
  */
 trait CreatesLocalProjectEnvironment
 {
@@ -28,7 +28,7 @@ trait CreatesLocalProjectEnvironment
         // Change to test directory (commands expect to run from project root)
         chdir($this->testProjectDir);
 
-        // Initialize tuti directory structure
+        // Initialize .tuti directory structure
         $this->projectDirService = new ProjectDirectoryService();
         $this->projectDirService->initialize();
 
@@ -46,25 +46,25 @@ trait CreatesLocalProjectEnvironment
         }
     }
 
-    protected function createDockerCompose(string $content = null): void
+    protected function createDockerCompose(? string $content = null): void
     {
-        $dockerDir = $this->testProjectDir .  '/.tuti/docker';
+        $dockerDir = $this->testProjectDir . '/.tuti/docker';
 
-        if (! is_dir($dockerDir)) {
+        if (!  is_dir($dockerDir)) {
             mkdir($dockerDir, 0755, true);
         }
 
-        $defaultContent = <<<YAML
+        $defaultContent = <<<'YAML'
 services:
   app:
     image: php:8.4-fpm
     container_name: test-app
     volumes:
-      - :/var/www
+      - .:/var/www
 
   nginx:
     image: nginx:alpine
-    container_name:  test-nginx
+    container_name: test-nginx
     ports:
       - "8080:80"
     depends_on:
@@ -87,6 +87,9 @@ YAML;
         );
     }
 
+    /**
+     * @param array<string, mixed> $config
+     */
     protected function createProjectConfig(array $config = []): void
     {
         $defaultConfig = [
@@ -108,14 +111,14 @@ YAML;
         $mergedConfig = array_merge_recursive($defaultConfig, $config);
 
         file_put_contents(
-            $this->testProjectDir . '/.tuti/configjson',
+            $this->testProjectDir . '/.tuti/config.json',
             json_encode($mergedConfig, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)
         );
     }
 
     protected function removeProjectConfig(): void
     {
-        $configPath = $this->testProjectDir . '/.tuti/configjson';
+        $configPath = $this->testProjectDir . '/.tuti/config.json';
 
         if (file_exists($configPath)) {
             unlink($configPath);
