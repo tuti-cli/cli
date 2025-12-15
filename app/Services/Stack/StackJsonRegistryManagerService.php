@@ -14,7 +14,7 @@ final readonly class StackJsonRegistryManagerService
 {
     private array $registry;
 
-    public function __construct(private string $registryPath)
+    public function __construct(private string $registryPath = 'services/registry.json')
     {
         $this->loadRegistry();
     }
