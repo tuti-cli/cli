@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Commands\Stack;
 
-use App\Services\Project\ProjectMetadataManagerService;
-use App\Services\Project\ProjectDirectoryManagerService;
+use App\Services\Project\ProjectMetadataService;
+use App\Services\Project\ProjectDirectoryService;
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackLoaderService;
@@ -31,12 +31,12 @@ final class InitCommand extends Command
     protected $description = 'Initialize a new project with selected stack and services';
 
     public function handle(
-        StackRegistryManagerService    $registry,
-        StackLoaderService             $stackLoader,
-        StackComposeBuilderService     $builder,
-        ProjectDirectoryManagerService $directoryManager,
-        ProjectMetadataManagerService  $metadata,
-        StackFilesCopierService        $copier
+        StackRegistryManagerService $registry,
+        StackLoaderService          $stackLoader,
+        StackComposeBuilderService  $builder,
+        ProjectDirectoryService     $directoryManager,
+        ProjectMetadataService      $metadata,
+        StackFilesCopierService     $copier
     ): int {
         $this->displayHeader();
 
@@ -118,16 +118,16 @@ final class InitCommand extends Command
     }
 
     private function initializeProject(
-        ProjectDirectoryManagerService $directoryManager,
-        StackFilesCopierService        $copier,
-        ProjectMetadataManagerService  $metadata,
-        StackComposeBuilderService     $builder,
-        string                         $stackPath,
-        StackLoaderService             $stackLoader,
-        array                          $manifest,
-        string                         $projectName,
-        string                         $environment,
-        array                          $selectedServices
+        ProjectDirectoryService    $directoryManager,
+        StackFilesCopierService    $copier,
+        ProjectMetadataService     $metadata,
+        StackComposeBuilderService $builder,
+        string                     $stackPath,
+        StackLoaderService         $stackLoader,
+        array                      $manifest,
+        string                     $projectName,
+        string                     $environment,
+        array                      $selectedServices
     ): void {
         spin(
             fn (): bool => $directoryManager->initialize(),
