@@ -98,17 +98,16 @@ Stores developer preferences applied to all projects.
 
 ```
 project-root/
-├── .tuti/
-│   ├── config.json           # Project configuration
-│   ├── .state                # Current state (running/stopped)
-│   ├── environments/
-│   │   ├── local.env
-│   │   ├── staging.env
-│   │   └── production.env
-│   ├── docker/
-│   │   └── docker-compose.yml
-│   └── deploy.php            # Generated Deployer config
-└── .tuti.json                # Project manifest (git-committed)
+└── .tuti/                    # Project config directory
+    ├── config.json           # Project configuration
+    ├── .state                # Current state (running/stopped)
+    ├── environments/
+    │   ├── local.env
+    │   ├── staging.env
+    │   └── production.env
+    ├── docker/
+    │   └── docker-compose.yml
+    └── deploy.php            # Generated Deployer config
 ```
 
 ---
