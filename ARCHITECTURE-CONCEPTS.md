@@ -65,12 +65,33 @@ stateDiagram-v2
 
 ```
 ~/.tuti/
-├── config.json           # Global settings
-├── projects.json         # Registry of all projects
-├── cache/                # Cached data
-│   └── port-allocations.json
+├── settings.json         # User preferences (defaults, identity)
+├── projects.json         # Registry of all known projects
+├── infrastructure/       # Global Traefik setup
 └── logs/
-    └── tuti.log
+```
+
+#### 1. User Settings (`~/.tuti/settings.json`)
+
+Stores developer preferences applied to all projects.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user` | `object` | Identity info (`name`, `email`) for git/composer. |
+| `defaults` | `object` | Default values for `tuti init` (e.g. `stack: laravel`). |
+| `stack_repositories` | `string[]` | URLs to custom stack collections. |
+| `updates.channel` | `string` | Update channel (`stable`, `beta`). |
+
+**Example:**
+```json
+{
+  "user": {
+    "name": "Yevhenii"
+  },
+  "defaults": {
+    "stack": "laravel-stack"
+  }
+}
 ```
 
 ### Project Configuration (`.tuti/`)
@@ -94,20 +115,162 @@ project-root/
 
 ## ⚙️ Configuration Schema
 
-### `.tuti/config.json`
+### 1. User Settings (`~/.tuti/settings.json`)
+
+Stores developer preferences applied to all projects.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user` | `object` | Identity info (`name`, `email`, `signing_key`). |
+| `defaults` | `object` | Default values for `tuti init` (stack, license, editor). |
+| `paths` | `object` | Global path overrides (`projects_root`, `docker_socket`). |
+| `updates` | `object` | Auto-update preferences (`channel`, `maintenance_window`). |
+| `telemetry` | `boolean` | Opt-in usage statistics. |
+
+**Example:**
+```json
+{
+  "user": {
+    "name": "Yevhenii",
+    "email": "dev@example.com",
+    "signing_key": "ssh-ed25519 AAAA..."
+  },
+  "defaults": {
+    "stack": "laravel-stack",
+    "license": "MIT",
+    "editor": "code"
+  },
+  "paths": {
+    "projects_root": "~/code",
+    "docker_socket": "/var/run/docker.sock"
+  },
+  "updates": {
+    "channel": "stable",
+    "auto_check": true
+  },
+  "telemetry": {
+    "enabled": false
+  }
+}
+```
+
+### 2. Project Configuration (`.tuti/config.json`)
+
+**Unified Schema:** This schema scales from simple single-app projects to complex monorepos.
+
+#### Example A: Simple Single-App
+Ideal for standard Laravel/Node projects. note `path: "."`.
 
 ```json
 {
   "project": {
-    "name": "my-app",
-    "type": "laravel",
+    "name": "my-blog",
     "version": "1.0.0"
   },
+  "apps": [
+    {
+      "name": "app",
+      "path": ".",
+      "type": "laravel",
+      "ports": { "http": 8000 }
+    }
+  ],
+  "shared_services": ["mysql", "redis"],
   "environments": {
     "local": {
       "type": "docker",
-      "services": ["mysql", "redis", "mailpit"],
-      "host": "my-app.test",
+      "host": "blog.test",
+      "user": "{{SYSTEM_USER}}"
+    },
+    "staging": {
+      "type": "deployer",
+      "host": "staging.blog.com",
+      "user": "deploy",
+      "path": "/var/www/staging",
+      "branch": "develop",
+      "strategy": "deploy:rolling"
+    },
+    "production": {
+      "type": "deployer",
+      "host": "blog.com",
+      "user": "deploy",
+      "path": "/var/www/prod",
+      "branch": "main",
+      "ssh_options": "-o ForwardAgent=yes"
+    }
+  }
+}
+```
+
+#### Example B: Comprehensive / Multi-App
+Reference for all supported fields, showing a frontend+backend setup.
+
+```json
+{
+  "project": {
+    "name": "my-platform",
+    "description": "Enterprise SaaS Platform",
+    "version": "1.0.0",
+    "license": "proprietary",
+    "authors": ["Yevhenii <dev@example.com>"]
+  },
+
+  // 1. Applications (Frontend, Backend, Workers)
+  "apps": [
+    {
+      "name": "api",
+      "path": "./backend",
+      "type": "laravel", 
+      "build": "composer install && php artisan optimize",
+      "start": "php artisan serve --host=0.0.0.0 --port=8000",
+      "test": "php artisan test",
+      
+      "ports": {
+        "http": 8000,
+        "debug": 9003
+      },
+      
+      "env": {
+        "APP_ENV": "local",
+        "DB_HOST": "postgres"
+      },
+      
+      "volumes": [
+        "./backend/storage:/var/www/storage"
+      ],
+      
+      "depends_on": ["postgres", "redis"]
+    },
+    {
+      "name": "dashboard",
+      "path": "./frontend",
+      "type": "node",
+      "build": "npm ci",
+      "start": "npm run dev -- --host",
+      
+      "ports": {
+        "http": 3000
+      },
+      
+      "depends_on": ["api"]
+    }
+  ],
+
+  // 2. Shared Infrastructure Services
+  "shared_services": [
+    "postgres", 
+    "redis", 
+    "mailpit", 
+    "meilisearch"
+  ],
+
+  // 3. Deployment & Environment Overrides
+  "environments": {
+    "local": {
+      "type": "docker",
+      "host": "platform.test",
+      "ssl": true,
+      "services": ["postgres", "redis", "mailpit", "meilisearch"],
       "user": "{{SYSTEM_USER}}"
     },
     "staging": {
@@ -115,37 +278,104 @@ project-root/
       "host": "staging.example.com",
       "user": "deploy",
       "path": "/var/www/staging",
-      "branch": "develop"
+      "branch": "develop",
+      "strategy": "deploy:rolling" // deployer recipe strategy
     },
     "production": {
       "type": "deployer",
-      "host": "production.example.com",
+      "host": "app.example.com",
       "user": "deploy",
       "path": "/var/www/production",
-      "branch": "main"
+      "branch": "main",
+      "ssh_options": "-o ForwardAgent=yes"
     }
   }
 }
 ```
 
-> **Note:** `{{SYSTEM_USER}}` is auto-filled during `tuti init` with the current system username.
+### 3. Global Registry (`~/.tuti/projects.json`)
 
-### `~/.tuti/projects.json`
+Registry of all known projects with full state execution details. Note how `allocations` differ between Single and Multi-app projects.
 
 ```json
 {
-  "projects": [
-    {
-      "name": "my-app",
-      "path": "/home/user/projects/my-app",
+  "projects": {
+    // Example A: Single-App Project
+    "my-blog": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "path": "/home/user/code/my-blog",
       "type": "laravel",
-      "state": "running",
-      "ports": { "mysql": 3306, "redis": 6379 },
-      "last_accessed": "2025-12-15T12:00:00Z"
+      "host": "blog.test",
+      "ssl_cert_path": "~/.tuti/infrastructure/certs/blog.test.pem",
+      
+      // Simple allocations (just service names)
+      "allocations": {
+        "http": 8080,
+        "mysql": 33060,
+        "redis": 63790
+      },
+      
+      "state": {
+        "status": "stopped",
+        "started_at": null,
+        "pid": null
+      },
+      "last_accessed_at": "2025-12-16T10:00:00Z"
+    },
+
+    // Example B: Multi-App Project
+    "my-platform": {
+      "id": "770f9511-f30c-52e5-b827-557766551111",
+      "path": "/home/user/code/my-platform",
+      "type": "multi-app",
+      "host": "platform.test", // Main gateway host
+      "ssl_cert_path": "~/.tuti/infrastructure/certs/platform.test.pem",
+      
+      // Namespaced allocations (app_name.port_name)
+      "allocations": {
+        "api.http": 8081,
+        "api.debug": 9004,
+        "dashboard.http": 3001,
+        "postgres": 54321,
+        "redis": 63791
+      },
+      
+      "state": {
+        "status": "running",
+        "started_at": "2025-12-16T09:30:00Z",
+        "pid": 12345,
+        "compose_file": "/home/user/code/my-platform/.tuti/docker/docker-compose.yml"
+      },
+      "last_accessed_at": "2025-12-16T10:05:00Z"
     }
-  ]
+  }
 }
 ```
+
+---
+
+### 4. Configuration Logic & Data Flow
+ 
+ How the CLI uses these files together:
+ 
+ #### A. Initialization (`tuti init`)
+ 1. Read `~/.tuti/settings.json` for defaults (e.g. `stack: laravel`).
+ 2. Scan current directory for "Mode A" or "Mode B" structure.
+ 3. Create `.tuti/config.json` with the Unified Schema.
+ 4. Add/Update entry in `~/.tuti/projects.json` (Registry).
+ 
+ #### B. Runtime (`tuti local:start`)
+ 1. **Load:** Read `.tuti/config.json` from current directory.
+ 2. **Resolve:** Replace variables like `{{SYSTEM_USER}}` from `settings.json` or system env.
+ 3. **Validation:** Ensure ports in `projects.json` don't collide with other running projects.
+ 4. **Execution:** Generate `docker-compose.yml` and run it.
+ 5. **Update:** Update `status: running` and `last_accessed_at` in `~/.tuti/projects.json`.
+ 
+ #### C. Global Management (`tuti projects:list`)
+ 1. Read `~/.tuti/projects.json` ONLY (fast, no disk scanning).
+ 2. Show list with cached status.
+ 3. If user runs `tuti switch <name>`, look up path in Registry and `cd` there (shell alias required).
+ 
 
 ---
 
