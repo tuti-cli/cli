@@ -25,6 +25,7 @@ final readonly class ProjectDirectoryService
 
         while ($current !== '/' && $current !== 'C:\\') {
             if (file_exists($current . '/tuti.json') || is_dir($current . '/.tuti')) {
+
                 return $current;
             }
 
