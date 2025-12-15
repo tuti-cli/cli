@@ -94,12 +94,12 @@ final readonly class ProjectDirectoryService
      */
     public function validate(): bool
     {
-        if (!$this->exists()) {
+        if (! $this->exists()) {
             return false;
         }
 
         foreach ($this->getRequiredDirectories() as $dir) {
-            if (!is_dir($this->getTutiPath($dir))) {
+            if (! is_dir($this->getTutiPath($dir))) {
                 return false;
             }
         }
@@ -114,7 +114,7 @@ final readonly class ProjectDirectoryService
     {
         $tutiPath = $this->getTutiPath();
 
-        if (!is_dir($tutiPath)) {
+        if (! is_dir($tutiPath)) {
             return true;
         }
 
@@ -131,7 +131,7 @@ final readonly class ProjectDirectoryService
         foreach ($directories as $dir) {
             $path = $this->getTutiPath($dir);
 
-            if (!is_dir($path) && !mkdir($path, 0755, true)) {
+            if (! is_dir($path) && ! mkdir($path, 0755, true)) {
                 throw new RuntimeException("Failed to create directory: {$path}");
             }
         }

@@ -24,7 +24,7 @@ interface OrchestratorInterface
     /**
      * Start the project's containers.
      *
-     * @param Project $project The project to start.
+     * @param  Project  $project  The project to start.
      * @return bool True if started successfully, false otherwise.
      */
     public function start(Project $project): bool;
@@ -32,7 +32,7 @@ interface OrchestratorInterface
     /**
      * Stop the project's containers.
      *
-     * @param Project $project The project to stop.
+     * @param  Project  $project  The project to stop.
      * @return bool True if stopped successfully, false otherwise.
      */
     public function stop(Project $project): bool;
@@ -40,8 +40,8 @@ interface OrchestratorInterface
     /**
      * Restart the project or a specific service.
      *
-     * @param Project $project The project context.
-     * @param string|null $service Optional specific service name to restart.
+     * @param  Project  $project  The project context.
+     * @param  string|null  $service  Optional specific service name to restart.
      * @return bool True if restarted successfully.
      */
     public function restart(Project $project, ?string $service = null): bool;
@@ -49,7 +49,7 @@ interface OrchestratorInterface
     /**
      * Get the status of the project's services.
      *
-     * @param Project $project The project to check.
+     * @param  Project  $project  The project to check.
      * @return array<int, array<string, mixed>> List of service statuses.
      */
     public function status(Project $project): array;
@@ -57,10 +57,9 @@ interface OrchestratorInterface
     /**
      * Stream logs for the project or a specific service.
      *
-     * @param Project $project The project context.
-     * @param string|null $service Optional specific service to follow.
-     * @param bool $follow Whether to keep the stream open (follow mode).
-     * @return void
+     * @param  Project  $project  The project context.
+     * @param  string|null  $service  Optional specific service to follow.
+     * @param  bool  $follow  Whether to keep the stream open (follow mode).
      */
     public function logs(Project $project, ?string $service = null, bool $follow = false): void;
 }

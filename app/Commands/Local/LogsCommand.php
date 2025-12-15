@@ -9,6 +9,7 @@ use App\Domain\Project\Project;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use LaravelZero\Framework\Commands\Command;
+use Throwable;
 
 final class LogsCommand extends Command
 {
@@ -31,15 +32,16 @@ final class LogsCommand extends Command
             $service = $this->argument('service');
             $follow = $this->option('follow');
 
-            $this->info("Fetching logs for " . ($service ?? "all services") . "...");
+            $this->info('Fetching logs for ' . ($service ?? 'all services') . '...');
 
             // This will stream output directly to stdout
             $orchestrator->logs($project, $service, $follow);
 
             return self::SUCCESS;
 
-        } catch (\Throwable $e) {
-            $this->error("Failed to retrieve logs: " . $e->getMessage());
+        } catch (Throwable $e) {
+            $this->error('Failed to retrieve logs: ' . $e->getMessage());
+
             return self::FAILURE;
         }
     }

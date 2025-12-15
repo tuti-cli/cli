@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Services\Stack\StackFilesCopierService;
-use Illuminate\Support\ServiceProvider;
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackEnvGeneratorService;
+use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
 use App\Services\Stack\StackStubLoaderService;
+use Illuminate\Support\ServiceProvider;
 
-class StackServiceProvider extends ServiceProvider
+final class StackServiceProvider extends ServiceProvider
 {
     public function register(): void
     {

@@ -24,11 +24,10 @@ use App\Domain\Project\ValueObjects\ProjectConfigurationVO;
 final class Project
 {
     public function __construct(
-        public readonly string                 $path,
+        public readonly string $path,
         public readonly ProjectConfigurationVO $config,
-        private ProjectStateEnum               $state = ProjectStateEnum::UNINITIALIZED
-    ) {
-    }
+        private ProjectStateEnum $state = ProjectStateEnum::UNINITIALIZED
+    ) {}
 
     /**
      * Get the project name

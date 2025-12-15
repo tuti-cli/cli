@@ -11,8 +11,8 @@ final readonly class StackComposeBuilderService
 {
     public function __construct(
         private StackRegistryManagerService $registry,
-        private StackStubLoaderService      $stubLoader,
-        private StackLoaderService          $stackLoader
+        private StackStubLoaderService $stubLoader,
+        private StackLoaderService $stackLoader
     ) {}
 
     /**

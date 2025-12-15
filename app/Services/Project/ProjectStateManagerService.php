@@ -9,6 +9,7 @@ use App\Contracts\StateManagerInterface;
 use App\Domain\Project\Enums\ProjectStateEnum;
 use App\Domain\Project\Project;
 use RuntimeException;
+use Throwable;
 
 /**
  * Class StateManagerService
@@ -27,8 +28,7 @@ final readonly class ProjectStateManagerService implements StateManagerInterface
 {
     public function __construct(
         private OrchestratorInterface $orchestrator
-    ) {
-    }
+    ) {}
 
     /**
      * Transition a project to the STARTING/RUNNING state.
@@ -51,9 +51,9 @@ final readonly class ProjectStateManagerService implements StateManagerInterface
                 $project->setState(ProjectStateEnum::RUNNING);
             } else {
                 $project->setState(ProjectStateEnum::ERROR);
-                throw new RuntimeException("Failed to start project containers.");
+                throw new RuntimeException('Failed to start project containers.');
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $project->setState(ProjectStateEnum::ERROR);
             throw $e;
         }
@@ -65,7 +65,7 @@ final readonly class ProjectStateManagerService implements StateManagerInterface
     public function stop(Project $project): void
     {
         // 1. Validate State
-        if (!$project->getState()->isRunning()) {
+        if (! $project->getState()->isRunning()) {
             // Idempotency: If already stopped, just return
             return;
         }
@@ -81,9 +81,9 @@ final readonly class ProjectStateManagerService implements StateManagerInterface
                 $project->setState(ProjectStateEnum::READY);
             } else {
                 $project->setState(ProjectStateEnum::ERROR);
-                throw new RuntimeException("Failed to stop project containers.");
+                throw new RuntimeException('Failed to stop project containers.');
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $project->setState(ProjectStateEnum::ERROR);
             throw $e;
         }

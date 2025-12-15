@@ -23,8 +23,7 @@ final readonly class ProjectConfigurationVO
         public string $version,
         public array $environments,
         public array $rawConfig = []
-    ) {
-    }
+    ) {}
 
     /**
      * Factory method to create from raw array (e.g. from config.json)

@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Commands\Stack;
 
-use App\Services\Project\ProjectMetadataService;
 use App\Services\Project\ProjectDirectoryService;
+use App\Services\Project\ProjectMetadataService;
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
+
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\select;
@@ -32,11 +33,11 @@ final class InitCommand extends Command
 
     public function handle(
         StackRegistryManagerService $registry,
-        StackLoaderService          $stackLoader,
-        StackComposeBuilderService  $builder,
-        ProjectDirectoryService     $directoryManager,
-        ProjectMetadataService      $metadata,
-        StackFilesCopierService     $copier
+        StackLoaderService $stackLoader,
+        StackComposeBuilderService $builder,
+        ProjectDirectoryService $directoryManager,
+        ProjectMetadataService $metadata,
+        StackFilesCopierService $copier
     ): int {
         $this->displayHeader();
 
@@ -118,16 +119,16 @@ final class InitCommand extends Command
     }
 
     private function initializeProject(
-        ProjectDirectoryService    $directoryManager,
-        StackFilesCopierService    $copier,
-        ProjectMetadataService     $metadata,
+        ProjectDirectoryService $directoryManager,
+        StackFilesCopierService $copier,
+        ProjectMetadataService $metadata,
         StackComposeBuilderService $builder,
-        string                     $stackPath,
-        StackLoaderService         $stackLoader,
-        array                      $manifest,
-        string                     $projectName,
-        string                     $environment,
-        array                      $selectedServices
+        string $stackPath,
+        StackLoaderService $stackLoader,
+        array $manifest,
+        string $projectName,
+        string $environment,
+        array $selectedServices
     ): void {
         spin(
             fn (): bool => $directoryManager->initialize(),
@@ -339,8 +340,8 @@ final class InitCommand extends Command
 
     private function selectServices(
         StackRegistryManagerService $registry,
-        StackLoaderService          $stackLoader,
-        array                       $manifest
+        StackLoaderService $stackLoader,
+        array $manifest
     ): array {
         $preSelected = $this->option('services');
 

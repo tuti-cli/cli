@@ -95,7 +95,7 @@ final readonly class StackFilesCopierService
 
     private function copyDirectory(string $source, string $destination): void
     {
-        if (!is_dir($destination) && ! mkdir($destination, 0755, true)) {
+        if (! is_dir($destination) && ! mkdir($destination, 0755, true)) {
             throw new RuntimeException("Failed to create directory:  {$destination}");
         }
 

@@ -6,7 +6,7 @@ use App\Contracts\OrchestratorInterface;
 use Tests\Feature\Concerns\CreatesLocalProjectEnvironment;
 use Tests\Mocks\FakeDockerOrchestrator;
 
-uses(CreatesLocalProjectEnvironment:: class);
+uses(CreatesLocalProjectEnvironment::class);
 
 beforeEach(function (): void {
     $this->setupLocalProject();

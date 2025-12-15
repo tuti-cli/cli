@@ -29,7 +29,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
         // We assume the docker-compose.yml is in the standard location
         $composePath = $project->path . '/.tuti/docker/docker-compose.yml';
 
-        if (!file_exists($composePath)) {
+        if (! file_exists($composePath)) {
             // In a real app we might throw a specific exception here
             return false;
         }
@@ -77,7 +77,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
         $process = $this->createProcess($project, ['ps', '--format', 'json']);
         $process->run();
 
-        if (!$process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             return [];
         }
 
@@ -85,9 +85,10 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
         $services = [];
 
         // Parse NDJSON (NewLine Delimited JSON) from docker compose v2
-        foreach (explode("\n", trim($output)) as $line) {
-            if (empty($line))
+        foreach (explode("\n", mb_trim($output)) as $line) {
+            if (empty($line)) {
                 continue;
+            }
             $data = json_decode($line, true);
             if ($data) {
                 $services[] = $data;
