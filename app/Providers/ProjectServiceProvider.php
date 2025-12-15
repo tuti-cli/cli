@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Services\Project\ProjectDirectoryService;
+use App\Services\Project\ProjectInitializationService;
 use App\Services\Project\ProjectMetadataService;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,5 +15,6 @@ final class ProjectServiceProvider extends ServiceProvider
     {
         $this->app->singleton(ProjectDirectoryService::class);
         $this->app->singleton(ProjectMetadataService::class);
+        $this->app->singleton(ProjectInitializationService::class);
     }
 }
