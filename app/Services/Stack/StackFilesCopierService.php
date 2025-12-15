@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Stack;
 
-use App\Services\Tuti\TutiDirectoryManagerService;
+use App\Services\Project\ProjectDirectoryManagerService;
 use RuntimeException;
 
 final readonly class StackFilesCopierService
 {
     public function __construct(
-        private TutiDirectoryManagerService $directoryManager
+        private ProjectDirectoryManagerService $directoryManager
     ) {}
 
     public function copyFromStack(string $stackPath): bool

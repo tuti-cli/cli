@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Tuti;
+namespace App\Services\Project;
 
 use RuntimeException;
 
-final readonly class TutiDirectoryManagerService
+final readonly class ProjectDirectoryManagerService
 {
     /**
      * Project root directory
