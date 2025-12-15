@@ -43,7 +43,7 @@ final class InitCommand extends Command
 
         try {
             if ($directoryManager->exists() && ! $this->option('force')) {
-                $this->error('Project already initialized. .tuti directory already exists.');
+                $this->error('Project already initialized. ".tuti/" directory already exists in your project root.');
                 $this->line('Use --force to reinitialize (this will remove existing configuration)');
 
                 return self::FAILURE;
