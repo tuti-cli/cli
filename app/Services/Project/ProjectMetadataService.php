@@ -57,6 +57,25 @@ final readonly class ProjectMetadataService
     }
 
     /**
+     * Create a new project configuration file.
+     *
+     * @param  array<string, mixed>  $config
+     */
+    public function create(array $config): void
+    {
+        $configPath = $this->directoryService->getTutiPath('config. json');
+
+        if (file_exists($configPath)) {
+            throw new RuntimeException('Configuration file already exists');
+        }
+
+        file_put_contents(
+            $configPath,
+            json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
+        );
+    }
+
+    /**
      * Check if project is initialized.
      */
     public function isInitialized(): bool

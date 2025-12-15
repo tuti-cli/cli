@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\Commands\Stack;
 
 use App\Services\Project\ProjectDirectoryService;
-use App\Services\Project\ProjectMetadataService;
-use App\Services\Stack\StackComposeBuilderService;
-use App\Services\Stack\StackFilesCopierService;
+use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
+use Throwable;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
@@ -23,25 +22,24 @@ use function Laravel\Prompts\warning;
 final class InitCommand extends Command
 {
     protected $signature = 'stack:init
-                          {stack?  : Stack name (e.g., laravel or laravel-stack)}
-                          {project-name? : Project name}
+                          {stack?   : Stack name (e.g., laravel or laravel-stack)}
+                          {project-name?  : Project name}
                           {--services=* : Pre-select services}
-                          {--env= :  Environment (dev, staging, production)}
-                          {--force :  Force initialization even if .tuti exists}';
+                          {--env= :   Environment (dev, staging, production)}
+                          {--force :   Force initialization even if .tuti exists}';
 
     protected $description = 'Initialize a new project with selected stack and services';
 
     public function handle(
         StackRegistryManagerService $registry,
         StackLoaderService $stackLoader,
-        StackComposeBuilderService $builder,
         ProjectDirectoryService $directoryManager,
-        ProjectMetadataService $metadata,
-        StackFilesCopierService $copier
+        StackInitializationService $initService
     ): int {
         $this->displayHeader();
 
         try {
+            // 1. Pre-flight checks
             if ($directoryManager->exists() && ! $this->option('force')) {
                 $this->error('Project already initialized. ".tuti/" directory already exists in your project root.');
                 $this->line('Use --force to reinitialize (this will remove existing configuration)');
@@ -54,6 +52,7 @@ final class InitCommand extends Command
                 $directoryManager->clean();
             }
 
+            // 2. Get stack path
             $stackPath = $this->getStackPath();
 
             if ($stackPath === null) {
@@ -62,14 +61,15 @@ final class InitCommand extends Command
                 return self::FAILURE;
             }
 
-            $this->info('Using stack: ' . basename($stackPath));
+            $this->info('Using stack: '. basename($stackPath));
             $this->newLine();
 
+            // 3. Load and display stack info
             $manifest = $stackLoader->load($stackPath);
             $stackLoader->validate($manifest);
-
             $this->displayStackInfo($manifest);
 
+            // 4. Gather user input
             $projectName = $this->getProjectName();
             $environment = $this->getEnvironment();
             $selectedServices = $this->selectServices($registry, $stackLoader, $manifest);
@@ -82,30 +82,32 @@ final class InitCommand extends Command
 
             $selectedServices = array_values(array_unique($selectedServices));
 
+            // 5. Confirm before proceeding
             if (! $this->confirmSelection($projectName, $environment, $selectedServices)) {
                 $this->warn('Initialization cancelled.');
 
-                return self::SUCCESS;
+                return self:: SUCCESS;
             }
 
-            $this->initializeProject(
-                $directoryManager,
-                $copier,
-                $metadata,
-                $builder,
-                $stackPath,
-                $stackLoader,
-                $manifest,
-                $projectName,
-                $environment,
-                $selectedServices
+            // 6. Delegate to business logic service
+            spin(
+                fn (): bool => $initService->initialize(
+                    $stackPath,
+                    $projectName,
+                    $environment,
+                    $selectedServices
+                ),
+                'Initializing project from stack...'
             );
+
+            $this->components->info('✓ Stack initialized');
 
             $this->displayNextSteps($projectName, $environment);
 
             return self::SUCCESS;
-        } catch (RuntimeException $e) {
-            $this->error('Initialization failed:  ' . $e->getMessage());
+
+        } catch (Throwable $e) {
+            $this->error('Initialization failed:   '.$e->getMessage());
 
             if ($directoryManager->exists()) {
                 $this->newLine();
@@ -118,69 +120,14 @@ final class InitCommand extends Command
         }
     }
 
-    private function initializeProject(
-        ProjectDirectoryService $directoryManager,
-        StackFilesCopierService $copier,
-        ProjectMetadataService $metadata,
-        StackComposeBuilderService $builder,
-        string $stackPath,
-        StackLoaderService $stackLoader,
-        array $manifest,
-        string $projectName,
-        string $environment,
-        array $selectedServices
-    ): void {
-        spin(
-            fn (): bool => $directoryManager->initialize(),
-            'Creating .tuti directory structure...'
-        );
-        $this->components->info('✓ .tuti directory created');
-
-        spin(
-            fn (): bool => $copier->copyFromStack($stackPath),
-            'Copying stack files...'
-        );
-        $this->components->info('✓ Stack files copied');
-
-        spin(
-            function () use ($metadata, $stackLoader, $manifest, $projectName, $environment, $selectedServices): bool {
-                $metadata->create([
-                    'stack' => $stackLoader->getStackName($manifest),
-                    'stack_version' => $manifest['version'],
-                    'project_name' => $projectName,
-                    'environment' => $environment,
-                    'services' => $this->groupServices($selectedServices),
-                ]);
-
-                return true;
-            },
-            'Creating project metadata...'
-        );
-        $this->components->info('✓ Project metadata created');
-
-        $this->generateDockerCompose($builder, $stackPath, $selectedServices, $projectName, $environment);
-    }
-
-    private function groupServices(array $selectedServices): array
-    {
-        $grouped = [];
-
-        foreach ($selectedServices as $serviceKey) {
-            [$category, $service] = explode('.', (string) $serviceKey);
-            $grouped[$category][] = $service;
-        }
-
-        return $grouped;
-    }
-
     private function displayHeader(): void
     {
         $this->newLine();
-        $this->line('╔════════════════════════════════════════════════════════════╗');
-        $this->line('║                                                            ║');
-        $this->line('║              🚀 TUTI Stack Initialization                  ║');
-        $this->line('║                                                            ║');
-        $this->line('╚════════════════════════════════════════════════════════════╝');
+        $this->line('╔══════════════════════════════════════════════════════════╗');
+        $this->line('║                                                          ║');
+        $this->line('║              🚀 TUTI Stack Initialization                ║');
+        $this->line('║                                                          ║');
+        $this->line('╚══════════════════════════════════════════════════════════╝');
         $this->newLine();
     }
 
@@ -195,17 +142,17 @@ final class InitCommand extends Command
             ];
 
             foreach ($possiblePaths as $path) {
-                if (is_dir($path) && file_exists($path . '/stack.json')) {
+                if (is_dir($path) && file_exists($path. '/stack.json')) {
                     return $path;
                 }
             }
 
-            if (is_dir($stackArg) && file_exists($stackArg . '/stack.json')) {
+            if (is_dir($stackArg) && file_exists($stackArg.'/stack.json')) {
                 return $stackArg;
             }
 
-            if (! $this->option('no-interaction')) {
-                warning("Stack not found:  {$stackArg}");
+            if (!  $this->option('no-interaction')) {
+                warning("Stack not found:   {$stackArg}");
             }
         }
 
@@ -221,7 +168,7 @@ final class InitCommand extends Command
         $availableStacks = $this->discoverStacks();
 
         if ($availableStacks === []) {
-            $this->warn('No stacks found in:  ' . stack_path());
+            $this->warn('No stacks found in:   '. stack_path());
 
             $customPath = text(
                 label: 'Enter stack name or path:',
@@ -235,7 +182,7 @@ final class InitCommand extends Command
             ];
 
             foreach ($possiblePaths as $path) {
-                if (is_dir($path) && file_exists($path . '/stack.json')) {
+                if (is_dir($path) && file_exists($path.'/stack.json')) {
                     return $path;
                 }
             }
@@ -260,23 +207,26 @@ final class InitCommand extends Command
         return $availableStacks[array_search($selected, array_keys($options), true)];
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function discoverStacks(): array
     {
         $stacksDir = stack_path();
 
-        if (! is_dir($stacksDir)) {
+        if (!  is_dir($stacksDir)) {
             return [];
         }
 
         $stacks = [];
-        $directories = glob($stacksDir . '/*-stack', GLOB_ONLYDIR);
+        $directories = glob($stacksDir.'/*-stack', GLOB_ONLYDIR);
 
         if ($directories === false) {
             return [];
         }
 
         foreach ($directories as $dir) {
-            if (file_exists($dir . '/stack.json')) {
+            if (file_exists($dir.'/stack.json')) {
                 $stacks[] = $dir;
             }
         }
@@ -284,12 +234,15 @@ final class InitCommand extends Command
         return $stacks;
     }
 
+    /**
+     * @param  array<string, mixed>  $manifest
+     */
     private function displayStackInfo(array $manifest): void
     {
-        $this->info('Stack:  ' . $manifest['name']);
-        $this->line('  Type: ' . $manifest['type']);
-        $this->line('  Framework: ' . $manifest['framework']);
-        $this->line('  Description: ' . $manifest['description']);
+        $this->info('Stack:   '.$manifest['name']);
+        $this->line('  Type: '.$manifest['type']);
+        $this->line('  Framework: '.$manifest['framework']);
+        $this->line('  Description: '.$manifest['description']);
         $this->newLine();
     }
 
@@ -338,6 +291,10 @@ final class InitCommand extends Command
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $manifest
+     * @return array<int, string>
+     */
     private function selectServices(
         StackRegistryManagerService $registry,
         StackLoaderService $stackLoader,
@@ -345,7 +302,7 @@ final class InitCommand extends Command
     ): array {
         $preSelected = $this->option('services');
 
-        if (! empty($preSelected)) {
+        if (!  empty($preSelected)) {
             return $preSelected;
         }
 
@@ -414,6 +371,9 @@ final class InitCommand extends Command
         return array_merge($defaults, $selectedOptional);
     }
 
+    /**
+     * @param  array<int, string>  $selectedServices
+     */
     private function confirmSelection(string $projectName, string $environment, array $selectedServices): bool
     {
         if ($this->option('no-interaction')) {
@@ -421,9 +381,9 @@ final class InitCommand extends Command
         }
 
         $this->info('Configuration Summary:');
-        $this->line("  Project:  {$projectName}");
+        $this->line("  Project:   {$projectName}");
         $this->line("  Environment: {$environment}");
-        $this->line('  Services: ');
+        $this->line('  Services:  ');
 
         foreach ($selectedServices as $service) {
             $this->line("    - {$service}");
@@ -434,35 +394,6 @@ final class InitCommand extends Command
         return confirm('Proceed with initialization?', true);
     }
 
-    private function generateDockerCompose(
-        StackComposeBuilderService $builder,
-        string $stackPath,
-        array $selectedServices,
-        string $projectName,
-        string $environment
-    ): void {
-        spin(
-            function () use ($builder, $stackPath, $selectedServices, $projectName, $environment): bool {
-                $projectConfig = ['PROJECT_NAME' => $projectName];
-
-                $compose = $builder->buildWithStack(
-                    $stackPath,
-                    $selectedServices,
-                    $projectConfig,
-                    $environment
-                );
-
-                $outputPath = tuti_path('docker-compose.yml');
-                $builder->writeToFile($compose, $outputPath);
-
-                return true;
-            },
-            'Generating docker-compose.yml...'
-        );
-
-        $this->components->info('✓ docker-compose.yml generated');
-    }
-
     private function displayNextSteps(string $projectName, string $environment): void
     {
         $this->newLine();
@@ -470,15 +401,15 @@ final class InitCommand extends Command
         $this->newLine();
 
         $this->info('Next Steps:');
-        $this->line('  1.Review stack configuration in .tuti/');
-        $this->line('  2.Generate environment variables');
-        $this->line('  3.Deploy the stack: ');
+        $this->line('  1. Review stack configuration in .tuti/');
+        $this->line('  2. Configure environment variables');
+        $this->line('  3. Start your environment: ');
         $this->newLine();
 
         if ($environment === 'dev') {
-            $this->line('     docker compose -f .tuti/docker-compose.yml up -d');
+            $this->line('     tuti local: start');
         } else {
-            $this->line("     docker stack deploy -c .tuti/docker-compose.yml {$projectName}_{$environment}");
+            $this->line("     tuti deploy {$environment}");
         }
 
         $this->newLine();

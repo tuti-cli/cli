@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackEnvGeneratorService;
 use App\Services\Stack\StackFilesCopierService;
+use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
 use App\Services\Stack\StackStubLoaderService;
@@ -22,5 +23,6 @@ final class StackServiceProvider extends ServiceProvider
         $this->app->singleton(StackEnvGeneratorService::class);
         $this->app->singleton(StackComposeBuilderService::class);
         $this->app->singleton(StackFilesCopierService::class);
+        $this->app->singleton(StackInitializationService::class);
     }
 }
