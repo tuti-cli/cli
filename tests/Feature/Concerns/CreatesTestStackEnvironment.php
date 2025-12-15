@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Concerns;
 
-use App\Services\Project\ProjectDirectoryManagerService;
+use App\Services\Project\ProjectDirectoryService;
 use App\Services\Stack\StackFilesCopierService;
 
 trait CreatesTestStackEnvironment
@@ -15,7 +15,7 @@ trait CreatesTestStackEnvironment
 
     protected array $tempDirs = [];
 
-    protected ProjectDirectoryManagerService $manager;
+    protected ProjectDirectoryService $manager;
 
     protected StackFilesCopierService $copier;
 
@@ -30,7 +30,7 @@ trait CreatesTestStackEnvironment
 
         $this->createDefaultStackStructure();
 
-        $this->manager = new ProjectDirectoryManagerService($this->testDir);
+        $this->manager = new ProjectDirectoryService($this->testDir);
         $this->manager->initialize();
 
         $this->copier = new StackFilesCopierService($this->manager);
@@ -159,7 +159,7 @@ trait CreatesTestStackEnvironment
         mkdir($isolatedTestDir);
         $this->tempDirs[] = $isolatedTestDir;
 
-        $isolatedManager = new ProjectDirectoryManagerService($isolatedTestDir);
+        $isolatedManager = new ProjectDirectoryService($isolatedTestDir);
         $isolatedManager->initialize();
 
         $isolatedCopier = new StackFilesCopierService($isolatedManager);

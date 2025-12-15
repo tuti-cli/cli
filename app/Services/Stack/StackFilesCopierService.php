@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Stack;
 
-use App\Services\Project\ProjectDirectoryManagerService;
+use App\Services\Project\ProjectDirectoryService;
 use RuntimeException;
 
 final readonly class StackFilesCopierService
 {
     public function __construct(
-        private ProjectDirectoryManagerService $directoryManager
+        private ProjectDirectoryService $directoryManager
     ) {}
 
     public function copyFromStack(string $stackPath): bool

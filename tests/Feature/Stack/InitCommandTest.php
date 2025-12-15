@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Services\Project\ProjectDirectoryManagerService;
+use App\Services\Project\ProjectDirectoryService;
 
 beforeEach(function (): void {
     $this->testDir = sys_get_temp_dir() . '/tuti-feature-test-' . uniqid();
@@ -12,7 +12,7 @@ beforeEach(function (): void {
 
 afterEach(function (): void {
     if (is_dir($this->testDir)) {
-        $manager = new ProjectDirectoryManagerService($this->testDir);
+        $manager = new ProjectDirectoryService($this->testDir);
         $manager->clean();
         @rmdir($this->testDir);
     }

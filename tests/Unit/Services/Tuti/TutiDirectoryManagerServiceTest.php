@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Services\Project\ProjectDirectoryManagerService;
+use App\Services\Project\ProjectDirectoryService;
 
 beforeEach(function (): void {
     $this->testDir = sys_get_temp_dir() . '/tuti-test-' . uniqid();
     mkdir($this->testDir);
 
-    $this->manager = new ProjectDirectoryManagerService($this->testDir);
+    $this->manager = new ProjectDirectoryService($this->testDir);
 });
 
 afterEach(function (): void {

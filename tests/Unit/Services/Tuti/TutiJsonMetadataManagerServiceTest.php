@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-use App\Services\Project\ProjectMetadataManagerService;
-use App\Services\Project\ProjectDirectoryManagerService;
+use App\Services\Project\ProjectMetadataService;
+use App\Services\Project\ProjectDirectoryService;
 
 beforeEach(function (): void {
     $this->testDir = sys_get_temp_dir() . '/tuti-test-' . uniqid();
     mkdir($this->testDir);
 
-    $this->manager = new ProjectDirectoryManagerService($this->testDir);
+    $this->manager = new ProjectDirectoryService($this->testDir);
 
     if (! is_dir($this->manager->getTutiPath())) {
         mkdir($this->manager->getTutiPath(), 0755, true);
     }
 
-    $this->metadata = new ProjectMetadataManagerService($this->manager);
+    $this->metadata = new ProjectMetadataService($this->manager);
 });
 
 afterEach(function (): void {
