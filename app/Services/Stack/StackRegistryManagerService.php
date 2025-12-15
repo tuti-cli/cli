@@ -10,7 +10,7 @@ use RuntimeException;
  * ServiceRegistryJsonReader is responsible for reading and parsing
  * the service registry.json file.
  */
-final readonly class StackJsonRegistryManagerService
+final readonly class StackRegistryManagerService
 {
     private array $registry;
 

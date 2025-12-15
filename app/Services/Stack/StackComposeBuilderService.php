@@ -10,9 +10,9 @@ use Symfony\Component\Yaml\Yaml;
 final readonly class StackComposeBuilderService
 {
     public function __construct(
-        private StackJsonRegistryManagerService $registry,
-        private StackStubLoaderService $stubLoader,
-        private StackLoaderService $stackLoader
+        private StackRegistryManagerService $registry,
+        private StackStubLoaderService      $stubLoader,
+        private StackLoaderService          $stackLoader
     ) {}
 
     /**

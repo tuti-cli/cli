@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Docker;
 
 use Symfony\Component\Process\Process;
+use function App\Services\get_project_name;
 
 final readonly class DockerService
 {

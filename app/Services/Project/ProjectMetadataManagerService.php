@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Tuti;
+namespace App\Services\Project;
 
 use RuntimeException;
 
-final readonly class TutiJsonMetadataManagerService
+final readonly class ProjectMetadataManagerService
 {
     public function __construct(
-        private TutiDirectoryManagerService $directoryManager
+        private ProjectDirectoryManagerService $directoryManager
     ) {}
 
     /**

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
-use App\Services\Tuti\TutiDirectoryManagerService;
-use App\Services\Tuti\TutiJsonMetadataManagerService;
+use App\Services\Project\ProjectMetadataManagerService;
+use App\Services\Project\ProjectDirectoryManagerService;
 use Exception;
 use LaravelZero\Framework\Commands\Command;
 
@@ -16,8 +16,8 @@ final class TestTutiDirectoryCommand extends Command
     protected $description = 'Test . tuti directory management';
 
     public function handle(
-        TutiDirectoryManagerService $directoryManager,
-        TutiJsonMetadataManagerService $metadata
+        ProjectDirectoryManagerService $directoryManager,
+        ProjectMetadataManagerService  $metadata
     ): int {
         $this->info('🔍 Testing .tuti Directory Management.. .');
         $this->newLine();
@@ -27,8 +27,8 @@ final class TestTutiDirectoryCommand extends Command
 
         try {
             // Create new instance for test directory
-            $testManager = new TutiDirectoryManagerService($testDir);
-            $testMetadata = new TutiJsonMetadataManagerService($testManager);
+            $testManager = new ProjectDirectoryManagerService($testDir);
+            $testMetadata = new ProjectMetadataManagerService($testManager);
 
             // Test 1: Check non-existence
             $this->info('Test 1: Check . tuti does not exist initially');
@@ -178,7 +178,7 @@ final class TestTutiDirectoryCommand extends Command
             // Cleanup
             if ($this->option('clean') && is_dir($testDir)) {
                 $this->info('🧹 Cleaning up test directory...');
-                $testManager = new TutiDirectoryManagerService($testDir);
+                $testManager = new ProjectDirectoryManagerService($testDir);
                 $testManager->clean();
                 rmdir($testDir);
                 $this->line('✓ Cleaned up');

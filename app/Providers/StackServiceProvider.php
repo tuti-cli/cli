@@ -9,14 +9,14 @@ use Illuminate\Support\ServiceProvider;
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackEnvGeneratorService;
 use App\Services\Stack\StackLoaderService;
-use App\Services\Stack\StackJsonRegistryManagerService;
+use App\Services\Stack\StackRegistryManagerService;
 use App\Services\Stack\StackStubLoaderService;
 
 class StackServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(StackJsonRegistryManagerService::class);
+        $this->app->singleton(StackRegistryManagerService::class);
         $this->app->singleton(StackStubLoaderService::class);
         $this->app->singleton(StackLoaderService::class);
         $this->app->singleton(StackEnvGeneratorService::class);
