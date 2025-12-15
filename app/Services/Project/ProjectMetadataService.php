@@ -20,6 +20,7 @@ final readonly class ProjectMetadataService
 {
     public function __construct(
         private ProjectDirectoryService $directoryService,
+        private JsonFileService $jsonService,
         private LoggerInterface $logger
     ) {
     }
@@ -31,22 +32,20 @@ final readonly class ProjectMetadataService
     {
         $path = $this->directoryService->getTutiPath('config.json');
 
-        if (!file_exists($path)) {
+        if (!$this->jsonService->exists($path)) {
             throw new RuntimeException("Configuration file not found at: {$path}");
         }
 
-        $content = file_get_contents($path);
-        if ($content === false) {
-            throw new RuntimeException("Failed to read config file at {$path}");
-        }
-
-        // Resolve any template variables in the content
-        $content = $this->resolveVariables($content);
+        // Define variables for substitution
+        $variables = [
+            '{{SYSTEM_USER}}' => $this->getSystemUser(),
+            '{{PROJECT_ROOT}}' => $this->directoryService->getProjectRoot(),
+        ];
 
         try {
-            $data = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
-            throw new RuntimeException('Invalid JSON in config file: ' . $e->getMessage());
+            $data = $this->jsonService->read($path, $variables);
+        } catch (RuntimeException $e) {
+            throw new RuntimeException("Failed to load project config: " . $e->getMessage());
         }
 
         return ProjectConfigurationVO::fromArray($data);
@@ -61,34 +60,11 @@ final readonly class ProjectMetadataService
     {
         $configPath = $this->directoryService->getTutiPath('config.json');
 
-        if (file_exists($configPath)) {
+        if ($this->jsonService->exists($configPath)) {
             throw new RuntimeException('Configuration file already exists');
         }
 
-        file_put_contents(
-            $configPath,
-            json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
-        );
-    }
-
-    /**
-     * Resolve template variables in the configuration content.
-     */
-    private function resolveVariables(string $content): string
-    {
-        $variables = [
-            'SYSTEM_USER' => $this->getSystemUser(),
-            'PROJECT_ROOT' => $this->directoryService->getProjectRoot(),
-            // Add more variables as needed
-        ];
-
-        // Replace both {{ VAR }} and {{VAR}} formats
-        foreach ($variables as $key => $value) {
-            $content = str_replace("{{ {$key} }}", $value, $content);
-            $content = str_replace("{{{$key}}}", $value, $content);
-        }
-
-        return $content;
+        $this->jsonService->write($configPath, $config);
     }
 
     /**
@@ -104,6 +80,12 @@ final readonly class ProjectMetadataService
 
         if (isset($_SERVER['USER']) && $_SERVER['USER'] !== '') {
             return $_SERVER['USER'];
+        }
+
+        // Fallback for Windows if USER env var is missing
+        $user = getenv('USERNAME');
+        if ($user !== false && $user !== '') {
+            return $user;
         }
 
         return 'tuti';
