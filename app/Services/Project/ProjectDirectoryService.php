@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Project;
 
+use Illuminate\Support\Facades\File;
 use RuntimeException;
 
 /**
@@ -103,6 +104,20 @@ final readonly class ProjectDirectoryService
         }
 
         return true;
+    }
+
+    /**
+     * Clean/remove .tuti directory (use with caution)
+     */
+    public function clean(): bool
+    {
+        $tutiPath = $this->getTutiPath();
+
+        if (!is_dir($tutiPath)) {
+            return true;
+        }
+
+        return File::deleteDirectory($tutiPath);
     }
 
     /**
