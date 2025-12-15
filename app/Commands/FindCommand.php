@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 use function Laravel\Prompts\suggest;
 
-final class TutiFindCommand extends Command
+final class FindCommand extends Command
 {
     protected $signature = 'find';
 
