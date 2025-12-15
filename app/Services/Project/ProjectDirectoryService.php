@@ -14,22 +14,28 @@ use RuntimeException;
  * It strictly adheres to the convention that a project is defined by a
  * `.tuti` directory or `tuti.json` file.
  */
-final readonly class ProjectDirectoryService
+final class ProjectDirectoryService
 {
+    private ?string $initializationRoot = null;
+
+    public function setInitializationRoot(?string $path): void
+    {
+        $this->initializationRoot = $path;
+    }
+
     /**
      * Get the root directory of the current project.
      */
     public function getProjectRoot(): string
     {
-        $current = getcwd();
+        if ($this->initializationRoot !== null) {
+            return $this->initializationRoot;
+        }
 
-        while ($current !== '/' && $current !== 'C:\\') {
-            if (file_exists($current . '/tuti.json') || is_dir($current . '/.tuti')) {
+        $root = base_path();
 
-                return $current;
-            }
-
-            $current = dirname($current);
+        if (file_exists($root . '/tuti.json') || is_dir($root . '/.tuti')) {
+            return $root;
         }
 
         throw new RuntimeException("Not in a Tuti project. Run 'tuti init' first.");
@@ -108,17 +114,44 @@ final readonly class ProjectDirectoryService
     }
 
     /**
-     * Clean/remove .tuti directory (use with caution)
+     * Clean/remove the .tuti directory
      */
-    public function clean(): bool
+    public function clean(): void
     {
-        $tutiPath = $this->getTutiPath();
+        $tutiPath = $this->getTutiDir();
 
-        if (! is_dir($tutiPath)) {
-            return true;
+        if (!  is_dir($tutiPath)) {
+            return;
         }
 
-        return File::deleteDirectory($tutiPath);
+        $this->removeDirectory($tutiPath);
+    }
+
+    /**
+     * Recursively remove a directory
+     */
+    private function removeDirectory(string $dir): void
+    {
+        if (!  is_dir($dir)) {
+            return;
+        }
+
+        $items = scandir($dir);
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $path = $dir.'/'.$item;
+
+            if (is_dir($path)) {
+                $this->removeDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+
+        rmdir($dir);
     }
 
     /**

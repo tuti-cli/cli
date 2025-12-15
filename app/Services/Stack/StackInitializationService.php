@@ -45,6 +45,8 @@ final readonly class StackInitializationService
         string $environment,
         array $selectedServices
     ): bool {
+        $this->directoryService->setInitializationRoot(base_path());
+
         // 1. Load and validate stack manifest
         $manifest = $this->stackLoader->load($stackPath);
         $this->stackLoader->validate($manifest);

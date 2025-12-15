@@ -21,11 +21,13 @@ use function Laravel\Prompts\warning;
 
 final class InitCommand extends Command
 {
+    // already defined in base Command class
+    // {--env= :   Environment (dev, staging, production)}
+    // {--no-interaction :   Run in non-interactive mode}
     protected $signature = 'stack:init
                           {stack?   : Stack name (e.g., laravel or laravel-stack)}
                           {project-name?  : Project name}
                           {--services=* : Pre-select services}
-                          {--env= :   Environment (dev, staging, production)}
                           {--force :   Force initialization even if .tuti exists}';
 
     protected $description = 'Initialize a new project with selected stack and services';
