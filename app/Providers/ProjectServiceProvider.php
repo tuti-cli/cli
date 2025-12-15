@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace App\Providers;
 
 
-use App\Services\Project\ProjectDirectoryManagerService;
-use App\Services\Project\ProjectMetadataManagerService;
+use App\Services\Project\ProjectDirectoryService;
+use App\Services\Project\ProjectMetadataService;
 use Illuminate\Support\ServiceProvider;
 
 class ProjectServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(ProjectDirectoryManagerService::class);
-        $this->app->singleton(ProjectMetadataManagerService::class);
+        $this->app->singleton(ProjectDirectoryService::class);
+        $this->app->singleton(ProjectMetadataService::class);
     }
 }
