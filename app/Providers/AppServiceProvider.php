@@ -21,7 +21,8 @@ final class AppServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        //
+        $this->app->bind(OrchestratorInterface::class, DockerComposeOrchestrator::class);
+        $this->app->bind(StateManagerInterface::class, ProjectStateManagerService::class);
     }
 
     /**
@@ -30,8 +31,5 @@ final class AppServiceProvider extends ServiceProvider
     private function configureDates(): void
     {
         Date::use(CarbonImmutable::class);
-
-        $this->app->bind(OrchestratorInterface::class, DockerComposeOrchestrator::class);
-        $this->app->bind(StateManagerInterface::class, ProjectStateManagerService::class);
     }
 }

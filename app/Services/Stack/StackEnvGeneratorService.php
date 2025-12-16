@@ -22,15 +22,11 @@ final readonly class StackEnvGeneratorService
         array $projectConfig,
         string $outputPath
     ): void {
-        if (! file_exists($templatePath)) {
+        if (!\Illuminate\Support\Facades\File::exists($templatePath)) {
             throw new RuntimeException("Template not found: {$templatePath}");
         }
 
-        $content = file_get_contents($templatePath);
-
-        if ($content === false) {
-            throw new RuntimeException("Failed to read template:  {$templatePath}");
-        }
+        $content = \Illuminate\Support\Facades\File::get($templatePath);
 
         // Replace project-specific variables
         $content = $this->replaceProjectVariables($content, $projectConfig);
@@ -39,10 +35,10 @@ final readonly class StackEnvGeneratorService
         $content = $this->generateSecureValues($content);
 
         // Write to output
-        $result = file_put_contents($outputPath, $content);
+        $result = \Illuminate\Support\Facades\File::put($outputPath, $content);
 
         if ($result === false) {
-            throw new RuntimeException("Failed to write . env file: {$outputPath}");
+            throw new RuntimeException("Failed to write .env file: {$outputPath}");
         }
     }
 
@@ -51,7 +47,7 @@ final readonly class StackEnvGeneratorService
      */
     public function exists(string $path): bool
     {
-        return file_exists($path);
+        return \Illuminate\Support\Facades\File::exists($path);
     }
 
     /**

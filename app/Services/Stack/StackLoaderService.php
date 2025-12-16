@@ -12,8 +12,13 @@ use RuntimeException;
  */
 final readonly class StackLoaderService
 {
+    public function __construct(
+        private \App\Services\Storage\JsonFileService $jsonService
+    ) {
+    }
+
     /**
-     * Load a stack manifest from a stack. json file
+     * Load a stack manifest from a stack.json file
      *
      * @param  string  $stackPath  Path to the stack directory
      * @return array<string, mixed>
@@ -22,22 +27,11 @@ final readonly class StackLoaderService
     {
         $manifestPath = mb_rtrim($stackPath, '/') . '/stack.json';
 
-        if (! file_exists($manifestPath)) {
-            throw new RuntimeException("Stack manifest not found at: {$manifestPath}");
+        try {
+            return $this->jsonService->read($manifestPath);
+        } catch (\RuntimeException $e) {
+            throw new RuntimeException("Failed to load stack manifest at {$manifestPath}: " . $e->getMessage());
         }
-
-        $content = file_get_contents($manifestPath);
-
-        if ($content === false) {
-            throw new RuntimeException("Failed to read stack manifest: {$manifestPath}");
-        }
-
-        /** @var array<string, mixed> */
-        return json_decode(
-            json: $content,
-            associative: true,
-            flags: JSON_THROW_ON_ERROR
-        );
     }
 
     /**
@@ -129,7 +123,7 @@ final readonly class StackLoaderService
         $required = ['name', 'version', 'type', 'framework'];
 
         foreach ($required as $field) {
-            if (! isset($stackManifest[$field])) {
+            if (!isset($stackManifest[$field])) {
                 throw new RuntimeException("Stack manifest missing required field: {$field}");
             }
         }
