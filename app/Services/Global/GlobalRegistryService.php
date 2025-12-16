@@ -15,7 +15,7 @@ use Illuminate\Support\Arr;
  */
 final readonly class GlobalRegistryService
 {
-    private const FILE_NAME = 'projects.json';
+    private const string FILE_NAME = 'projects.json';
 
     public function __construct(
         private JsonFileService $jsonService

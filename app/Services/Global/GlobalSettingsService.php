@@ -14,7 +14,7 @@ use Illuminate\Support\Arr;
  */
 final readonly class GlobalSettingsService
 {
-    private const FILE_NAME = 'settings.json';
+    private const string FILE_NAME = 'settings.json';
 
     public function __construct(
         private JsonFileService $jsonService
