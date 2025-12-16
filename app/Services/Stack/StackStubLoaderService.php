@@ -17,15 +17,11 @@ final readonly class StackStubLoaderService
      */
     public function load(string $stubPath, array $replacements = []): string
     {
-        if (! file_exists($stubPath)) {
+        if (!\Illuminate\Support\Facades\File::exists($stubPath)) {
             throw new RuntimeException("Stub file not found: {$stubPath}");
         }
 
-        $content = file_get_contents($stubPath);
-
-        if ($content === false) {
-            throw new RuntimeException("Failed to read stub file: {$stubPath}");
-        }
+        $content = \Illuminate\Support\Facades\File::get($stubPath);
 
         return $this->replacePlaceholders($content, $replacements);
     }
