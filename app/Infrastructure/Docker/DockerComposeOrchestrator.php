@@ -86,7 +86,10 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
 
         // Parse NDJSON (NewLine Delimited JSON) from docker compose v2
         foreach (explode("\n", mb_trim($output)) as $line) {
-            if (empty($line)) {
+            if ($line === '') {
+                continue;
+            }
+            if ($line === '0') {
                 continue;
             }
             $data = json_decode($line, true);
@@ -117,7 +120,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
         // Timeout must be null for streaming logs
         $process->setTimeout(null);
 
-        $process->run(function ($type, $buffer) {
+        $process->run(function ($type, $buffer): void {
             echo $buffer;
         });
     }

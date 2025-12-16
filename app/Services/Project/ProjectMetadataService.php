@@ -19,8 +19,7 @@ final readonly class ProjectMetadataService
 {
     public function __construct(
         private ProjectDirectoryService $directoryService,
-        private JsonFileService $jsonService,
-        private LoggerInterface $logger
+        private JsonFileService $jsonService
     ) {}
 
     /**
@@ -43,7 +42,7 @@ final readonly class ProjectMetadataService
         try {
             $data = $this->jsonService->read($path, $variables);
         } catch (RuntimeException $e) {
-            throw new RuntimeException('Failed to load project config: ' . $e->getMessage());
+            throw new RuntimeException('Failed to load project config: ' . $e->getMessage(), $e->getCode(), $e);
         }
 
         return ProjectConfigurationVO::fromArray($data);

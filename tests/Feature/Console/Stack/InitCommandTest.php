@@ -43,11 +43,11 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    if (isset($this->testDir) && is_dir($this->testDir)) {
+    if (property_exists($this, 'testDir') && $this->testDir !== null && is_dir($this->testDir)) {
         File::deleteDirectory($this->testDir);
     }
 
-    if (isset($this->stackDir) && is_dir($this->stackDir)) {
+    if (property_exists($this, 'stackDir') && $this->stackDir !== null && is_dir($this->stackDir)) {
         File::deleteDirectory($this->stackDir);
     }
 });

@@ -13,7 +13,7 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    if (isset($this->testDir) && is_dir($this->testDir)) {
+    if (property_exists($this, 'testDir') && $this->testDir !== null && is_dir($this->testDir)) {
         File::deleteDirectory($this->testDir);
     }
 });

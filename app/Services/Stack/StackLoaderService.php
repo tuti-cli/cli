@@ -29,7 +29,7 @@ final readonly class StackLoaderService
         try {
             return $this->jsonService->read($manifestPath);
         } catch (RuntimeException $e) {
-            throw new RuntimeException("Failed to load stack manifest at {$manifestPath}: " . $e->getMessage());
+            throw new RuntimeException("Failed to load stack manifest at {$manifestPath}: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
 

@@ -33,7 +33,7 @@ final class StartCommand extends Command
             $project = new Project($root, $config);
 
             // 2. Delegate to Business Logic (State Manager)
-            $this->task("Starting containers for {$project->getName()}", function () use ($stateManager, $project) {
+            $this->task("Starting containers for {$project->getName()}", function () use ($stateManager, $project): true {
                 $stateManager->start($project);
 
                 return true;

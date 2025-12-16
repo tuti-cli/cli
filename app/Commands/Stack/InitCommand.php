@@ -103,7 +103,7 @@ final class InitCommand extends Command
 
             $this->components->info('✓ Stack initialized');
 
-            $this->displayNextSteps($projectName, $environment);
+            $this->displayNextSteps($environment);
 
             return self::SUCCESS;
 
@@ -395,7 +395,7 @@ final class InitCommand extends Command
         return confirm('Proceed with initialization?', true);
     }
 
-    private function displayNextSteps(string $projectName, string $environment): void
+    private function displayNextSteps(string $environment): void
     {
         $this->newLine();
         $this->components->info('✅ Stack initialized successfully!');
