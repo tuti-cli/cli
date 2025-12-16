@@ -17,7 +17,7 @@ final readonly class StackStubLoaderService
      */
     public function load(string $stubPath, array $replacements = []): string
     {
-        if (!\Illuminate\Support\Facades\File::exists($stubPath)) {
+        if (! \Illuminate\Support\Facades\File::exists($stubPath)) {
             throw new RuntimeException("Stub file not found: {$stubPath}");
         }
 

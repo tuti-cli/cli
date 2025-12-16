@@ -11,8 +11,8 @@ use App\Services\Stack\StackLoaderService;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function (): void {
-    $this->testDir = sys_get_temp_dir().'/tuti-stack-init-test-'.uniqid();
-    $this->stackDir = sys_get_temp_dir().'/tuti-test-stack-'.uniqid();
+    $this->testDir = sys_get_temp_dir() . '/tuti-stack-init-test-' . uniqid();
+    $this->stackDir = sys_get_temp_dir() . '/tuti-test-stack-' . uniqid();
 
     mkdir($this->testDir);
     mkdir($this->stackDir);
@@ -39,10 +39,10 @@ beforeEach(function (): void {
         ],
     ];
 
-    file_put_contents($this->stackDir.'/stack.json', json_encode($manifest));
+    file_put_contents($this->stackDir . '/stack.json', json_encode($manifest));
 
-    mkdir($this->stackDir.'/docker');
-    file_put_contents($this->stackDir.'/docker/Dockerfile', 'FROM php:8.4');
+    mkdir($this->stackDir . '/docker');
+    file_put_contents($this->stackDir . '/docker/Dockerfile', 'FROM php:8.4');
 
     $this->directoryService = new ProjectDirectoryService();
     $this->metadataService = new ProjectMetadataService($this->directoryService);
@@ -155,9 +155,9 @@ it('validates directory structure after initialization', function (): void {
 
 it('throws exception if stack manifest is invalid', function (): void {
     // Create invalid stack
-    $invalidStack = $this->stackDir.'-invalid';
+    $invalidStack = $this->stackDir . '-invalid';
     mkdir($invalidStack);
-    file_put_contents($invalidStack. '/stack.json', '{"invalid": true}');
+    file_put_contents($invalidStack . '/stack.json', '{"invalid": true}');
 
     expect(fn () => $this->initService->initialize(
         $invalidStack,

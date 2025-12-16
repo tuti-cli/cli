@@ -22,7 +22,7 @@ final readonly class StackEnvGeneratorService
         array $projectConfig,
         string $outputPath
     ): void {
-        if (!\Illuminate\Support\Facades\File::exists($templatePath)) {
+        if (! \Illuminate\Support\Facades\File::exists($templatePath)) {
             throw new RuntimeException("Template not found: {$templatePath}");
         }
 

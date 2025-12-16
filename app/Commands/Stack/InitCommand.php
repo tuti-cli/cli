@@ -9,7 +9,6 @@ use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
 use LaravelZero\Framework\Commands\Command;
-use RuntimeException;
 use Throwable;
 
 use function Laravel\Prompts\confirm;
@@ -63,7 +62,7 @@ final class InitCommand extends Command
                 return self::FAILURE;
             }
 
-            $this->info('Using stack: '. basename($stackPath));
+            $this->info('Using stack: ' . basename($stackPath));
             $this->newLine();
 
             // 3. Load and display stack info
@@ -88,7 +87,7 @@ final class InitCommand extends Command
             if (! $this->confirmSelection($projectName, $environment, $selectedServices)) {
                 $this->warn('Initialization cancelled.');
 
-                return self:: SUCCESS;
+                return self::SUCCESS;
             }
 
             // 6. Delegate to business logic service
@@ -109,7 +108,7 @@ final class InitCommand extends Command
             return self::SUCCESS;
 
         } catch (Throwable $e) {
-            $this->error('Initialization failed:   '.$e->getMessage());
+            $this->error('Initialization failed:   ' . $e->getMessage());
 
             if ($directoryManager->exists()) {
                 $this->newLine();
@@ -144,16 +143,16 @@ final class InitCommand extends Command
             ];
 
             foreach ($possiblePaths as $path) {
-                if (is_dir($path) && file_exists($path. '/stack.json')) {
+                if (is_dir($path) && file_exists($path . '/stack.json')) {
                     return $path;
                 }
             }
 
-            if (is_dir($stackArg) && file_exists($stackArg.'/stack.json')) {
+            if (is_dir($stackArg) && file_exists($stackArg . '/stack.json')) {
                 return $stackArg;
             }
 
-            if (!  $this->option('no-interaction')) {
+            if (! $this->option('no-interaction')) {
                 warning("Stack not found:   {$stackArg}");
             }
         }
@@ -170,7 +169,7 @@ final class InitCommand extends Command
         $availableStacks = $this->discoverStacks();
 
         if ($availableStacks === []) {
-            $this->warn('No stacks found in:   '. stack_path());
+            $this->warn('No stacks found in:   ' . stack_path());
 
             $customPath = text(
                 label: 'Enter stack name or path:',
@@ -184,7 +183,7 @@ final class InitCommand extends Command
             ];
 
             foreach ($possiblePaths as $path) {
-                if (is_dir($path) && file_exists($path.'/stack.json')) {
+                if (is_dir($path) && file_exists($path . '/stack.json')) {
                     return $path;
                 }
             }
@@ -216,19 +215,19 @@ final class InitCommand extends Command
     {
         $stacksDir = stack_path();
 
-        if (!  is_dir($stacksDir)) {
+        if (! is_dir($stacksDir)) {
             return [];
         }
 
         $stacks = [];
-        $directories = glob($stacksDir.'/*-stack', GLOB_ONLYDIR);
+        $directories = glob($stacksDir . '/*-stack', GLOB_ONLYDIR);
 
         if ($directories === false) {
             return [];
         }
 
         foreach ($directories as $dir) {
-            if (file_exists($dir.'/stack.json')) {
+            if (file_exists($dir . '/stack.json')) {
                 $stacks[] = $dir;
             }
         }
@@ -241,10 +240,10 @@ final class InitCommand extends Command
      */
     private function displayStackInfo(array $manifest): void
     {
-        $this->info('Stack:   '.$manifest['name']);
-        $this->line('  Type: '.$manifest['type']);
-        $this->line('  Framework: '.$manifest['framework']);
-        $this->line('  Description: '.$manifest['description']);
+        $this->info('Stack:   ' . $manifest['name']);
+        $this->line('  Type: ' . $manifest['type']);
+        $this->line('  Framework: ' . $manifest['framework']);
+        $this->line('  Description: ' . $manifest['description']);
         $this->newLine();
     }
 
@@ -304,7 +303,7 @@ final class InitCommand extends Command
     ): array {
         $preSelected = $this->option('services');
 
-        if (!  empty($preSelected)) {
+        if (! empty($preSelected)) {
             return $preSelected;
         }
 

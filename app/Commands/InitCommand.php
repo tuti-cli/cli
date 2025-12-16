@@ -32,11 +32,11 @@ final class InitCommand extends Command
 
         try {
             // 1. Pre-flight checks
-            if ($directoryService->exists() && !$this->option('force')) {
+            if ($directoryService->exists() && ! $this->option('force')) {
                 $this->error('Project already initialized. ".tuti/" directory already exists.');
                 $this->line('Use --force to reinitialize (this will remove existing configuration)');
 
-                return self:: FAILURE;
+                return self::FAILURE;
             }
 
             if ($directoryService->exists() && $this->option('force')) {
@@ -61,7 +61,7 @@ final class InitCommand extends Command
             return self::SUCCESS;
 
         } catch (Throwable $e) {
-            $this->error('Initialization failed: '.$e->getMessage());
+            $this->error('Initialization failed: ' . $e->getMessage());
 
             if ($directoryService->exists()) {
                 $this->newLine();
@@ -100,7 +100,7 @@ final class InitCommand extends Command
         return text(
             label: 'Project name:',
             default: basename(getcwd()),
-            required:  true,
+            required: true,
             validate: fn (string $value): ?string => preg_match('/^[a-z0-9_-]+$/', $value)
                 ? null
                 : 'Project name must contain only lowercase letters, numbers, hyphens, and underscores'

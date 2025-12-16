@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Global;
 
 use App\Services\Storage\JsonFileService;
-use Illuminate\Support\Arr;
 
 /**
  * Service GlobalRegistryService
@@ -19,8 +18,7 @@ final readonly class GlobalRegistryService
 
     public function __construct(
         private JsonFileService $jsonService
-    ) {
-    }
+    ) {}
 
     /**
      * Register or update a project in the registry.
@@ -30,7 +28,7 @@ final readonly class GlobalRegistryService
         $registry = $this->load();
 
         // Ensure 'projects' key exists
-        if (!isset($registry['projects'])) {
+        if (! isset($registry['projects'])) {
             $registry['projects'] = [];
         }
 
@@ -70,7 +68,7 @@ final readonly class GlobalRegistryService
     {
         $path = $this->getRegistryPath();
 
-        if (!$this->jsonService->exists($path)) {
+        if (! $this->jsonService->exists($path)) {
             return ['projects' => []];
         }
 
@@ -92,7 +90,7 @@ final readonly class GlobalRegistryService
     {
         $home = getenv('HOME');
 
-        if (!$home && isset($_SERVER['HOMEDRIVE'], $_SERVER['HOMEPATH'])) {
+        if (! $home && isset($_SERVER['HOMEDRIVE'], $_SERVER['HOMEPATH'])) {
             $home = $_SERVER['HOMEDRIVE'] . $_SERVER['HOMEPATH'];
         }
 
