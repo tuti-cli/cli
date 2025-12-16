@@ -120,7 +120,7 @@ final class ProjectDirectoryService
     {
         $tutiPath = $this->getTutiDir();
 
-        if (!  is_dir($tutiPath)) {
+        if (! is_dir($tutiPath)) {
             return;
         }
 
@@ -132,7 +132,7 @@ final class ProjectDirectoryService
      */
     private function removeDirectory(string $dir): void
     {
-        if (!  is_dir($dir)) {
+        if (! is_dir($dir)) {
             return;
         }
 
@@ -142,7 +142,7 @@ final class ProjectDirectoryService
                 continue;
             }
 
-            $path = $dir.'/'.$item;
+            $path = $dir . '/' . $item;
 
             if (is_dir($path)) {
                 $this->removeDirectory($path);

@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\File;
 use Mockery\MockInterface;
 
 beforeEach(function (): void {
-    $this->testDir = sys_get_temp_dir().'/tuti-stack-init-feature-'. uniqid();
+    $this->testDir = sys_get_temp_dir() . '/tuti-stack-init-feature-' . uniqid();
     mkdir($this->testDir);
     chdir($this->testDir);
 
-    $this->stackDir = sys_get_temp_dir().'/test-stack-'.uniqid();
+    $this->stackDir = sys_get_temp_dir() . '/test-stack-' . uniqid();
 
     mkdir($this->stackDir);
 
@@ -36,10 +36,10 @@ beforeEach(function (): void {
         ],
     ];
 
-    file_put_contents($this->stackDir.'/stack.json', json_encode($manifest));
+    file_put_contents($this->stackDir . '/stack.json', json_encode($manifest));
 
-    mkdir($this->stackDir. '/docker');
-    file_put_contents($this->stackDir. '/docker/Dockerfile', 'FROM php:8.4');
+    mkdir($this->stackDir . '/docker');
+    file_put_contents($this->stackDir . '/docker/Dockerfile', 'FROM php:8.4');
 });
 
 afterEach(function (): void {

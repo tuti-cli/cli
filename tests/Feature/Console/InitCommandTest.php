@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\File;
 use Mockery\MockInterface;
 
 beforeEach(function (): void {
-    $this->testDir = sys_get_temp_dir().'/tuti-init-test-'.uniqid();
+    $this->testDir = sys_get_temp_dir() . '/tuti-init-test-' . uniqid();
     mkdir($this->testDir);
     chdir($this->testDir);
 });

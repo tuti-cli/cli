@@ -68,7 +68,7 @@ final readonly class ProjectInitializationService
                     'services' => [],
                     'host' => "{$projectName}.test",
                     'user' => '{{SYSTEM_USER}}',
-                ]
+                ],
             ],
             'initialized_at' => now()->toIso8601String(),
         ];

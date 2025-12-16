@@ -8,7 +8,7 @@ use App\Services\Project\ProjectMetadataService;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function (): void {
-    $this->testDir = sys_get_temp_dir().'/tuti-init-service-test-'.uniqid();
+    $this->testDir = sys_get_temp_dir() . '/tuti-init-service-test-' . uniqid();
     mkdir($this->testDir);
     chdir($this->testDir);
 

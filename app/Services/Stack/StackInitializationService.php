@@ -35,7 +35,6 @@ final readonly class StackInitializationService
      * Initialize a project from a stack template.
      *
      * @param  array<int, string>  $selectedServices
-     * @return bool
      *
      * @throws RuntimeException If initialization fails
      */

@@ -18,20 +18,21 @@ final class JsonFileService
     /**
      * Read and decode a JSON file.
      *
-     * @param string $path Absolute path to the JSON file.
-     * @param array<string, string> $variables Optional variables to substitute (e.g. ['{{USER}}' => 'me']).
+     * @param  string  $path  Absolute path to the JSON file.
+     * @param  array<string, string>  $variables  Optional variables to substitute (e.g. ['{{USER}}' => 'me']).
      * @return array<string, mixed>
+     *
      * @throws RuntimeException If file not found or invalid JSON.
      */
     public function read(string $path, array $variables = []): array
     {
-        if (!File::exists($path)) {
+        if (! File::exists($path)) {
             throw new RuntimeException("File not found: {$path}");
         }
 
         $content = File::get($path);
 
-        if (!empty($variables)) {
+        if (! empty($variables)) {
             $content = $this->resolveVariables($content, $variables);
         }
 
@@ -45,14 +46,14 @@ final class JsonFileService
     /**
      * Write data to a JSON file.
      *
-     * @param string $path Absolute path to the file.
-     * @param array<string, mixed> $data Data to encode and write.
+     * @param  string  $path  Absolute path to the file.
+     * @param  array<string, mixed>  $data  Data to encode and write.
      */
     public function write(string $path, array $data): void
     {
         $dir = dirname($path);
 
-        if (!File::isDirectory($dir)) {
+        if (! File::isDirectory($dir)) {
             File::makeDirectory($dir, 0755, true);
         }
 

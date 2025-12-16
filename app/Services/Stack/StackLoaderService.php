@@ -14,8 +14,7 @@ final readonly class StackLoaderService
 {
     public function __construct(
         private \App\Services\Storage\JsonFileService $jsonService
-    ) {
-    }
+    ) {}
 
     /**
      * Load a stack manifest from a stack.json file
@@ -29,7 +28,7 @@ final readonly class StackLoaderService
 
         try {
             return $this->jsonService->read($manifestPath);
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             throw new RuntimeException("Failed to load stack manifest at {$manifestPath}: " . $e->getMessage());
         }
     }
@@ -123,7 +122,7 @@ final readonly class StackLoaderService
         $required = ['name', 'version', 'type', 'framework'];
 
         foreach ($required as $field) {
-            if (!isset($stackManifest[$field])) {
+            if (! isset($stackManifest[$field])) {
                 throw new RuntimeException("Stack manifest missing required field: {$field}");
             }
         }

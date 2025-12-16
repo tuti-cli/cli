@@ -18,14 +18,13 @@ final readonly class GlobalSettingsService
 
     public function __construct(
         private JsonFileService $jsonService
-    ) {
-    }
+    ) {}
 
     /**
      * Get a setting value using dot notation.
      *
-     * @param string $key Dot notation key (e.g. 'user.name') or null for all.
-     * @param mixed $default Default value if key missing.
+     * @param  string  $key  Dot notation key (e.g. 'user.name') or null for all.
+     * @param  mixed  $default  Default value if key missing.
      */
     public function get(?string $key = null, mixed $default = null): mixed
     {
@@ -57,7 +56,7 @@ final readonly class GlobalSettingsService
     {
         $path = $this->getSettingsPath();
 
-        if (!$this->jsonService->exists($path)) {
+        if (! $this->jsonService->exists($path)) {
             return [];
         }
 
@@ -81,7 +80,7 @@ final readonly class GlobalSettingsService
     {
         $home = getenv('HOME');
 
-        if (!$home && isset($_SERVER['HOMEDRIVE'], $_SERVER['HOMEPATH'])) {
+        if (! $home && isset($_SERVER['HOMEDRIVE'], $_SERVER['HOMEPATH'])) {
             $home = $_SERVER['HOMEDRIVE'] . $_SERVER['HOMEPATH'];
         }
 

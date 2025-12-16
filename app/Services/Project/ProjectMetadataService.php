@@ -6,8 +6,6 @@ namespace App\Services\Project;
 
 use App\Domain\Project\ValueObjects\ProjectConfigurationVO;
 use App\Services\Storage\JsonFileService;
-use Illuminate\Support\Facades\Log;
-use JsonException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -23,8 +21,7 @@ final readonly class ProjectMetadataService
         private ProjectDirectoryService $directoryService,
         private JsonFileService $jsonService,
         private LoggerInterface $logger
-    ) {
-    }
+    ) {}
 
     /**
      * Load the current project configuration.
@@ -33,7 +30,7 @@ final readonly class ProjectMetadataService
     {
         $path = $this->directoryService->getTutiPath('config.json');
 
-        if (!$this->jsonService->exists($path)) {
+        if (! $this->jsonService->exists($path)) {
             throw new RuntimeException("Configuration file not found at: {$path}");
         }
 
@@ -46,7 +43,7 @@ final readonly class ProjectMetadataService
         try {
             $data = $this->jsonService->read($path, $variables);
         } catch (RuntimeException $e) {
-            throw new RuntimeException("Failed to load project config: " . $e->getMessage());
+            throw new RuntimeException('Failed to load project config: ' . $e->getMessage());
         }
 
         return ProjectConfigurationVO::fromArray($data);
@@ -66,6 +63,20 @@ final readonly class ProjectMetadataService
         }
 
         $this->jsonService->write($configPath, $config);
+    }
+
+    /**
+     * Check if project is initialized.
+     */
+    public function isInitialized(): bool
+    {
+        try {
+            $this->directoryService->getProjectRoot();
+
+            return true;
+        } catch (RuntimeException) {
+            return false;
+        }
     }
 
     /**
@@ -90,19 +101,5 @@ final readonly class ProjectMetadataService
         }
 
         return 'tuti';
-    }
-
-    /**
-     * Check if project is initialized.
-     */
-    public function isInitialized(): bool
-    {
-        try {
-            $this->directoryService->getProjectRoot();
-
-            return true;
-        } catch (RuntimeException) {
-            return false;
-        }
     }
 }

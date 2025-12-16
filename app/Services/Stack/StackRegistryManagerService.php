@@ -30,7 +30,7 @@ final readonly class StackRegistryManagerService
 
         try {
             $this->registry = $this->jsonService->read($fullPath);
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             throw new RuntimeException("Failed to read service registry: {$fullPath}. " . $e->getMessage());
         }
     }
