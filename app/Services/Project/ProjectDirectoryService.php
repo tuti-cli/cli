@@ -138,10 +138,12 @@ final class ProjectDirectoryService
 
         $items = scandir($dir);
         foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
+            if ($item === '.') {
                 continue;
             }
-
+            if ($item === '..') {
+                continue;
+            }
             $path = $dir . '/' . $item;
 
             if (is_dir($path)) {

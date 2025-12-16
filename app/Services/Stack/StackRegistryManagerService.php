@@ -12,10 +12,7 @@ use RuntimeException;
  */
 final readonly class StackRegistryManagerService
 {
-    private array $registry;
-
     public function __construct(
-        private \App\Services\Storage\JsonFileService $jsonService,
         private string $registryPath = 'services/registry.json'
     ) {
         $this->loadRegistry();
@@ -26,12 +23,6 @@ final readonly class StackRegistryManagerService
      */
     private function loadRegistry(): void
     {
-        $fullPath = stub_path($this->registryPath);
-
-        try {
-            $this->registry = $this->jsonService->read($fullPath);
-        } catch (RuntimeException $e) {
-            throw new RuntimeException("Failed to read service registry: {$fullPath}. " . $e->getMessage());
-        }
+        stub_path($this->registryPath);
     }
 }

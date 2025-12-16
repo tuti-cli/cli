@@ -31,7 +31,7 @@ final class StatusCommand extends Command
 
             $services = $orchestrator->status($project);
 
-            if (empty($services)) {
+            if ($services === []) {
                 $this->warn('No running services found.');
 
                 return self::SUCCESS;

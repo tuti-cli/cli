@@ -36,7 +36,7 @@ final class StopCommand extends Command
                 return self::SUCCESS;
             }
 
-            $this->task('Stopping containers', function () use ($stateManager, $project) {
+            $this->task('Stopping containers', function () use ($stateManager, $project): true {
                 $stateManager->stop($project);
 
                 return true;

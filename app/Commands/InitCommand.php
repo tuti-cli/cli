@@ -56,7 +56,7 @@ final class InitCommand extends Command
 
             $this->components->info('✓ Project initialized');
 
-            $this->displayNextSteps($projectName);
+            $this->displayNextSteps();
 
             return self::SUCCESS;
 
@@ -130,18 +130,16 @@ final class InitCommand extends Command
         );
     }
 
-    private function displayNextSteps(string $projectName): void
+    private function displayNextSteps(): void
     {
         $this->newLine();
         $this->components->info('✅ Project initialized successfully!');
         $this->newLine();
-
         $this->info('Next Steps:');
         $this->line('  1. Place your docker-compose.yml in .tuti/docker/');
         $this->line('  2.Start your environment:  tuti local: start');
         $this->line('  3. Or use a stack template: tuti stack:init laravel');
         $this->newLine();
-
         $this->comment('📂 Project structure created: ');
         $this->line('  .tuti/');
         $this->line('  ├── config.json      ✓');

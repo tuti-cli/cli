@@ -32,14 +32,14 @@ final class JsonFileService
 
         $content = File::get($path);
 
-        if (! empty($variables)) {
+        if ($variables !== []) {
             $content = $this->resolveVariables($content, $variables);
         }
 
         try {
             return json_decode($content, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw new RuntimeException("Invalid JSON in {$path}: " . $e->getMessage());
+            throw new RuntimeException("Invalid JSON in {$path}: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -61,7 +61,7 @@ final class JsonFileService
             $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
             File::put($path, $json);
         } catch (JsonException $e) {
-            throw new RuntimeException("Failed to encode JSON for {$path}: " . $e->getMessage());
+            throw new RuntimeException("Failed to encode JSON for {$path}: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
