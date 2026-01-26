@@ -131,8 +131,29 @@ make up
 make shell
 php tuti --version
 
-# Build PHAR
+# Build PHAR (required first)
 make build-phar
+make test-phar
+
+# Build binaries for all platforms (uses phpacker)
+make build-binary
+
+# Or build for specific platform
+make build-binary-linux
+make build-binary-mac
+
+# Test binary locally (no PHP required!)
+make test-binary
+
+# Install locally to test
+make install-local
+~/.tuti/bin/tuti --version
+
+# Release (after testing passes)
+make version-bump V=0.1.0
+git add . && git commit -m "Release v0.1.0"
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin main --tags
 ```
 
 ---
