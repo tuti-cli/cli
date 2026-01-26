@@ -1,30 +1,52 @@
 # Release Process
 
-## Quick Release
+## Local Testing (Before Release)
 
 ```bash
-make version-bump V=0.1.0
+# Build PHAR first
 make build-phar
 make test-phar
-git add . && git commit -m "Release v0.1.0"
-git tag -a v0.1.0 -m "Release v0.1.0"
+
+# Build binaries for all platforms (uses phpacker)
+make build-binary
+
+# Test binary locally (no PHP required!)
+make test-binary
+
+# Install locally and test
+make install-local
+~/.tuti/bin/tuti --version
+~/.tuti/bin/tuti install
+```
+
+## Binary Output Structure
+
+phpacker creates binaries in `builds/build/`:
+```
+builds/build/
+├── linux/
+│   ├── linux-x64
+│   └── linux-arm64
+├── mac/
+│   ├── mac-x64
+│   └── mac-arm64
+└── windows/
+    └── windows-x64.exe
+```
+
+## Release
+
+```bash
+make version-bump V=0.1.1
+git add . && git commit -m "Release v0.1.1"
+git tag -a v0.1.1 -m "Release v0.1.1"
 git push origin main --tags
 ```
 
 GitHub Actions will automatically:
 1. Build PHAR
-2. Create self-contained binaries for Linux and macOS (with embedded PHP)
+2. Build binaries with phpacker for all platforms
 3. Create GitHub Release with all files
-
-## What Gets Built
-
-| File | Platform | PHP Required |
-|------|----------|--------------|
-| `tuti-linux-amd64` | Linux x64 | No |
-| `tuti-linux-arm64` | Linux ARM64 | No |
-| `tuti-darwin-amd64` | macOS Intel | No |
-| `tuti-darwin-arm64` | macOS Apple Silicon | No |
-| `tuti.phar` | Any | Yes |
 
 ## Verify Release
 
@@ -34,6 +56,6 @@ GitHub Actions will automatically:
 ## Rollback
 
 ```bash
-git tag -d v0.1.0
-git push origin :refs/tags/v0.1.0
+git tag -d v0.1.1
+git push origin :refs/tags/v0.1.1
 ```

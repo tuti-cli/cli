@@ -22,7 +22,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default installation paths
-INSTALL_DIR="${TUTI_INSTALL_DIR:-$HOME/.local/bin}"
+INSTALL_DIR="${TUTI_INSTALL_DIR:-$HOME/.tuti/bin}"
 GLOBAL_TUTI_DIR="${HOME}/.tuti"
 GITHUB_REPO="tuti-cli/cli"
 BINARY_NAME="tuti"
@@ -78,6 +78,7 @@ detect_platform() {
 # Get the binary filename for the current platform
 get_binary_name() {
     local platform=$(detect_platform)
+    # phpacker creates: tuti-linux-amd64, tuti-linux-arm64, tuti-darwin-amd64, tuti-darwin-arm64
     echo "tuti-${platform}"
 }
 
@@ -299,7 +300,7 @@ main() {
             echo "  --help, -h         Show this help message"
             echo ""
             echo "Environment variables:"
-            echo "  TUTI_INSTALL_DIR   Installation directory (default: ~/.local/bin)"
+            echo "  TUTI_INSTALL_DIR   Installation directory (default: ~/.tuti/bin)"
             echo ""
             exit 0
             ;;

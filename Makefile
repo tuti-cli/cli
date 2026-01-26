@@ -1,4 +1,4 @@
-.PHONY: help build up down restart shell logs clean test lint install build-phar test-phar release version-bump check-build
+.PHONY: help build up down restart shell logs clean test lint install build-phar build-binary build-binary-linux build-binary-mac test-phar test-binary install-local release version-bump check-build
 
 .DEFAULT_GOAL := help
 
@@ -16,6 +16,27 @@ DOCKER_EXEC_IT := docker compose exec app
 # Version (read from config/app.php)
 VERSION ?= $(shell grep "'version'" config/app.php | sed "s/.*'\([^']*\)'.*/\1/")
 
+# Platform detection
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+ifeq ($(UNAME_S),Linux)
+    PLATFORM_OS := linux
+else ifeq ($(UNAME_S),Darwin)
+    PLATFORM_OS := darwin
+else
+    PLATFORM_OS := unknown
+endif
+ifeq ($(UNAME_M),x86_64)
+    PLATFORM_ARCH := amd64
+else ifeq ($(UNAME_M),aarch64)
+    PLATFORM_ARCH := arm64
+else ifeq ($(UNAME_M),arm64)
+    PLATFORM_ARCH := arm64
+else
+    PLATFORM_ARCH := unknown
+endif
+PLATFORM := $(PLATFORM_OS)-$(PLATFORM_ARCH)
+
 help: ## Show this help message
 	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(RESET)"
 	@echo "$(CYAN)              Tuti CLI - Development Commands              $(RESET)"
@@ -28,11 +49,10 @@ help: ## Show this help message
 	@grep -E '^(build|up|down|restart|shell|logs|clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(YELLOW)Build & Release:$(RESET)"
-	@grep -E '^(build-phar|test-phar|check-build|release|version-bump):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^(build-phar|build-binary|test-phar|test-binary|install-local|check-build|release|version-bump):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(YELLOW)Current version: $(GREEN)$(VERSION)$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)Note:$(RESET) Native binaries are built automatically by GitHub Actions on release"
+	@echo "$(YELLOW)Platform: $(GREEN)$(PLATFORM)$(RESET)"
 
 # =============================================================================
 # Docker
@@ -83,27 +103,86 @@ lint: ## Run linter (Pint)
 
 build-phar: ## Build PHAR using Laravel Zero app:build
 	@echo "$(CYAN)Building PHAR v$(VERSION)...$(RESET)"
-	@$(DOCKER_EXEC) php -d phar.readonly=0 tuti app:build tuti --build-version=$(VERSION)
-	@echo "$(GREEN)✓ PHAR built: builds/tuti$(RESET)"
-	@echo "$(YELLOW)Note: Native binaries will be built by GitHub Actions on release$(RESET)"
+	@$(DOCKER_EXEC) php -d phar.readonly=0 tuti app:build tuti.phar --build-version=$(VERSION)
+	@echo "$(GREEN)✓ PHAR built: builds/tuti.phar$(RESET)"
 
-test-phar: ## Test PHAR file
+build-binary: build-phar ## Build self-contained binaries using phpacker
+	@echo "$(CYAN)Building binaries for all platforms...$(RESET)"
+	@$(DOCKER_EXEC) ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all
+	@echo "$(GREEN)✓ Binaries built in builds/build/$(RESET)"
+	@ls -la builds/build/ 2>/dev/null || true
+
+build-binary-linux: build-phar ## Build binary for Linux only
+	@echo "$(CYAN)Building Linux binaries...$(RESET)"
+	@$(DOCKER_EXEC) ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 linux
+	@echo "$(GREEN)✓ Linux binaries built$(RESET)"
+
+build-binary-mac: build-phar ## Build binary for macOS only
+	@echo "$(CYAN)Building macOS binaries...$(RESET)"
+	@$(DOCKER_EXEC) ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 mac
+	@echo "$(GREEN)✓ macOS binaries built$(RESET)"
+
+test-phar: ## Test PHAR file (requires PHP)
 	@echo "$(CYAN)Testing PHAR...$(RESET)"
-	@if [ -f "builds/tuti" ]; then \
-		$(DOCKER_EXEC) php builds/tuti --version && \
-		$(DOCKER_EXEC) php builds/tuti list | head -20 && \
+	@if [ -f "builds/tuti.phar" ]; then \
+		$(DOCKER_EXEC) php builds/tuti.phar --version && \
+		$(DOCKER_EXEC) php builds/tuti.phar list | head -20 && \
 		echo "$(GREEN)✓ PHAR works!$(RESET)"; \
 	else \
-		echo "$(RED)✗ PHAR not found at builds/tuti$(RESET)"; \
-		echo "$(YELLOW)Checking for tuti.phar...$(RESET)"; \
-		if [ -f "builds/tuti.phar" ]; then \
-			$(DOCKER_EXEC) php builds/tuti.phar --version && \
-			echo "$(GREEN)✓ tuti.phar works!$(RESET)"; \
+		echo "$(RED)✗ PHAR not found at builds/tuti.phar$(RESET)"; \
+		exit 1; \
+	fi
+
+test-binary: ## Test self-contained binary (no PHP required!)
+	@echo "$(CYAN)Testing binary for $(PLATFORM)...$(RESET)"
+	@if [ "$(PLATFORM_OS)" = "linux" ]; then \
+		ARCH="$(PLATFORM_ARCH)"; \
+		if [ "$$ARCH" = "amd64" ]; then ARCH="x64"; fi; \
+		if [ -f "builds/build/linux/linux-$$ARCH" ]; then \
+			./builds/build/linux/linux-$$ARCH --version && \
+			echo "$(GREEN)✓ Binary works without PHP!$(RESET)"; \
 		else \
-			echo "$(RED)✗ No PHAR found. Run 'make build-phar' first$(RESET)"; \
+			echo "$(RED)✗ Binary not found at builds/build/linux/linux-$$ARCH$(RESET)"; \
+			echo "$(YELLOW)Run 'make build-binary' first$(RESET)"; \
 			exit 1; \
 		fi \
+	elif [ "$(PLATFORM_OS)" = "darwin" ]; then \
+		ARCH="$(PLATFORM_ARCH)"; \
+		if [ "$$ARCH" = "amd64" ]; then ARCH="x64"; fi; \
+		if [ -f "builds/build/mac/mac-$$ARCH" ]; then \
+			./builds/build/mac/mac-$$ARCH --version && \
+			echo "$(GREEN)✓ Binary works without PHP!$(RESET)"; \
+		else \
+			echo "$(RED)✗ Binary not found at builds/build/mac/mac-$$ARCH$(RESET)"; \
+			echo "$(YELLOW)Run 'make build-binary' first$(RESET)"; \
+			exit 1; \
+		fi \
+	else \
+		echo "$(RED)Unsupported platform for testing$(RESET)"; \
+		exit 1; \
 	fi
+
+install-local: build-binary ## Build and install binary locally to ~/.tuti/bin
+	@echo "$(CYAN)Installing binary to ~/.tuti/bin...$(RESET)"
+	@mkdir -p $(HOME)/.tuti/bin
+	@if [ "$(PLATFORM_OS)" = "linux" ]; then \
+		ARCH="$(PLATFORM_ARCH)"; \
+		if [ "$$ARCH" = "amd64" ]; then ARCH="x64"; fi; \
+		cp builds/build/linux/linux-$$ARCH $(HOME)/.tuti/bin/tuti; \
+	elif [ "$(PLATFORM_OS)" = "darwin" ]; then \
+		ARCH="$(PLATFORM_ARCH)"; \
+		if [ "$$ARCH" = "amd64" ]; then ARCH="x64"; fi; \
+		cp builds/build/mac/mac-$$ARCH $(HOME)/.tuti/bin/tuti; \
+	fi
+	@chmod +x $(HOME)/.tuti/bin/tuti
+	@echo "$(GREEN)✓ Installed to ~/.tuti/bin/tuti$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Add to PATH (if not already):$(RESET)"
+	@echo "  echo 'export PATH=\"\$$PATH:\$$HOME/.tuti/bin\"' >> ~/.bashrc"
+	@echo "  source ~/.bashrc"
+	@echo ""
+	@echo "$(YELLOW)Test:$(RESET)"
+	@echo "  ~/.tuti/bin/tuti --version"
 
 test-all: test build-phar test-phar ## Run all tests including PHAR
 
