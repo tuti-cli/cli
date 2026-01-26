@@ -1,0 +1,236 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  PHP_VERSION: '8.4'
+
+jobs:
+  build-phar:
+    name: Build PHAR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, zip, phar, sodium
+          tools: composer:v2
+          ini-values: phar.readonly=0
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Build PHAR
+        run: php tuti app:build tuti --build-version=${{ steps.version.outputs.VERSION }}
+
+      - name: Test PHAR
+        run: |
+          php builds/tuti --version
+          php builds/tuti list | head -20
+
+      - name: Upload PHAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phar
+          path: builds/tuti
+
+  build-linux:
+    name: Build Linux Binary
+    needs: build-phar
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download PHAR
+        uses: actions/download-artifact@v4
+        with:
+          name: phar
+          path: builds/
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, zip, phar, sodium
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction
+
+      - name: Build Linux ${{ matrix.arch }} binary
+        run: |
+          chmod +x builds/tuti
+          mkdir -p builds/bin
+          # Use static-php-cli or phpacker to compile
+          php vendor/bin/phpacker build builds/tuti \
+            --output=builds/bin/tuti-linux-${{ matrix.arch }} \
+            --os=linux \
+            --arch=${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} || \
+          cp builds/tuti builds/bin/tuti-linux-${{ matrix.arch }}
+
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-linux-${{ matrix.arch }}
+          path: builds/bin/tuti-linux-${{ matrix.arch }}
+
+  build-macos:
+    name: Build macOS Binary
+    needs: build-phar
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download PHAR
+        uses: actions/download-artifact@v4
+        with:
+          name: phar
+          path: builds/
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, zip, phar, sodium
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction
+
+      - name: Build macOS ${{ matrix.arch }} binary
+        run: |
+          chmod +x builds/tuti
+          mkdir -p builds/bin
+          php vendor/bin/phpacker build builds/tuti \
+            --output=builds/bin/tuti-darwin-${{ matrix.arch }} \
+            --os=darwin \
+            --arch=${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} || \
+          cp builds/tuti builds/bin/tuti-darwin-${{ matrix.arch }}
+
+      - name: Upload macOS binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-darwin-${{ matrix.arch }}
+          path: builds/bin/tuti-darwin-${{ matrix.arch }}
+
+  release:
+    name: Create Release
+    needs: [build-phar, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          # PHAR
+          cp artifacts/phar/tuti release/tuti.phar
+          chmod +x release/tuti.phar
+          # Linux binaries
+          cp artifacts/binary-linux-amd64/tuti-linux-amd64 release/ 2>/dev/null || true
+          cp artifacts/binary-linux-arm64/tuti-linux-arm64 release/ 2>/dev/null || true
+          # macOS binaries
+          cp artifacts/binary-darwin-amd64/tuti-darwin-amd64 release/ 2>/dev/null || true
+          cp artifacts/binary-darwin-arm64/tuti-darwin-arm64 release/ 2>/dev/null || true
+          # Make all executable
+          chmod +x release/* 2>/dev/null || true
+          # List files
+          ls -la release/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*
+            scripts/install.sh
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          generate_release_notes: true
+          body: |
+            ## 📦 Installation
+
+            ### Quick Install (Recommended)
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/tuti-cli/tuti-cli/main/scripts/install.sh | bash
+            ```
+
+            ### Manual Install
+
+            **Linux (x64):**
+            ```bash
+            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-linux-amd64
+            chmod +x tuti-linux-amd64
+            sudo mv tuti-linux-amd64 /usr/local/bin/tuti
+            tuti install
+            ```
+
+            **Linux (ARM64):**
+            ```bash
+            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-linux-arm64
+            chmod +x tuti-linux-arm64
+            sudo mv tuti-linux-arm64 /usr/local/bin/tuti
+            tuti install
+            ```
+
+            **macOS (Intel):**
+            ```bash
+            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-darwin-amd64
+            chmod +x tuti-darwin-amd64
+            sudo mv tuti-darwin-amd64 /usr/local/bin/tuti
+            tuti install
+            ```
+
+            **macOS (Apple Silicon):**
+            ```bash
+            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-darwin-arm64
+            chmod +x tuti-darwin-arm64
+            sudo mv tuti-darwin-arm64 /usr/local/bin/tuti
+            tuti install
+            ```
+
+            **PHAR (requires PHP 8.4+):**
+            ```bash
+            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti.phar
+            chmod +x tuti.phar
+            sudo mv tuti.phar /usr/local/bin/tuti
+            tuti install
+            ```
+
+            ### Verify Installation
+            ```bash
+            tuti --version
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

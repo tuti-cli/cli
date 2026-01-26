@@ -1,0 +1,19 @@
+{
+    "version": "1.0.0",
+    "description": "Tuti-CLI Stack Registry - Available stack templates",
+    "stacks": {
+        "laravel": {
+            "name": "Laravel Stack",
+            "description": "Production-ready Laravel application stack with Docker",
+            "repository": "https://github.com/tuti-cli/laravel-stack.git",
+            "branch": "main",
+            "framework": "laravel",
+            "type": "php",
+            "min_cli_version": "1.0.0"
+        }
+    },
+    "defaults": {
+        "cache_ttl": 86400,
+        "auto_update": true
+    }
+}

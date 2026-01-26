@@ -3,7 +3,7 @@
 
 # Tuti CLI
 
-**An environment management and deployment tool that gets out of your way. ****
+**An environment management and deployment tool that gets out of your way.**
 
 From local Docker to production deployment. One command. Zero config.
 
@@ -13,31 +13,72 @@ From local Docker to production deployment. One command. Zero config.
 
 ## ⚡️ Installation
 
-### Via Composer [work in progress]
-```bash
-composer global require tuti-cli/cli
-```
-
-### Download Binary (Recommended) [work in progress]
-Single executable with zero dependencies - no PHP installation required:
+### Quick Install (Recommended)
 
 ```bash
 # macOS / Linux / Windows + WSL2
-curl -sS https://tuti-cli.dev/install | bash
-
-# Or download directly
-wget https://github.com/tuti-cli/cli/releases/latest/download/tuti
-chmod +x tuti
-sudo mv tuti /usr/local/bin/
+curl -fsSL https://raw.githubusercontent.com/tuti-cli/tuti-cli/main/scripts/install.sh | bash
 ```
+
+This will automatically:
+- Detect your OS and architecture
+- Download the appropriate binary (or PHAR as fallback)
+- Set up the global `~/.tuti` directory
+- Add tuti to your PATH
+
+### Manual Installation
+
+**Linux (x64):**
+```bash
+wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti-linux-amd64
+chmod +x tuti-linux-amd64
+sudo mv tuti-linux-amd64 /usr/local/bin/tuti
+tuti install
+```
+
+**Linux (ARM64):**
+```bash
+wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti-linux-arm64
+chmod +x tuti-linux-arm64
+sudo mv tuti-linux-arm64 /usr/local/bin/tuti
+tuti install
+```
+
+**macOS (Intel):**
+```bash
+wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti-darwin-amd64
+chmod +x tuti-darwin-amd64
+sudo mv tuti-darwin-amd64 /usr/local/bin/tuti
+tuti install
+```
+
+**macOS (Apple Silicon):**
+```bash
+wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti-darwin-arm64
+chmod +x tuti-darwin-arm64
+sudo mv tuti-darwin-arm64 /usr/local/bin/tuti
+tuti install
+```
+
+**PHAR (requires PHP 8.4+):**
+```bash
+wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti.phar
+chmod +x tuti.phar
+sudo mv tuti.phar /usr/local/bin/tuti
+tuti install
+```
+
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-# Initialize your project
-cd my-laravel-app
-tuti init
+# Initialize your project with Laravel stack
+tuti stack:laravel myapp
+
+# Or add Docker to existing Laravel project
+cd my-existing-laravel-app
+tuti stack:laravel --mode=existing
 
 # Start local environment
 tuti local:start

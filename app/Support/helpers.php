@@ -10,12 +10,17 @@ if (! function_exists('tuti_path')) {
      */
     function tuti_path(?string $path = null, ?string $projectRoot = null): string
     {
-        // Use provided projectRoot or default to app root (2 levels up from this file)
-        $projectRoot ??= dirname(__DIR__, 2);
+        if ($projectRoot === null) {
+            $projectRoot = getcwd();
 
-        $base = $projectRoot . '/.tuti';
+            if ($projectRoot === false) {
+                throw new RuntimeException('Unable to determine current working directory.');
+            }
+        }
 
-        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
+        $base = rtrim($projectRoot, '/') . '/.tuti';
+
+        return $path ? $base . '/' . ltrim($path, '/') : $base;
     }
 }
 
@@ -35,10 +40,56 @@ if (! function_exists('global_tuti_path')) {
      */
     function global_tuti_path(?string $path = null): string
     {
-        $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? '/root';
-        $base = $home . '/.tuti';
+        $home = getenv('HOME');
 
-        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
+        if (empty($home)) {
+            $home = $_SERVER['HOME'] ?? null;
+        }
+
+        if (empty($home)) {
+            $home = $_SERVER['USERPROFILE'] ?? null;
+        }
+
+        // Try posix_getpwuid on Unix systems
+        if (empty($home) && function_exists('posix_getpwuid') && function_exists('posix_getuid')) {
+            $userInfo = posix_getpwuid(posix_getuid());
+            $home = $userInfo['dir'] ?? null;
+        }
+
+        // Fallback: try to construct from username
+        if (empty($home)) {
+            $user = getenv('USER') ?: getenv('USERNAME');
+            if (! empty($user)) {
+                if (PHP_OS_FAMILY === 'Windows') {
+                    $home = "C:\\Users\\{$user}";
+                } else {
+                    $home = "/home/{$user}";
+                }
+            }
+        }
+
+        if (empty($home)) {
+            throw new RuntimeException(
+                'Unable to determine home directory. ' .
+                'Please set the HOME environment variable or run: tuti install'
+            );
+        }
+
+        $base = rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
+
+        return $path ? $base . DIRECTORY_SEPARATOR . ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR) : $base;
+    }
+}
+
+if (! function_exists('cli_base_path')) {
+    /**
+     * Get the CLI installation path (where tuti binary is installed).
+     */
+    function cli_base_path(?string $path = null): string
+    {
+        $base = dirname(__DIR__, 2);
+
+        return $path ? $base . '/' . ltrim($path, '/') : $base;
     }
 }
 
@@ -48,9 +99,9 @@ if (! function_exists('stub_path')) {
      */
     function stub_path(?string $path = null): string
     {
-        $base = base_path('stubs');
+        $base = cli_base_path('stubs');
 
-        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
+        return $path ? $base . '/' . mb_ltrim($path, '/')  : $base;
     }
 }
 
@@ -60,7 +111,7 @@ if (! function_exists('stack_path')) {
      */
     function stack_path(?string $path = null): string
     {
-        $base = base_path('stacks');
+        $base = cli_base_path('stacks');
 
         return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }

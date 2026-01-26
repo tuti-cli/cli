@@ -4,20 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Project;
 
+use Illuminate\Support\Facades\File;
 use RuntimeException;
+use Symfony\Component\Process\Process;
 
-/**
- * Service ProjectInitializationService
- *
- * Handles the business logic for initializing a new Tuti project.
- * This service coordinates:
- * 1. Directory creation (via ProjectDirectoryService)
- * 2. Configuration generation (via ProjectMetadataService)
- * 3. Validation of initialization
- *
- * Following the same pattern as ProjectStateManagerService,
- * this service acts as the "orchestrator" for project initialization.
- */
 final readonly class ProjectInitializationService
 {
     public function __construct(
@@ -25,33 +15,68 @@ final readonly class ProjectInitializationService
         private ProjectMetadataService $metadataService
     ) {}
 
-    /**
-     * Initialize a new project with the given name and environment.
-     *
-     * @throws RuntimeException If initialization fails
-     */
     public function initialize(string $projectName, string $environment): bool
     {
-        $this->directoryService->setInitializationRoot(base_path());
+        // 1. Create .tuti directory
+        $this->directoryService->create();
 
-        // 1. Create directory structure
-        $this->directoryService->initialize();
+        // 2. Clone laravel-stack
+        $this->cloneLaravelStack();
 
-        // 2. Create minimal configuration
+        // 3. Move env files to root
+        $this->moveEnvFilesToRoot();
+
+        // 4. Create config
         $config = $this->buildMinimalConfig($projectName, $environment);
         $this->metadataService->create($config);
-
-        // 3. Validate the initialization
-        if (! $this->directoryService->validate()) {
-            throw new RuntimeException('Project initialization validation failed');
-        }
 
         return true;
     }
 
+    private function cloneLaravelStack(): void
+    {
+        $tutiPath = $this->directoryService->getTutiPath();
+
+        if (is_dir($tutiPath)) {
+            return;
+        }
+
+        $process = new Process([
+            'git',
+            'clone',
+            'https://github.com/tuti-cli/laravel-stack.git',
+            '.',
+        ]);
+
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            throw new RuntimeException('Failed to clone laravel-stack:' . $process->getErrorOutput());
+        }
+    }
+
+    private function moveEnvFilesToRoot(): void
+    {
+        $envDir = $this->directoryService->getTutiPath('laravel-stack/environments');
+        $projectRoot = $this->directoryService->getProjectRoot();
+
+        if (! is_dir($envDir)) {
+            return;
+        }
+
+        $envFiles = File::files($envDir);
+
+        foreach ($envFiles as $file) {
+            $fileName = $file->getFilename();
+
+            File::copy(
+                $file->getPathname(),
+                $projectRoot . '/' . $fileName
+            );
+        }
+    }
+
     /**
-     * Build the minimal configuration structure for a new project.
-     *
      * @return array<string, mixed>
      */
     private function buildMinimalConfig(string $projectName, string $environment): array
@@ -59,18 +84,27 @@ final readonly class ProjectInitializationService
         return [
             'project' => [
                 'name' => $projectName,
-                'type' => 'custom',
+                'type' => 'laravel',
                 'version' => '1.0.0',
             ],
+            'apps' => [
+                [
+                    'name' => 'app',
+                    'path' => '.',
+                    'type' => 'laravel',
+                    'ports' => [
+                        'http' => 8000,
+                    ],
+                ],
+            ],
+            'shared_services' => ['postgres', 'redis'],
             'environments' => [
                 'local' => [
-                    'type' => $environment,
-                    'services' => [],
+                    'type' => 'docker',
                     'host' => "{$projectName}.test",
                     'user' => '{{SYSTEM_USER}}',
                 ],
             ],
-            'initialized_at' => now()->toIso8601String(),
         ];
     }
 }
