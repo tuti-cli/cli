@@ -4,8 +4,9 @@
         "app",
         "bootstrap",
         "config",
-        "vendor",
-        "database"
+        "database",
+        "stubs",
+        "vendor"
     ],
     "files": [
         "composer.json"

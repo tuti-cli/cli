@@ -1,0 +1,34 @@
+{
+    "name": "laravel-stack",
+    "version": "1.0.0",
+    "type": "php",
+    "framework": "laravel",
+    "description": "Test Laravel stack for testing",
+
+    "metadata": {
+        "maintainer": "tuti-cli",
+        "php_version": "8.4"
+    },
+
+    "required_services": {
+        "database": {
+            "category": "databases",
+            "options": ["postgres"],
+            "default": "postgres"
+        }
+    },
+
+    "optional_services": {
+        "cache": {
+            "category": "cache",
+            "options": ["redis"],
+            "default": "redis"
+        }
+    },
+
+    "environments": {
+        "dev": {
+            "app_replicas": 1
+        }
+    }
+}

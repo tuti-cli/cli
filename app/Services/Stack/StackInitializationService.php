@@ -44,14 +44,15 @@ final readonly class StackInitializationService
         string $environment,
         array $selectedServices
     ): bool {
-        $this->directoryService->setInitializationRoot(base_path());
+        $this->directoryService->setInitializationRoot(getcwd());
 
         // 1. Load and validate stack manifest
         $manifest = $this->stackLoader->load($stackPath);
         $this->stackLoader->validate($manifest);
 
         // 2. Create directory structure
-        $this->directoryService->initialize();
+        $this->directoryService->create();
+        $this->directoryService->createSubDirectories();
 
         // 3. Copy stack files
         $this->copierService->copyFromStack($stackPath);

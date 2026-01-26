@@ -4,99 +4,96 @@ declare(strict_types=1);
 
 namespace App\Services\Project;
 
+use App\Services\Context\WorkingDirectoryService;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
 
 /**
  * Service ProjectDirectoryService
  *
- * Responsible for handling project file structure and paths.
- * It strictly adheres to the convention that a project is defined by a
- * `.tuti` directory or `tuti.json` file.
+ * Manages .tuti directory structure within the user's project.
  */
 final class ProjectDirectoryService
 {
-    private ?string $initializationRoot = null;
+    public function __construct(
+        private WorkingDirectoryService $workingDirectory
+    ) {}
 
-    public function setInitializationRoot(?string $path): void
+    /**
+     * Set the root directory for initialization.
+     * This allows initializing in a different directory than cwd.
+     */
+    public function setInitializationRoot(string $path): void
     {
-        $this->initializationRoot = $path;
+        $this->workingDirectory->setWorkingDirectory($path);
     }
 
     /**
-     * Get the root directory of the current project.
+     * Get the project root (where .tuti will be created).
      */
     public function getProjectRoot(): string
     {
-        if ($this->initializationRoot !== null) {
-            return $this->initializationRoot;
-        }
-
-        $root = base_path();
-
-        if (file_exists($root . '/tuti.json') || is_dir($root . '/.tuti')) {
-            return $root;
-        }
-
-        throw new RuntimeException("Not in a Tuti project. Run 'tuti init' first.");
+        return $this->workingDirectory->getWorkingDirectory();
     }
 
     /**
-     * Get the path to the .tuti directory
+     * Get the .tuti directory path.
      */
-    public function getTutiDir(): string
+    public function getTutiPath(?string $subPath = null): string
     {
-        return tuti_path(null, $this->getProjectRoot());
+        return $this->workingDirectory->getTutiPath($subPath);
     }
 
     /**
-     * Get path to a file inside .tuti directory
-     */
-    public function getTutiPath(string $path = ''): string
-    {
-        return tuti_path($path, $this->getProjectRoot());
-    }
-
-    /**
-     * Check if .tuti directory exists
+     * Check if project is initialized (.tuti exists).
      */
     public function exists(): bool
     {
-        try {
-            return is_dir($this->getTutiDir());
-        } catch (RuntimeException) {
-            return false;
-        }
+        return $this->workingDirectory->tutiExists();
     }
 
     /**
-     * Initialize .tuti directory structure
+     * Create the .tuti directory structure.
      */
-    public function initialize(): bool
+    public function create(): void
     {
+        $tutiPath = $this->getTutiPath();
+
         if ($this->exists()) {
-            throw new RuntimeException('Project already initialized. .tuti directory already exists.');
+            throw new RuntimeException('.tuti directory already exists.');
         }
 
-        $this->createBaseStructure();
-
-        return true;
+        if (! File::isDirectory($tutiPath)) {
+            try {
+                File::makeDirectory($tutiPath, 0755, true);
+            } catch (\Exception $e) {
+                throw new RuntimeException(
+                    "Failed to create .tuti directory at: {$tutiPath}. " .
+                    "Error: {$e->getMessage()}. " .
+                    "Please check write permissions for: {$this->getProjectRoot()}"
+                );
+            }
+        }
     }
 
     /**
-     * Get all directories that should exist in .tuti
+     * Create subdirectories within .tuti.
+     *
+     * @param  array<int, string>  $directories
      */
-    public function getRequiredDirectories(): array
+    public function createSubDirectories(array $directories = ['docker', 'environments', 'scripts']): void
     {
-        return [
-            'docker',
-            'environments',
-            'scripts',
-        ];
+        foreach ($directories as $dir) {
+            $path = $this->getTutiPath($dir);
+
+            if (! File::isDirectory($path)) {
+                File::makeDirectory($path, 0755, true);
+            }
+        }
     }
 
     /**
-     * Validate .tuti directory structure
+     * Validate the .tuti directory structure.
      */
     public function validate(): bool
     {
@@ -104,8 +101,13 @@ final class ProjectDirectoryService
             return false;
         }
 
-        foreach ($this->getRequiredDirectories() as $dir) {
-            if (! is_dir($this->getTutiPath($dir))) {
+        // Check required files/directories exist
+        $required = [
+            'config.json',
+        ];
+
+        foreach ($required as $item) {
+            if (! file_exists($this->getTutiPath($item))) {
                 return false;
             }
         }
@@ -114,61 +116,42 @@ final class ProjectDirectoryService
     }
 
     /**
-     * Clean/remove the .tuti directory
+     * Clean/remove the .tuti directory.
      */
     public function clean(): void
     {
-        $tutiPath = $this->getTutiDir();
+        $tutiPath = $this->getTutiPath();
 
-        if (! is_dir($tutiPath)) {
+        if (! $this->exists()) {
             return;
         }
 
-        $this->removeDirectory($tutiPath);
+        File::deleteDirectory($tutiPath);
     }
 
     /**
-     * Recursively remove a directory
+     * Validate we're in a valid project directory.
      */
-    private function removeDirectory(string $dir): void
+    public function validateProjectDirectory(): void
     {
-        if (! is_dir($dir)) {
-            return;
-        }
+        $projectRoot = $this->getProjectRoot();
 
-        $items = scandir($dir);
-        foreach ($items as $item) {
-            if ($item === '.') {
-                continue;
-            }
-            if ($item === '..') {
-                continue;
-            }
-            $path = $dir . '/' . $item;
+        $indicators = [
+            'composer.json',
+            'package.json',
+            'artisan',
+            '.git',
+        ];
 
-            if (is_dir($path)) {
-                $this->removeDirectory($path);
-            } else {
-                unlink($path);
+        foreach ($indicators as $file) {
+            if (file_exists($projectRoot . '/' . $file)) {
+                return;
             }
         }
 
-        rmdir($dir);
-    }
-
-    /**
-     * Create base .tuti directory structure
-     */
-    private function createBaseStructure(): void
-    {
-        $directories = array_merge([''], $this->getRequiredDirectories());
-
-        foreach ($directories as $dir) {
-            $path = $this->getTutiPath($dir);
-
-            if (! is_dir($path) && ! mkdir($path, 0755, true)) {
-                throw new RuntimeException("Failed to create directory: {$path}");
-            }
-        }
+        throw new RuntimeException(
+            "This doesn't appear to be a project directory. " .
+            "Please run 'tuti init' from your project root."
+        );
     }
 }
