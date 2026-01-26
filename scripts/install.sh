@@ -6,10 +6,10 @@
 # This script installs tuti CLI and sets up the required directory structure.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/tuti-cli/tuti-cli/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
 #
 # Or:
-#   wget -qO- https://raw.githubusercontent.com/tuti-cli/tuti-cli/main/scripts/install.sh | bash
+#   wget -qO- https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
 #
 
 set -e
@@ -24,7 +24,7 @@ NC='\033[0m' # No Color
 # Default installation paths
 INSTALL_DIR="${TUTI_INSTALL_DIR:-$HOME/.local/bin}"
 GLOBAL_TUTI_DIR="${HOME}/.tuti"
-GITHUB_REPO="tuti-cli/tuti-cli"
+GITHUB_REPO="tuti-cli/cli"
 BINARY_NAME="tuti"
 
 print_banner() {

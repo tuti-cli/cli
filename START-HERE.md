@@ -73,7 +73,7 @@ make release-auto V=x.y.z  # Automated release
    - Creates GitHub Release with all files
 3. Users install with:
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/tuti-cli/tuti-cli/main/scripts/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
    ```
    The script auto-detects their OS/arch and downloads the right binary.
 
