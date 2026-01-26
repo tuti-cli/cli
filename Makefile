@@ -1,4 +1,4 @@
-.PHONY: help build up down restart shell logs clean test lint install build-phar build-binaries test-phar release version-bump check-build
+.PHONY: help build up down restart shell logs clean test lint install build-phar test-phar release version-bump check-build
 
 .DEFAULT_GOAL := help
 
@@ -28,9 +28,11 @@ help: ## Show this help message
 	@grep -E '^(build|up|down|restart|shell|logs|clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(YELLOW)Build & Release:$(RESET)"
-	@grep -E '^(build-phar|build-binaries|test-phar|check-build|release|version-bump):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^(build-phar|test-phar|check-build|release|version-bump):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(YELLOW)Current version: $(GREEN)$(VERSION)$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Note:$(RESET) Native binaries are built automatically by GitHub Actions on release"
 
 # =============================================================================
 # Docker
@@ -83,25 +85,7 @@ build-phar: ## Build PHAR using Laravel Zero app:build
 	@echo "$(CYAN)Building PHAR v$(VERSION)...$(RESET)"
 	@$(DOCKER_EXEC) php -d phar.readonly=0 tuti app:build tuti --build-version=$(VERSION)
 	@echo "$(GREEN)✓ PHAR built: builds/tuti$(RESET)"
-
-build-binaries: build-phar ## Build native binaries for Linux and macOS
-	@echo "$(CYAN)Building native binaries...$(RESET)"
-	@mkdir -p builds/bin
-	@echo "$(YELLOW)Building Linux x64...$(RESET)"
-	@$(DOCKER_EXEC) php vendor/bin/phpacker build builds/tuti \
-		--output=builds/bin/tuti-linux-amd64 \
-		--os=linux \
-		--arch=x64 2>/dev/null || \
-		$(DOCKER_EXEC) php vendor/bin/phpacker compile builds/tuti builds/bin/tuti-linux-amd64 2>/dev/null || \
-		echo "$(YELLOW)⚠ Linux build requires running on appropriate platform$(RESET)"
-	@echo "$(YELLOW)Building Linux ARM64...$(RESET)"
-	@$(DOCKER_EXEC) php vendor/bin/phpacker build builds/tuti \
-		--output=builds/bin/tuti-linux-arm64 \
-		--os=linux \
-		--arch=arm64 2>/dev/null || \
-		echo "$(YELLOW)⚠ Linux ARM64 build skipped$(RESET)"
-	@echo "$(GREEN)✓ Binaries built in builds/bin/$(RESET)"
-	@ls -la builds/bin/ 2>/dev/null || true
+	@echo "$(YELLOW)Note: Native binaries will be built by GitHub Actions on release$(RESET)"
 
 test-phar: ## Test PHAR file
 	@echo "$(CYAN)Testing PHAR...$(RESET)"

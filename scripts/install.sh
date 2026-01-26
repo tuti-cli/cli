@@ -89,10 +89,6 @@ check_dependencies() {
         missing+=("curl or wget")
     fi
 
-    if ! command -v git &> /dev/null; then
-        warn "Git is not installed. Some features may not work."
-    fi
-
     if ! command -v docker &> /dev/null; then
         warn "Docker is not installed. You'll need it to run stacks."
     fi
@@ -156,21 +152,19 @@ install_binary() {
     local tmp_file=$(mktemp)
 
     if [ -z "${version}" ]; then
-        warn "Could not determine latest version"
-        info "Falling back to PHAR installation..."
-        install_phar
-        return
+        error "Could not determine latest version. Please check your internet connection."
+        exit 1
     fi
 
     info "Latest version: v${version}"
     info "Platform: ${platform}"
 
-    # Construct download URL for native binary
+    # Construct download URL for self-contained binary
     download_url="https://github.com/${GITHUB_REPO}/releases/download/v${version}/${binary_name}"
 
-    info "Trying native binary: ${binary_name}"
+    info "Downloading: ${binary_name}"
 
-    # Try to download native binary
+    # Download binary
     local download_success=false
     if command -v curl &> /dev/null; then
         if curl -fsSL "${download_url}" -o "${tmp_file}" 2>/dev/null; then
@@ -183,58 +177,15 @@ install_binary() {
     fi
 
     if [ "${download_success}" = true ] && [ -s "${tmp_file}" ]; then
-        # Verify it's not an error page (check if it starts with ELF or Mach-O magic)
-        if file "${tmp_file}" 2>/dev/null | grep -qE "(executable|Mach-O)"; then
-            mv "${tmp_file}" "${INSTALL_DIR}/${BINARY_NAME}"
-            chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
-            success "Native binary installed to: ${INSTALL_DIR}/${BINARY_NAME}"
-            return
-        fi
-    fi
-
-    warn "Native binary not available for ${platform}"
-    info "Falling back to PHAR installation..."
-    rm -f "${tmp_file}" 2>/dev/null
-    install_phar
-}
-
-# Fallback: Install PHAR version
-install_phar() {
-    info "Installing PHAR version (requires PHP 8.4+)..."
-
-    # Check for PHP
-    if ! command -v php &> /dev/null; then
-        error "PHP is required for PHAR installation but not found"
-        error "Please install PHP 8.4+ or wait for native binary support for your platform"
-        exit 1
-    fi
-
-    local version=$(get_latest_version)
-    local phar_url="https://github.com/${GITHUB_REPO}/releases/download/v${version}/tuti.phar"
-    local tmp_file=$(mktemp)
-
-    if [ -z "${version}" ]; then
-        phar_url="https://github.com/${GITHUB_REPO}/releases/latest/download/tuti.phar"
-    fi
-
-    info "Downloading PHAR from: ${phar_url}"
-
-    if command -v curl &> /dev/null; then
-        curl -fsSL "${phar_url}" -o "${tmp_file}"
+        mv "${tmp_file}" "${INSTALL_DIR}/${BINARY_NAME}"
+        chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
+        success "Installed to: ${INSTALL_DIR}/${BINARY_NAME}"
     else
-        wget -qO "${tmp_file}" "${phar_url}"
-    fi
-
-    if [ ! -s "${tmp_file}" ]; then
-        error "Failed to download PHAR file"
+        error "Failed to download binary for ${platform}"
+        error "URL: ${download_url}"
+        rm -f "${tmp_file}" 2>/dev/null
         exit 1
     fi
-
-    # Install PHAR directly (it's executable)
-    mv "${tmp_file}" "${INSTALL_DIR}/${BINARY_NAME}"
-    chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
-
-    success "PHAR installed to: ${INSTALL_DIR}/${BINARY_NAME}"
 }
 
 # Add to PATH if needed
