@@ -108,18 +108,30 @@ build-phar: ## Build PHAR using Laravel Zero app:build
 
 build-binary: build-phar ## Build self-contained binaries using phpacker
 	@echo "$(CYAN)Building binaries for all platforms...$(RESET)"
-	@$(DOCKER_EXEC) ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all
+	@echo "$(YELLOW)Setting up phpacker environment...$(RESET)"
+	@$(DOCKER_EXEC) rm -rf builds/build 2>/dev/null || true
+	@$(DOCKER_EXEC) mkdir -p /tmp/phpacker-cache
+	@$(DOCKER_EXEC) mkdir -p builds/build
+	@$(DOCKER_EXEC) chmod -R 777 /tmp/phpacker-cache
+	@echo "$(YELLOW)Running phpacker (this may take a few minutes to download PHP runtimes)...$(RESET)"
+	@$(DOCKER_EXEC) sh -c 'TMPDIR=/tmp/phpacker-cache HOME=/tmp ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all'
 	@echo "$(GREEN)✓ Binaries built in builds/build/$(RESET)"
-	@ls -la builds/build/ 2>/dev/null || true
+	@$(DOCKER_EXEC) ls -laR builds/build/ 2>/dev/null || true
 
 build-binary-linux: build-phar ## Build binary for Linux only
 	@echo "$(CYAN)Building Linux binaries...$(RESET)"
-	@$(DOCKER_EXEC) ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 linux
+	@$(DOCKER_EXEC) rm -rf builds/build 2>/dev/null || true
+	@$(DOCKER_EXEC) mkdir -p /tmp/phpacker-cache builds/build
+	@$(DOCKER_EXEC) chmod -R 777 /tmp/phpacker-cache
+	@$(DOCKER_EXEC) sh -c 'TMPDIR=/tmp/phpacker-cache HOME=/tmp ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 linux'
 	@echo "$(GREEN)✓ Linux binaries built$(RESET)"
 
 build-binary-mac: build-phar ## Build binary for macOS only
 	@echo "$(CYAN)Building macOS binaries...$(RESET)"
-	@$(DOCKER_EXEC) ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 mac
+	@$(DOCKER_EXEC) rm -rf builds/build 2>/dev/null || true
+	@$(DOCKER_EXEC) mkdir -p /tmp/phpacker-cache builds/build
+	@$(DOCKER_EXEC) chmod -R 777 /tmp/phpacker-cache
+	@$(DOCKER_EXEC) sh -c 'TMPDIR=/tmp/phpacker-cache HOME=/tmp ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 mac'
 	@echo "$(GREEN)✓ macOS binaries built$(RESET)"
 
 test-phar: ## Test PHAR file (requires PHP)
