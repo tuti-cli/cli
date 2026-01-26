@@ -98,9 +98,10 @@ git push origin main --tags
 GitHub Actions will automatically:
 1. Build PHAR on GitHub runners
 2. Test it
-3. Create Release at https://github.com/tuti-cli/tuti-cli/releases
+3. Create Release at https://github.com/tuti-cli/cli/releases
 4. Attach files:
    - `tuti.phar`
+   - Native binaries for Linux/macOS
    - `scripts/install.sh`
 
 ---
@@ -109,10 +110,10 @@ GitHub Actions will automatically:
 
 ```bash
 # Quick install
-curl -fsSL https://raw.githubusercontent.com/tuti-cli/tuti-cli/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
 
 # Or directly
-wget https://github.com/tuti-cli/tuti-cli/releases/download/v0.1.0/tuti.phar
+wget https://github.com/tuti-cli/cli/releases/download/v0.1.0/tuti.phar
 chmod +x tuti.phar
 sudo mv tuti.phar /usr/local/bin/tuti
 tuti install

@@ -183,14 +183,14 @@ jobs:
 
             ### Quick Install (Recommended)
             ```bash
-            curl -fsSL https://raw.githubusercontent.com/tuti-cli/tuti-cli/main/scripts/install.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
             ```
 
             ### Manual Install
 
             **Linux (x64):**
             ```bash
-            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-linux-amd64
+            wget https://github.com/tuti-cli/cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-linux-amd64
             chmod +x tuti-linux-amd64
             sudo mv tuti-linux-amd64 /usr/local/bin/tuti
             tuti install
@@ -198,7 +198,7 @@ jobs:
 
             **Linux (ARM64):**
             ```bash
-            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-linux-arm64
+            wget https://github.com/tuti-cli/cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-linux-arm64
             chmod +x tuti-linux-arm64
             sudo mv tuti-linux-arm64 /usr/local/bin/tuti
             tuti install
@@ -206,7 +206,7 @@ jobs:
 
             **macOS (Intel):**
             ```bash
-            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-darwin-amd64
+            wget https://github.com/tuti-cli/cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-darwin-amd64
             chmod +x tuti-darwin-amd64
             sudo mv tuti-darwin-amd64 /usr/local/bin/tuti
             tuti install
@@ -214,7 +214,7 @@ jobs:
 
             **macOS (Apple Silicon):**
             ```bash
-            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-darwin-arm64
+            wget https://github.com/tuti-cli/cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti-darwin-arm64
             chmod +x tuti-darwin-arm64
             sudo mv tuti-darwin-arm64 /usr/local/bin/tuti
             tuti install
@@ -222,7 +222,7 @@ jobs:
 
             **PHAR (requires PHP 8.4+):**
             ```bash
-            wget https://github.com/tuti-cli/tuti-cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti.phar
+            wget https://github.com/tuti-cli/cli/releases/download/v${{ steps.version.outputs.VERSION }}/tuti.phar
             chmod +x tuti.phar
             sudo mv tuti.phar /usr/local/bin/tuti
             tuti install

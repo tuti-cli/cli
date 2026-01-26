@@ -62,8 +62,8 @@ git push origin main --tags
 ```
 
 ### 6. Verify
-1. Check: https://github.com/tuti-cli/tuti-cli/actions
-2. Check: https://github.com/tuti-cli/tuti-cli/releases
+1. Check: https://github.com/tuti-cli/cli/actions
+2. Check: https://github.com/tuti-cli/cli/releases
 
 ---
 

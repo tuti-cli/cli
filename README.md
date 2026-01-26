@@ -17,7 +17,7 @@ From local Docker to production deployment. One command. Zero config.
 
 ```bash
 # macOS / Linux / Windows + WSL2
-curl -fsSL https://raw.githubusercontent.com/tuti-cli/tuti-cli/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
 ```
 
 This will automatically:
@@ -30,7 +30,7 @@ This will automatically:
 
 **Linux (x64):**
 ```bash
-wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti-linux-amd64
+wget https://github.com/tuti-cli/cli/releases/latest/download/tuti-linux-amd64
 chmod +x tuti-linux-amd64
 sudo mv tuti-linux-amd64 /usr/local/bin/tuti
 tuti install
@@ -38,7 +38,7 @@ tuti install
 
 **Linux (ARM64):**
 ```bash
-wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti-linux-arm64
+wget https://github.com/tuti-cli/cli/releases/latest/download/tuti-linux-arm64
 chmod +x tuti-linux-arm64
 sudo mv tuti-linux-arm64 /usr/local/bin/tuti
 tuti install
@@ -46,7 +46,7 @@ tuti install
 
 **macOS (Intel):**
 ```bash
-wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti-darwin-amd64
+wget https://github.com/tuti-cli/cli/releases/latest/download/tuti-darwin-amd64
 chmod +x tuti-darwin-amd64
 sudo mv tuti-darwin-amd64 /usr/local/bin/tuti
 tuti install
@@ -54,7 +54,7 @@ tuti install
 
 **macOS (Apple Silicon):**
 ```bash
-wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti-darwin-arm64
+wget https://github.com/tuti-cli/cli/releases/latest/download/tuti-darwin-arm64
 chmod +x tuti-darwin-arm64
 sudo mv tuti-darwin-arm64 /usr/local/bin/tuti
 tuti install
@@ -62,7 +62,7 @@ tuti install
 
 **PHAR (requires PHP 8.4+):**
 ```bash
-wget https://github.com/tuti-cli/tuti-cli/releases/latest/download/tuti.phar
+wget https://github.com/tuti-cli/cli/releases/latest/download/tuti.phar
 chmod +x tuti.phar
 sudo mv tuti.phar /usr/local/bin/tuti
 tuti install

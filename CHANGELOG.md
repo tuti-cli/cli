@@ -45,5 +45,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform support (Linux, macOS, Windows via WSL)
 - PHAR packaging for easy distribution
 
-[Unreleased]: https://github.com/tuti-cli/tuti-cli/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/tuti-cli/tuti-cli/releases/tag/v0.1.0
+[Unreleased]: https://github.com/tuti-cli/cli/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/tuti-cli/cli/releases/tag/v0.1.0
