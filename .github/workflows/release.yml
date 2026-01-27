@@ -32,7 +32,12 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
-        run: composer install --optimize-autoloader --no-interaction
+        run: |
+          composer install --optimize-autoloader --no-interaction
+          echo "=== Checking vendor/bin directory ==="
+          ls -la vendor/bin/ | grep phpacker || echo "phpacker not found"
+          echo "=== Checking if phpacker is executable ==="
+          file vendor/bin/phpacker || echo "phpacker file not found"
 
       - name: Build PHAR
         run: php tuti app:build tuti.phar --build-version=${{ steps.version.outputs.VERSION }}
@@ -44,6 +49,13 @@ jobs:
 
       - name: Build all binaries with phpacker
         run: |
+          echo "=== Verifying phpacker before build ==="
+          if [ ! -f "vendor/bin/phpacker" ]; then
+            echo "phpacker not found, installing explicitly..."
+            composer require phpacker/phpacker --dev
+          fi
+          ls -la vendor/bin/phpacker
+          file vendor/bin/phpacker
           mkdir -p builds/build /tmp/phpacker-cache
           chmod -R 777 builds/build /tmp/phpacker-cache
           HOME=/tmp PHPACKER_CACHE=/tmp/phpacker-cache ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all
