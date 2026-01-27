@@ -1,48 +1,61 @@
-# Local Testing & Release Workflow
+# Build & Release Workflow
 
-## Build & Test Locally
+## Local Testing
 
 ```bash
 # 1. Build PHAR
 make build-phar
-make test-phar
 
-# 2. Build binaries (uses phpacker - downloads PHP runtime)
+# 2. Build binaries with phpacker
 make build-binary
 
-# 3. Test binary - NO PHP REQUIRED!
+# 3. Test binary (no PHP required!)
 make test-binary
 
 # 4. Install locally
 make install-local
-
-# 5. Add to PATH and test
-echo 'export PATH="$PATH:$HOME/.tuti/bin"' >> ~/.bashrc
-source ~/.bashrc
-tuti --version
+~/.tuti/bin/tuti --version
 ```
 
-## Release (After Local Testing Passes)
+## Release
 
 ```bash
-make version-bump V=0.1.1
-git add . && git commit -m "Release v0.1.1"
-git tag -a v0.1.1 -m "Release v0.1.1"
+make version-bump V=0.2.0
+git add . && git commit -m "Release v0.2.0"
+git tag -a v0.2.0 -m "Release v0.2.0"
 git push origin main --tags
 ```
 
+## What Happens on Release
+
+GitHub Actions will:
+1. Build PHAR: `php tuti app:build tuti.phar`
+2. Build binaries: `./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all`
+3. Rename binaries: `linux-x64` → `tuti-linux-amd64`
+4. Create GitHub Release with all files
+
 ## Binary Output
 
-phpacker creates:
-- `builds/build/linux/linux-x64`
-- `builds/build/linux/linux-arm64`
-- `builds/build/mac/mac-x64`
-- `builds/build/mac/mac-arm64`
-- `builds/build/windows/windows-x64.exe`
+```
+builds/build/
+├── linux/linux-x64     → tuti-linux-amd64
+├── linux/linux-arm64   → tuti-linux-arm64
+├── mac/mac-x64         → tuti-darwin-amd64
+├── mac/mac-arm64       → tuti-darwin-arm64
+└── windows/windows-x64 → tuti-windows-amd64.exe
+```
 
-## Clean Up
+## User Installation
 
-Delete this file after reading:
 ```bash
-rm -f FINAL-SETUP.md
+curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
+```
+
+Downloads binary to `~/.tuti/bin/tuti` - works without PHP installed!
+
+---
+
+Delete this file after review:
+```bash
+rm FINAL-SETUP.md
 ```

@@ -107,39 +107,32 @@ build-phar: ## Build PHAR using Laravel Zero app:build
 	@echo "$(GREEN)✓ PHAR built: builds/tuti.phar$(RESET)"
 
 build-binary: build-phar ## Build self-contained binaries using phpacker
-	@echo "$(CYAN)Building binaries for all platforms...$(RESET)"
-	@echo "$(YELLOW)Setting up phpacker environment...$(RESET)"
+	@echo "$(CYAN)Building self-contained binaries with phpacker...$(RESET)"
+	@echo "$(YELLOW)This embeds PHP 8.4 runtime - no system PHP needed!$(RESET)"
 	@$(DOCKER_EXEC) rm -rf builds/build 2>/dev/null || true
-	@$(DOCKER_EXEC) mkdir -p /tmp/phpacker-cache
-	@$(DOCKER_EXEC) mkdir -p builds/build
-	@$(DOCKER_EXEC) chmod -R 777 /tmp/phpacker-cache
-	@echo "$(YELLOW)Running phpacker (this may take a few minutes to download PHP runtimes)...$(RESET)"
-	@$(DOCKER_EXEC) sh -c 'TMPDIR=/tmp/phpacker-cache HOME=/tmp ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all'
+	@$(DOCKER_EXEC) mkdir -p builds/build /tmp/phpacker-cache
+	@$(DOCKER_EXEC) chmod -R 777 builds/build /tmp/phpacker-cache
+	@$(DOCKER_EXEC) sh -c 'HOME=/tmp PHPACKER_CACHE=/tmp/phpacker-cache ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all'
 	@echo "$(GREEN)✓ Binaries built in builds/build/$(RESET)"
-	@echo "$(YELLOW)Verifying binaries...$(RESET)"
-	@$(DOCKER_EXEC) find builds/build -type f -name "*" -exec file {} \; || true
-	@$(DOCKER_EXEC) ls -laR builds/build/ 2>/dev/null || true
-	@echo "$(YELLOW)Testing Linux binary (if available)...$(RESET)"
-	@if [ -f "builds/build/linux/linux-x64" ]; then \
-		$(DOCKER_EXEC) sh -c 'cd / && ./var/www/html/builds/build/linux/linux-x64 --version' 2>/dev/null || \
-		echo "$(YELLOW)⚠ Binary test failed - may need PHP in runtime$(RESET)"; \
-	fi
+	@$(DOCKER_EXEC) ls -laR builds/build/
 
-build-binary-linux: build-phar ## Build binary for Linux only
-	@echo "$(CYAN)Building Linux binaries...$(RESET)"
+build-binary-linux: build-phar ## Build Linux binaries only using phpacker
+	@echo "$(CYAN)Building Linux binaries with phpacker...$(RESET)"
 	@$(DOCKER_EXEC) rm -rf builds/build 2>/dev/null || true
-	@$(DOCKER_EXEC) mkdir -p /tmp/phpacker-cache builds/build
-	@$(DOCKER_EXEC) chmod -R 777 /tmp/phpacker-cache
-	@$(DOCKER_EXEC) sh -c 'TMPDIR=/tmp/phpacker-cache HOME=/tmp ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 linux'
+	@$(DOCKER_EXEC) mkdir -p builds/build /tmp/phpacker-cache
+	@$(DOCKER_EXEC) chmod -R 777 builds/build /tmp/phpacker-cache
+	@$(DOCKER_EXEC) sh -c 'HOME=/tmp PHPACKER_CACHE=/tmp/phpacker-cache ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 linux'
 	@echo "$(GREEN)✓ Linux binaries built$(RESET)"
+	@$(DOCKER_EXEC) ls -laR builds/build/linux/
 
-build-binary-mac: build-phar ## Build binary for macOS only
-	@echo "$(CYAN)Building macOS binaries...$(RESET)"
+build-binary-mac: build-phar ## Build macOS binaries only using phpacker
+	@echo "$(CYAN)Building macOS binaries with phpacker...$(RESET)"
 	@$(DOCKER_EXEC) rm -rf builds/build 2>/dev/null || true
-	@$(DOCKER_EXEC) mkdir -p /tmp/phpacker-cache builds/build
-	@$(DOCKER_EXEC) chmod -R 777 /tmp/phpacker-cache
-	@$(DOCKER_EXEC) sh -c 'TMPDIR=/tmp/phpacker-cache HOME=/tmp ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 mac'
+	@$(DOCKER_EXEC) mkdir -p builds/build /tmp/phpacker-cache
+	@$(DOCKER_EXEC) chmod -R 777 builds/build /tmp/phpacker-cache
+	@$(DOCKER_EXEC) sh -c 'HOME=/tmp PHPACKER_CACHE=/tmp/phpacker-cache ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 mac'
 	@echo "$(GREEN)✓ macOS binaries built$(RESET)"
+	@$(DOCKER_EXEC) ls -laR builds/build/mac/
 
 test-phar: ## Test PHAR file (requires PHP)
 	@echo "$(CYAN)Testing PHAR...$(RESET)"
