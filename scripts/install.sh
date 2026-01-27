@@ -191,36 +191,76 @@ install_binary() {
 
 # Add to PATH if needed
 setup_path() {
-    local shell_config=""
-    local path_export="export PATH=\"\${PATH}:${INSTALL_DIR}\""
+    local shell_configs=()
+    local path_export="export PATH=\"\$PATH:${INSTALL_DIR}\""
+    local path_added=false
 
-    # Detect shell config file
-    if [ -n "$ZSH_VERSION" ] || [ -f "$HOME/.zshrc" ]; then
-        shell_config="$HOME/.zshrc"
-    elif [ -n "$BASH_VERSION" ] || [ -f "$HOME/.bashrc" ]; then
-        shell_config="$HOME/.bashrc"
-    elif [ -f "$HOME/.profile" ]; then
-        shell_config="$HOME/.profile"
-    fi
+    # Detect available shell config files (2026 modern shells)
+    [ -f "$HOME/.zshrc" ] && shell_configs+=("$HOME/.zshrc")
+    [ -f "$HOME/.bashrc" ] && shell_configs+=("$HOME/.bashrc")
+    [ -f "$HOME/.config/fish/config.fish" ] && shell_configs+=("$HOME/.config/fish/config.fish")
+    [ -f "$HOME/.config/nushell/config.nu" ] && shell_configs+=("$HOME/.config/nushell/config.nu")
+    [ -f "$HOME/.profile" ] && shell_configs+=("$HOME/.profile")
 
     # Check if already in PATH
     if echo "$PATH" | grep -q "${INSTALL_DIR}"; then
+        success "Tuti CLI directory already in PATH"
         return
     fi
 
-    if [ -n "$shell_config" ]; then
-        # Check if already added to config
-        if ! grep -q "tuti" "$shell_config" 2>/dev/null; then
-            echo "" >> "$shell_config"
-            echo "# Tuti CLI" >> "$shell_config"
-            echo "${path_export}" >> "$shell_config"
-            info "Added to PATH in ${shell_config}"
-            warn "Please restart your terminal or run: source ${shell_config}"
+    # Try to add to detected shell configs
+    for config in "${shell_configs[@]}"; do
+        if [ -f "$config" ]; then
+            # Check if already added to this config
+            if ! grep -q "${INSTALL_DIR}" "$config" 2>/dev/null; then
+                echo "" >> "$config"
+                echo "# Tuti CLI" >> "$config"
+
+                # Handle different shell syntaxes
+                case "$config" in
+                    *config.fish)
+                        echo "set -gx PATH \$PATH ${INSTALL_DIR}" >> "$config"
+                        ;;
+                    *config.nu)
+                        echo "\$env.PATH = (\$env.PATH | split row (char esep) | append '${INSTALL_DIR}')" >> "$config"
+                        ;;
+                    *)
+                        echo "$path_export" >> "$config"
+                        ;;
+                esac
+
+                success "Added to PATH in $(basename "$config")"
+                path_added=true
+            else
+                success "Already configured in $(basename "$config")"
+                path_added=true
+            fi
         fi
+    done
+
+    if [ "$path_added" = false ]; then
+        warn "Could not detect shell config file automatically."
+        echo ""
+        echo "Please add Tuti CLI to your PATH manually:"
+        echo ""
+        echo "For Bash/Zsh:"
+        echo "  echo 'export PATH=\"\$PATH:${INSTALL_DIR}\"' >> ~/.bashrc"
+        echo "  source ~/.bashrc"
+        echo ""
+        echo "For Fish:"
+        echo "  echo 'set -gx PATH \$PATH ${INSTALL_DIR}' >> ~/.config/fish/config.fish"
+        echo ""
+        echo "For Nushell:"
+        echo "  echo '\$env.PATH = (\$env.PATH | split row (char esep) | append \"${INSTALL_DIR}\")' >> ~/.config/nushell/config.nu"
+        echo ""
     else
-        warn "Could not detect shell config file."
-        echo "Please add the following to your shell config:"
-        echo "  ${path_export}"
+        echo ""
+        warn "Please restart your terminal or run one of these commands:"
+        echo "  source ~/.bashrc    # For Bash"
+        echo "  source ~/.zshrc     # For Zsh"
+        echo "  exec fish           # For Fish"
+        echo "  exec nu             # For Nushell"
+        echo ""
     fi
 }
 
@@ -232,12 +272,39 @@ verify_installation() {
         success "Tuti CLI installed successfully!"
         echo ""
 
-        # Try to run version command
-        if "${INSTALL_DIR}/${BINARY_NAME}" --version 2>/dev/null; then
+        # Try to run version command and check for issues
+        local version_output
+        if version_output=$("${INSTALL_DIR}/${BINARY_NAME}" --version 2>&1); then
+            echo "$version_output"
+            success "Binary is working correctly!"
+        else
+            error "Binary execution failed:"
+            echo "$version_output"
             echo ""
+
+            # Check if it's a PHP dependency issue
+            if echo "$version_output" | grep -q "php.*No such file"; then
+                error "The binary requires PHP but PHP is not installed or not in PATH"
+                echo ""
+                echo "This suggests the binary is not truly self-contained."
+                echo "Please install PHP or use a different installation method."
+                echo ""
+                echo "To install PHP on Ubuntu/Debian:"
+                echo "  sudo apt update && sudo apt install php-cli"
+                echo ""
+                echo "To install PHP on macOS:"
+                echo "  brew install php"
+                echo ""
+                exit 1
+            else
+                warn "Binary installed but failed initial test. You may need to:"
+                echo "1. Restart your terminal"
+                echo "2. Run: source ~/.bashrc (or your shell config)"
+                echo "3. Try: ${INSTALL_DIR}/${BINARY_NAME} --version"
+            fi
         fi
     else
-        error "Installation verification failed"
+        error "Installation verification failed - binary not executable"
         exit 1
     fi
 }

@@ -116,7 +116,14 @@ build-binary: build-phar ## Build self-contained binaries using phpacker
 	@echo "$(YELLOW)Running phpacker (this may take a few minutes to download PHP runtimes)...$(RESET)"
 	@$(DOCKER_EXEC) sh -c 'TMPDIR=/tmp/phpacker-cache HOME=/tmp ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all'
 	@echo "$(GREEN)✓ Binaries built in builds/build/$(RESET)"
+	@echo "$(YELLOW)Verifying binaries...$(RESET)"
+	@$(DOCKER_EXEC) find builds/build -type f -name "*" -exec file {} \; || true
 	@$(DOCKER_EXEC) ls -laR builds/build/ 2>/dev/null || true
+	@echo "$(YELLOW)Testing Linux binary (if available)...$(RESET)"
+	@if [ -f "builds/build/linux/linux-x64" ]; then \
+		$(DOCKER_EXEC) sh -c 'cd / && ./var/www/html/builds/build/linux/linux-x64 --version' 2>/dev/null || \
+		echo "$(YELLOW)⚠ Binary test failed - may need PHP in runtime$(RESET)"; \
+	fi
 
 build-binary-linux: build-phar ## Build binary for Linux only
 	@echo "$(CYAN)Building Linux binaries...$(RESET)"
