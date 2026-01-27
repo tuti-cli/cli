@@ -79,12 +79,14 @@ jobs:
           mkdir -p release
           # PHAR
           cp builds/tuti.phar release/
-          # Rename binaries to standard format for install script
-          cp builds/build/linux/linux-x64 release/tuti-linux-amd64
-          cp builds/build/linux/linux-arm64 release/tuti-linux-arm64
-          cp builds/build/mac/mac-x64 release/tuti-darwin-amd64
-          cp builds/build/mac/mac-arm64 release/tuti-darwin-arm64
-          chmod +x release/*
+          # Rename binaries to standard format for install script (copy only if exists)
+          cp builds/build/linux/linux-x64 release/tuti-linux-amd64 2>/dev/null || echo "linux-x64 not found"
+          cp builds/build/linux/linux-arm64 release/tuti-linux-arm64 2>/dev/null || echo "linux-arm64 not found"
+          cp builds/build/mac/mac-x64 release/tuti-darwin-amd64 2>/dev/null || echo "mac-x64 not found"
+          cp builds/build/mac/mac-arm64 release/tuti-darwin-arm64 2>/dev/null || echo "mac-arm64 not found"
+          cp builds/build/windows/windows-x64.exe release/tuti-windows-amd64.exe 2>/dev/null || echo "windows-x64 not found"
+          chmod +x release/* 2>/dev/null || true
+          echo "=== Release files ==="
           ls -lh release/
 
       - name: Create Release
