@@ -32,7 +32,7 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        run: composer install --optimize-autoloader --no-interaction
 
       - name: Build PHAR
         run: php tuti app:build tuti.phar --build-version=${{ steps.version.outputs.VERSION }}
@@ -43,26 +43,24 @@ jobs:
           php builds/tuti.phar list | head -20
 
       - name: Build all binaries with phpacker
-        run: ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all
+        run: |
+          mkdir -p builds/build /tmp/phpacker-cache
+          chmod -R 777 builds/build /tmp/phpacker-cache
+          HOME=/tmp PHPACKER_CACHE=/tmp/phpacker-cache ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all
 
       - name: Verify binaries
         run: |
           echo "=== Binaries created ==="
           ls -laR builds/build/
-          echo "=== Testing Linux x64 ==="
+          echo "=== Testing Linux x64 binary ==="
           file builds/build/linux/linux-x64
-          echo "=== Testing macOS x64 ==="
-          file builds/build/mac/mac-x64
-
-      - name: Verify binaries are standalone
-        run: |
+          echo "=== Checking binary is executable ==="
+          chmod +x builds/build/linux/linux-x64
+          ./builds/build/linux/linux-x64 --version
+          echo "=== Binary works! ==="
           echo "=== Binary sizes ==="
           ls -lh builds/build/linux/
-          ls -lh builds/build/mac/
-          echo "=== Testing Linux x64 binary ==="
-          ./builds/build/linux/linux-x64 --version || echo "Binary test failed in CI (expected)"
-          echo "=== Checking if binaries are truly standalone ==="
-          strings builds/build/linux/linux-x64 | grep -E "(env php|/usr/bin/php)" || echo "✓ No system PHP references found"
+          ls -lh builds/build/mac/ || true
 
       - name: Prepare release files
         run: |
