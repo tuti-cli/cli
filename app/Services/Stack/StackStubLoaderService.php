@@ -33,6 +33,35 @@ final readonly class StackStubLoaderService
     }
 
     /**
+     * Check if content has unreplaced placeholders.
+     *
+     * @return array<int, string>
+     */
+    public function getUnreplacedPlaceholders(string $content): array
+    {
+        preg_match_all('/\{\{([A-Z_]+)\}\}/', $content, $matches);
+
+        return $matches[1] ?? [];
+    }
+
+    /**
+     * Load multiple stubs and combine them.
+     *
+     * @param  array<int, array{path: string, replacements?: array<string, string>}>  $stubs
+     */
+    public function loadMultiple(array $stubs): string
+    {
+        $combined = '';
+
+        foreach ($stubs as $stub) {
+            $combined .= $this->load($stub['path'], $stub['replacements'] ?? []);
+            $combined .= "\n";
+        }
+
+        return $combined;
+    }
+
+    /**
      * Resolve the stub path to an absolute path.
      *
      * Supports:
@@ -62,35 +91,6 @@ final readonly class StackStubLoaderService
 
         // Return first path for error message
         return $pathsToTry[0];
-    }
-
-    /**
-     * Check if content has unreplaced placeholders.
-     *
-     * @return array<int, string>
-     */
-    public function getUnreplacedPlaceholders(string $content): array
-    {
-        preg_match_all('/\{\{([A-Z_]+)\}\}/', $content, $matches);
-
-        return $matches[1] ?? [];
-    }
-
-    /**
-     * Load multiple stubs and combine them.
-     *
-     * @param  array<int, array{path: string, replacements?: array<string, string>}>  $stubs
-     */
-    public function loadMultiple(array $stubs): string
-    {
-        $combined = '';
-
-        foreach ($stubs as $stub) {
-            $combined .= $this->load($stub['path'], $stub['replacements'] ?? []);
-            $combined .= "\n";
-        }
-
-        return $combined;
     }
 
     /**

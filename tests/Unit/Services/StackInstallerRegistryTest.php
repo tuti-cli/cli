@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Contracts\StackInstallerInterface;
-use App\Services\Stack\Installers\LaravelStackInstaller;
 use App\Services\Stack\StackInstallerRegistry;
 
 it('can register an installer', function (): void {

@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
+use Exception;
 use LaravelZero\Framework\Commands\Command;
-
-use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\info;
+use RuntimeException;
 
 final class InstallCommand extends Command
 {
@@ -26,7 +25,7 @@ final class InstallCommand extends Command
             $this->displaySuccess($globalPath);
 
             return self::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Installation failed: ' . $e->getMessage());
             $this->newLine();
             $this->warn('Please try running with sudo or check directory permissions.');
@@ -97,7 +96,7 @@ final class InstallCommand extends Command
         );
 
         if ($result === false) {
-            throw new \RuntimeException("Failed to create config file: {$configPath}");
+            throw new RuntimeException("Failed to create config file: {$configPath}");
         }
 
         $this->line('  ✓ Created: config.json');
@@ -110,7 +109,7 @@ final class InstallCommand extends Command
         }
 
         if (! @mkdir($path, 0755, true) && ! is_dir($path)) {
-            throw new \RuntimeException("Failed to create directory: {$path}");
+            throw new RuntimeException("Failed to create directory: {$path}");
         }
     }
 
@@ -142,12 +141,12 @@ final class InstallCommand extends Command
         }
 
         if (empty($home)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Unable to determine home directory. Please set the HOME environment variable.'
             );
         }
 
-        return rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
+        return mb_rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
     }
 
     private function displaySuccess(string $globalPath): void

@@ -6,7 +6,6 @@ namespace App\Commands\Stack;
 
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Stack\Installers\LaravelStackInstaller;
-use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
@@ -14,7 +13,6 @@ use LaravelZero\Framework\Commands\Command;
 use Throwable;
 
 use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\info;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
@@ -225,7 +223,7 @@ final class LaravelCommand extends Command
         $pathOption = $this->option('path');
 
         if ($pathOption !== null) {
-            return rtrim($pathOption, '/') . '/' . $projectName;
+            return mb_rtrim($pathOption, '/') . '/' . $projectName;
         }
 
         return getcwd() . '/' . $projectName;
@@ -357,7 +355,7 @@ final class LaravelCommand extends Command
 
         $this->newLine();
         $this->info('📋 Configuration Summary:');
-        $this->line("  Mode: " . ($config['mode'] === 'fresh' ? '✨ Fresh installation' : '📁 Apply to existing'));
+        $this->line('  Mode: ' . ($config['mode'] === 'fresh' ? '✨ Fresh installation' : '📁 Apply to existing'));
         $this->line("  Project: {$config['project_name']}");
         $this->line("  Path: {$config['project_path']}");
         $this->line("  Environment: {$config['environment']}");

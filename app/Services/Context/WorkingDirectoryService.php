@@ -57,7 +57,7 @@ final class WorkingDirectoryService
             return $base;
         }
 
-        return $base . '/' . ltrim($subPath, '/');
+        return $base . '/' . mb_ltrim($subPath, '/');
     }
 
     /**
@@ -73,7 +73,7 @@ final class WorkingDirectoryService
      */
     public function getPath(string $relativePath): string
     {
-        return $this->getWorkingDirectory() . '/' . ltrim($relativePath, '/');
+        return $this->getWorkingDirectory() . '/' . mb_ltrim($relativePath, '/');
     }
 
     /**

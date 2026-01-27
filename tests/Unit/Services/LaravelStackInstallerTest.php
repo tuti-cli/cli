@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Services\Stack\Installers\LaravelStackInstaller;
-use App\Services\Stack\StackFilesCopierService;
-use App\Services\Stack\StackLoaderService;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function (): void {

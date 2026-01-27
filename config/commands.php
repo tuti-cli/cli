@@ -96,7 +96,7 @@ return [
         // --- 4. Standard Laravel Zero Commands (Recommended to keep list clean) ---
         // Note: BuildCommand is needed for `php tuti app:build`
         // LaravelZero\Framework\Commands\BuildCommand::class,  // KEEP THIS AVAILABLE!
-        LaravelZero\Framework\Commands\InstallCommand::class,
+        //        LaravelZero\Framework\Commands\InstallCommand::class,
         LaravelZero\Framework\Commands\RenameCommand::class,
         LaravelZero\Framework\Commands\StubPublishCommand::class,
         LaravelZero\Framework\Commands\MakeCommand::class,
@@ -115,9 +115,9 @@ return [
     */
 
     'remove' => [
-//        LaravelZero\Framework\Commands\BuildCommand::class,
-//        LaravelZero\Framework\Commands\InstallCommand::class,
-//        LaravelZero\Framework\Commands\RenameCommand::class,
+        //        LaravelZero\Framework\Commands\BuildCommand::class,
+        //        LaravelZero\Framework\Commands\InstallCommand::class,
+        //        LaravelZero\Framework\Commands\RenameCommand::class,
 
     ],
 
