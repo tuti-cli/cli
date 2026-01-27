@@ -7,9 +7,9 @@ namespace App\Commands\Stack;
 use App\Services\Stack\StackRepositoryService;
 use LaravelZero\Framework\Commands\Command;
 
+use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
-use function Laravel\Prompts\confirm;
 
 final class ManageCommand extends Command
 {

@@ -18,9 +18,9 @@ if (! function_exists('tuti_path')) {
             }
         }
 
-        $base = rtrim($projectRoot, '/') . '/.tuti';
+        $base = mb_rtrim($projectRoot, '/') . '/.tuti';
 
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
+        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }
 }
 
@@ -75,9 +75,9 @@ if (! function_exists('global_tuti_path')) {
             );
         }
 
-        $base = rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
+        $base = mb_rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
 
-        return $path ? $base . DIRECTORY_SEPARATOR . ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR) : $base;
+        return $path ? $base . DIRECTORY_SEPARATOR . mb_ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR) : $base;
     }
 }
 
@@ -89,7 +89,7 @@ if (! function_exists('cli_base_path')) {
     {
         $base = dirname(__DIR__, 2);
 
-        return $path ? $base . '/' . ltrim($path, '/') : $base;
+        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }
 }
 
@@ -101,7 +101,7 @@ if (! function_exists('stub_path')) {
     {
         $base = cli_base_path('stubs');
 
-        return $path ? $base . '/' . mb_ltrim($path, '/')  : $base;
+        return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }
 }
 

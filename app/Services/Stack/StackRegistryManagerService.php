@@ -25,32 +25,6 @@ final class StackRegistryManagerService
     }
 
     /**
-     * Load the service registry from JSON file
-     */
-    private function loadRegistry(): void
-    {
-        $path = stub_path($this->registryPath);
-
-        if (! file_exists($path)) {
-            throw new RuntimeException("Service registry not found at: {$path}");
-        }
-
-        $content = file_get_contents($path);
-
-        if ($content === false) {
-            throw new RuntimeException("Failed to read service registry: {$path}");
-        }
-
-        $decoded = json_decode($content, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new RuntimeException('Failed to parse service registry JSON: ' . json_last_error_msg());
-        }
-
-        $this->registry = $decoded;
-    }
-
-    /**
      * Get the registry version
      */
     public function getVersion(): string
@@ -164,5 +138,31 @@ final class StackRegistryManagerService
     public function getCategories(): array
     {
         return array_keys($this->registry['services'] ?? []);
+    }
+
+    /**
+     * Load the service registry from JSON file
+     */
+    private function loadRegistry(): void
+    {
+        $path = stub_path($this->registryPath);
+
+        if (! file_exists($path)) {
+            throw new RuntimeException("Service registry not found at: {$path}");
+        }
+
+        $content = file_get_contents($path);
+
+        if ($content === false) {
+            throw new RuntimeException("Failed to read service registry: {$path}");
+        }
+
+        $decoded = json_decode($content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new RuntimeException('Failed to parse service registry JSON: ' . json_last_error_msg());
+        }
+
+        $this->registry = $decoded;
     }
 }

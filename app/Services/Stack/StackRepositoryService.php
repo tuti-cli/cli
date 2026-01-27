@@ -115,7 +115,7 @@ final class StackRepositoryService
         if (! file_exists($targetPath . '/stack.json')) {
             $this->removeDirectory($targetPath);
             throw new RuntimeException(
-                "Downloaded stack is invalid: missing stack.json"
+                'Downloaded stack is invalid: missing stack.json'
             );
         }
 

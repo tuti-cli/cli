@@ -86,6 +86,11 @@ clean: ## Clean up Docker resources
 install: up ## Install composer dependencies
 	@$(DOCKER_EXEC) composer install
 
+dotenv-test: ## Test if .env is loaded correctly
+	@echo "$(CYAN)Testing .env loading...$(RESET)"
+	@$(DOCKER_EXEC) php -r "require 'vendor/autoload.php'; \$$app = require 'bootstrap/app.php'; \$$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap(); echo 'APP_NAME: ' . env('APP_NAME', 'NOT LOADED') . PHP_EOL; echo 'APP_ENV: ' . env('APP_ENV', 'NOT LOADED') . PHP_EOL;"
+	@echo "$(GREEN)✓ Dotenv loaded successfully$(RESET)"
+
 check-build: ## Check if app:build command is available
 	@$(DOCKER_EXEC) php tuti list 2>/dev/null | grep -q "app:build" && \
 		echo "$(GREEN)✓ app:build is available$(RESET)" || \

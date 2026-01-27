@@ -22,6 +22,8 @@ final class FindCommand extends Command
             ->map(fn ($key): int|string => $key)
             ->toArray();
 
+        echo env('APP_ENV');
+
         $command = suggest(
             'Which command do you want to run?',
             options: $commands,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Project;
 
 use App\Services\Context\WorkingDirectoryService;
+use Exception;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
 
@@ -66,7 +67,7 @@ final class ProjectDirectoryService
         if (! File::isDirectory($tutiPath)) {
             try {
                 File::makeDirectory($tutiPath, 0755, true);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 throw new RuntimeException(
                     "Failed to create .tuti directory at: {$tutiPath}. " .
                     "Error: {$e->getMessage()}. " .
