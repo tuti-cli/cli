@@ -43,14 +43,28 @@ jobs:
           php builds/tuti.phar list | head -20
 
       - name: Build all binaries with phpacker
-        run: ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all
+        run: |
+          echo "Setting up phpacker environment..."
+          mkdir -p /tmp/phpacker-cache
+          chmod -R 777 /tmp/phpacker-cache
+          echo "Building binaries..."
+          TMPDIR=/tmp/phpacker-cache HOME=/tmp ./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all
 
-      - name: List built files
+      - name: Verify binaries are standalone
         run: |
           echo "=== PHAR ==="
           ls -la builds/tuti.phar
           echo "=== Binaries ==="
-          ls -laR builds/build/
+          find builds/build -type f -name "*" -exec file {} \;
+          echo "=== Testing Linux binary ==="
+          if [ -f "builds/build/linux/linux-x64" ]; then
+            ./builds/build/linux/linux-x64 --version || echo "Binary test failed - checking if it requires PHP"
+            ldd builds/build/linux/linux-x64 2>/dev/null || echo "Binary is static or ldd not available"
+            strings builds/build/linux/linux-x64 | grep -E "(php|PHP)" | head -5 || echo "No PHP strings found"
+          fi
+
+      - name: List built files
+        run: ls -laR builds/build/
 
       - name: Prepare release files
         run: |
