@@ -2,7 +2,7 @@
 
 **Docker-based environment management for Laravel projects.**
 
-One command to set up local development. Zero PHP installation required.
+One command to set up local development. **Zero dependencies required.**
 
 > **Note:** This project is under active development.
 
@@ -16,7 +16,7 @@ One command to set up local development. Zero PHP installation required.
 curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
 ```
 
-This downloads a self-contained binary - **no PHP installation required** on your system.
+**✅ No PHP, no dependencies!** Downloads a truly self-contained binary (~50MB) with embedded PHP runtime.
 
 ### Manual Install
 
@@ -81,7 +81,7 @@ tuti local:start
 - **Docker** - Required for running containers
 - **curl** or **wget** - For installation
 
-That's it! PHP runs inside Docker containers, not on your machine.
+That's it! The tuti binary includes everything needed to run.
 
 ---
 
@@ -99,9 +99,10 @@ tuti local:stop        # Stop environment
 
 ## How It Works
 
-1. **No PHP on your machine** - Tuti is a self-contained binary with embedded PHP runtime
+1. **Truly self-contained** - Binary includes embedded PHP runtime (built with phpacker)
 2. **Docker-first** - All development services run in containers
 3. **Stack templates** - Pre-configured Docker setups for Laravel, with databases, cache, etc.
+4. **Single executable** - Just download and run, no extraction needed
 
 ---
 
@@ -113,7 +114,7 @@ curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.s
 
 Or manually:
 ```bash
-rm /usr/local/bin/tuti
+rm /usr/local/bin/tuti        # or ~/.tuti/bin/tuti
 rm -rf ~/.tuti
 ```
 

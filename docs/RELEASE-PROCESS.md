@@ -7,10 +7,12 @@
 make build-phar
 make test-phar
 
-# Build binaries for all platforms (uses phpacker)
-make build-binary
+# Build binaries with phpacker
+make build-binary-linux    # Linux only (faster for testing)
+# OR
+make build-binary          # All platforms
 
-# Test binary locally (no PHP required!)
+# Test binary locally (NO PHP required!)
 make test-binary
 
 # Install locally and test
@@ -19,9 +21,15 @@ make install-local
 ~/.tuti/bin/tuti install
 ```
 
-## Binary Output Structure
+## How Binaries Work
 
-phpacker creates binaries in `builds/build/`:
+We use **phpacker** (as documented in Laravel Zero docs) to create self-contained binaries:
+
+1. **Build PHAR** first: `php tuti app:build tuti.phar`
+2. **Run phpacker**: `./vendor/bin/phpacker build --src=./builds/tuti.phar --php=8.4 all`
+3. **Result**: Binaries with embedded PHP 8.4 runtime
+
+The binaries are created in `builds/build/` organized by platform:
 ```
 builds/build/
 ├── linux/
@@ -34,19 +42,23 @@ builds/build/
     └── windows-x64.exe
 ```
 
+### Binary Features:
+- ✅ **Completely self-contained** - includes PHP 8.4 runtime
+- ✅ **No system dependencies** - user only needs the binary
+- ✅ **All platforms** - Linux, macOS, Windows
+- ✅ **Single file** - easy to distribute
+
+
 ## Release
 
 ```bash
-make version-bump V=0.1.1
-git add . && git commit -m "Release v0.1.1"
-git tag -a v0.1.1 -m "Release v0.1.1"
+make version-bump V=0.1.4
+git add . && git commit -m "Release v0.1.4"
+git tag -a v0.1.4 -m "Release v0.1.4"
 git push origin main --tags
 ```
 
-GitHub Actions will automatically:
-1. Build PHAR
-2. Build binaries with phpacker for all platforms
-3. Create GitHub Release with all files
+GitHub Actions will automatically build binaries for all platforms with static PHP embedded.
 
 ## Verify Release
 
@@ -56,6 +68,6 @@ GitHub Actions will automatically:
 ## Rollback
 
 ```bash
-git tag -d v0.1.1
-git push origin :refs/tags/v0.1.1
+git tag -d v0.1.4
+git push origin :refs/tags/v0.1.4
 ```
