@@ -1,0 +1,21 @@
+{
+    "version": "1.0.0",
+    "project": "tuti-cli",
+    "guidelines": [
+        "tuti-cli/core-architecture",
+        "tuti-cli/stack-system",
+        "tuti-cli/docker-integration",
+        "tuti-cli/laravel-zero-conventions",
+        "laravel-zero/commands",
+        "laravel-zero/dependencies",
+        "laravel-zero/testing"
+    ],
+    "skills": [
+        "stack-management",
+        "docker-compose-generation",
+        "service-stubs",
+        "laravel-zero-commands"
+    ],
+    "mcp_enabled": false,
+    "docs_api": "https://laravel.com/docs"
+}
