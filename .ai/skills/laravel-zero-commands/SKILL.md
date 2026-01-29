@@ -1,34 +1,38 @@
 ---
 name: laravel-zero-commands
-description: Develop Laravel Zero commands with best practices.
+description: Develop Laravel Zero console commands
+globs:
+  - app/Commands/**
+  - config/commands.php
 ---
 
-# Laravel Zero Commands
+# Laravel Zero Commands Skill
 
 ## When to Use
-Creating or modifying console commands.
+- Creating new console commands
+- Modifying existing commands
 
 ## Command Template
 
 ```php
 declare(strict_types=1);
 
-namespace App\Commands\SomeCategory;
+namespace App\Commands\Category;
 
-use App\Services\SomeService;
+use App\Services\MyService;
 use LaravelZero\Framework\Commands\Command;
 
-final class MyCommand extends Command
+final class ActionCommand extends Command
 {
-    protected $signature = 'category:name 
-        {argument : Description}
+    protected $signature = 'category:action 
+        {argument? : Description}
         {--option=default : Description}
     ';
 
-    protected $description = 'Command description';
+    protected $description = 'What this command does';
 
     public function __construct(
-        private readonly SomeService $service,
+        private readonly MyService $service,
     ) {
         parent::__construct();
     }
@@ -37,13 +41,10 @@ final class MyCommand extends Command
     {
         try {
             $this->info('Starting...');
-            
-            $result = $this->service->doSomething();
-            
-            $this->info('Completed successfully!');
-            
+            $result = $this->service->execute();
+            $this->info('Done!');
             return Command::SUCCESS;
-        } catch (SomeException $e) {
+        } catch (\Exception $e) {
             $this->error("Failed: {$e->getMessage()}");
             return Command::FAILURE;
         }
@@ -51,45 +52,62 @@ final class MyCommand extends Command
 }
 ```
 
-Common Patterns
+## File Location
+
+```
+app/Commands/
+├── Local/           # local:start, local:stop
+├── Stack/           # stack:laravel, stack:manage
+└── Test/            # test:*
+```
+
+## Common Patterns
 
 ### Progress Bar
+```php
+$this->withProgressBar($items, function ($item) {
+    $this->processItem($item);
+});
+```
 
-``` php
-$items = collect(range(1, 100));
-$bar = $this->output->createProgressBar($items->count());
-$bar->start();
+### Interactive Input
+```php
+$name = $this->ask('Project name?', 'default');
+$db = $this->choice('Database?', ['postgres', 'mysql'], 0);
+$confirm = $this->confirm('Continue?', true);
+```
 
-$items->each(function ($item) use ($bar) {
-    // Process item
-    $bar->advance();
+### Table Output
+```php
+$this->table(['Name', 'Status'], [
+    ['Laravel', 'Active'],
+    ['WordPress', 'Pending'],
+]);
+```
+
+## Testing
+
+```php
+test('command executes', function () {
+    $this->artisan('category:action')
+        ->assertExitCode(Command::SUCCESS);
 });
 
-$bar->finish();
-$this->newLine();
+test('command with mocked service', function () {
+    $mock = Mockery::mock(MyService::class);
+    $mock->shouldReceive('execute')->once()->andReturn(true);
+    $this->app->instance(MyService::class, $mock);
+    
+    $this->artisan('category:action')
+        ->assertExitCode(Command::SUCCESS);
+});
 ```
 
-Table Output
-```php
-$data = [
-    ['Name' => 'John', 'Age' => 30],
-    ['Name' => 'Jane', 'Age' => 25],
-];
+## Checklist
 
-$this->table(array_keys($data[0]), $data);
-```
-Asking Questions
-```php
-$name = $this->ask('What is your name?');
-$confirm = $this->confirm('Continue?');
-$choice = $this->choice('Select one', ['Option 1', 'Option 2']);
-
-Best Practices
-
-- Use `declare(strict_types=1)`
-- Make classes `final`
-- Use constructor injection
-- Return `Command::SUCCESS` or `Command::FAILURE`
-- Handle exceptions properly
-- Provide clear user feedback
-- Write tests```
+- [ ] `declare(strict_types=1)`
+- [ ] Class is `final`
+- [ ] Constructor calls `parent::__construct()`
+- [ ] Returns `Command::SUCCESS` or `Command::FAILURE`
+- [ ] Has descriptive `$description`
+- [ ] Includes tests

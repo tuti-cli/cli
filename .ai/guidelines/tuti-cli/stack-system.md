@@ -1,100 +1,94 @@
+# Stack System
 
-#### 3.2 Stack System
-Create `.ai/guidelines/tuti-cli/stack-system.md`:
+## Overview
 
-```markdown
-# Tuti CLI Stack System
+Stacks provide pre-configured Docker setups for different web development frameworks and technologies.
 
-The stack system provides pre-configured Docker setups for different frameworks.
+**Supported Frameworks:**
+- Laravel (PHP)
+- WordPress (PHP/CMS) - planned
+- Next.js (React/Node.js) - planned
+- Django (Python) - planned
 
-## Stack Architecture
+## Stack Sources
 
-### Stack Sources
+| Source | Location | Priority |
+|--------|----------|----------|
+| Remote | Downloaded to `~/.tuti/stacks/` | Default |
+| Local | `stacks/` in repo (dev only) | Higher |
 
-1. **Remote Repositories**:
-   - Defined in `stubs/stacks/registry.json`
-   - Downloaded to `~/.tuti/stacks/` on first use
-   - Updated via `tuti stack:manage update`
+## Stack Structure
 
-2. **Local Development** (for contributors):
-   - Placed in `stacks/` directory
-   - Takes precedence over remote stacks
-
-### Stack Components
-
-**Stack Repository** (`stubs/stacks/registry.json`):
-```json
-{
-    "stacks": {
-        "laravel": {
-            "name": "Laravel Stack",
-            "description": "Laravel with Docker support",
-            "repository": "https://github.com/tuti-cli/laravel-stack.git",
-            "branch": "main",
-            "framework": "laravel",
-            "type": "php"
-        }
-    }
-}
-
-
-**Stack Directory Structure**:
-
+```
 laravel-stack/
-├── stack.json                 # Stack manifest
+├── stack.json              # Manifest
 ├── docker/
 │   ├── Dockerfile
 │   └── nginx.conf
 ├── environments/
 │   ├── .env.dev.example
 │   └── .env.prod.example
-├── docker-compose.yml          # Base compose
-├── docker-compose.dev.yml      # Dev overrides
-└── docker-compose.prod.yml     # Prod overrides
+├── docker-compose.yml      # Base
+├── docker-compose.dev.yml  # Dev overrides
+└── docker-compose.prod.yml # Prod overrides
+```
 
-Stack Installer Interface
+## Registry
 
-All stack installers must implement `StackInstallerInterface`:
+`stubs/stacks/registry.json`:
+```json
+{
+    "stacks": {
+        "laravel": {
+            "name": "Laravel Stack",
+            "repository": "https://github.com/tuti-cli/laravel-stack.git",
+            "framework": "laravel",
+            "type": "php"
+        },
+        "wordpress": {
+            "name": "WordPress Stack", 
+            "repository": "https://github.com/tuti-cli/wordpress-stack.git",
+            "framework": "wordpress",
+            "type": "php"
+        },
+        "nextjs": {
+            "name": "Next.js Stack",
+            "repository": "https://github.com/tuti-cli/nextjs-stack.git", 
+            "framework": "nextjs",
+            "type": "nodejs"
+        }
+    }
+}
+```
 
+## Installer Interface
+
+```php
 interface StackInstallerInterface
 {
     public function getIdentifier(): string;
     public function getName(): string;
-    public function getDescription(): string;
-    public function getFramework(): string;
-    public function supports(string $stackIdentifier): bool;
+    public function supports(string $stack): bool;
     public function detectExistingProject(string $path): bool;
-    public function installFresh(string $projectPath, string $projectName, array $options = []): bool;
-    public function applyToExisting(string $projectPath, array $options = []): bool;
-    public function getStackPath(): string;
+    public function installFresh(string $path, string $name, array $options): bool;
+    public function applyToExisting(string $path, array $options): bool;
     public function getAvailableModes(): array;
 }
+```
 
+## Key Services
 
-Key Services
+| Service | Purpose |
+|---------|---------|
+| `StackRepositoryService` | Download/update stacks |
+| `StackInitializationService` | Initialize projects |
+| `StackComposeBuilderService` | Generate docker-compose |
+| `StackStubLoaderService` | Load service stubs |
+| `StackInstallerRegistry` | Manage installers |
 
-**StackRepositoryService** (`app/Services/Stack/StackRepositoryService.php`):
-- Downloads stacks from remote repositories
-- Caches stacks locally
-- Checks for updates
+## Adding New Stack
 
-**StackInitializationService** (`app/Services/Stack/StackInitializationService.php`):
-- Calls appropriate stack installer
-- Handles fresh and existing modes
-- Manages service selection
-
-**StackComposeBuilderService** (`app/Services/Stack/StackComposeBuilderService.php`):
-- Combines base compose with service stubs
-- Applies stack-specific overrides
-- Generates final docker-compose.yml
-
-**StackStubLoaderService** (`app/Services/Stack/StackStubLoaderService.php`):
-- Loads service stubs from `stubs/services/`
-- Provides service configurations
-
-### Adding a New Stack
-
-1. Create stack repository (e.g., `tuti-cli/wordpress-stack`)
+1. Create stack repository
 2. Add to `stubs/stacks/registry.json`
 3. Create installer in `app/Services/Stack/Installers/`
 4. Register in `StackServiceProvider`
@@ -103,11 +97,11 @@ Key Services
 ## Service Stubs
 
 Located in `stubs/services/`:
-- `registry.json`: Service definitions
-- `databases/`: Postgres, MySQL, MariaDB
-- `cache/`: Redis
-- `search/`: Meilisearch, Typesense
-- `storage/`: MinIO
-- `mail/`: Mailpit
+- `databases/` - PostgreSQL, MySQL, MariaDB
+- `cache/` - Redis, Memcached
+- `search/` - Meilisearch, Typesense, Elasticsearch
+- `storage/` - MinIO, S3-compatible
+- `mail/` - Mailpit, MailHog
+- `monitoring/` - Grafana, Prometheus
 
-Service stubs are universal templates that work with any stack.
+Service stubs are universal templates that work across all frameworks (Laravel, WordPress, Next.js, etc.).
