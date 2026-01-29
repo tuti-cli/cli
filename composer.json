@@ -17,21 +17,20 @@
     ],
     "require": {
         "php": "^8.4",
-        "illuminate/database": "^12.49.0",
-        "illuminate/log": "^12.49",
-        "laravel-zero/framework": "^12.0.5",
+        "illuminate/database": "^12.42.0",
+        "illuminate/log": "^12.42",
+        "laravel-zero/framework": "^12.0.4",
         "symfony/yaml": "^7.4.1",
-        "vlucas/phpdotenv": "^5.6.3"
+        "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
-        "laravel/boost": "^1.8.10",
-        "laravel/pint": "^1.27.0",
+        "laravel/pint": "^1.26.0",
         "mockery/mockery": "^1.6.12",
-        "pestphp/pest": "^3.8.4|^4.3.2",
+        "pestphp/pest": "^3.8.4|^4.2.0",
         "phpacker/phpacker": "^0.6.4",
-        "phpstan/phpstan": "^2.1.37",
-        "rector/rector": "^2.3.5"
+        "phpstan/phpstan": "^2.1.33",
+        "rector/rector": "^2.2.14"
     },
     "autoload": {
         "psr-4": {
@@ -72,5 +71,7 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "bin": ["tuti"]
+    "bin": [
+        "tuti"
+    ]
 }
