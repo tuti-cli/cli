@@ -17,20 +17,21 @@
     ],
     "require": {
         "php": "^8.4",
-        "illuminate/database": "^12.42.0",
-        "illuminate/log": "^12.42",
-        "laravel-zero/framework": "^12.0.4",
+        "illuminate/database": "^12.49.0",
+        "illuminate/log": "^12.49",
+        "laravel-zero/framework": "^12.0.5",
         "symfony/yaml": "^7.4.1",
-        "vlucas/phpdotenv": "^5.6"
+        "vlucas/phpdotenv": "^5.6.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
-        "laravel/pint": "^1.26.0",
+        "laravel/boost": "^1.8.10",
+        "laravel/pint": "^1.27.0",
         "mockery/mockery": "^1.6.12",
-        "pestphp/pest": "^3.8.4|^4.2.0",
+        "pestphp/pest": "^3.8.4|^4.3.2",
         "phpacker/phpacker": "^0.6.4",
-        "phpstan/phpstan": "^2.1.33",
-        "rector/rector": "^2.2.14"
+        "phpstan/phpstan": "^2.1.37",
+        "rector/rector": "^2.3.5"
     },
     "autoload": {
         "psr-4": {
