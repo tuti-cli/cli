@@ -1,58 +1,76 @@
-# Testing Laravel Zero Commands with Pest
+# Testing with Pest
 
-## Basic Command Test
+## Command Tests
 
 ```php
-test('command executes successfully', function () {
-    $this->artisan('command:name')
+use LaravelZero\Framework\Commands\Command;
+
+test('command succeeds', function () {
+    $this->artisan('stack:laravel', ['project-name' => 'test'])
         ->assertExitCode(Command::SUCCESS);
 });
 
-With Arguments and Options
-
-```php
-test('command with arguments', function () {
-    $this->artisan('command:name', ['arg1' => 'value'])
-        ->expectsOutput('Expected output')
+test('command output', function () {
+    $this->artisan('local:status')
+        ->expectsOutput('Environment running')
         ->assertExitCode(Command::SUCCESS);
 });
 
-Testing Output
-
-```php
-test('command displays expected output', function () {
-    $this->artisan('command:name')
-        ->expectsOutput('Hello World')
-        ->expectsOutputContains('partial match')
-        ->doesntExpectOutput('unexpected text');
+test('command interaction', function () {
+    $this->artisan('stack:laravel')
+        ->expectsQuestion('Project name?', 'my-app')
+        ->expectsConfirmation('Include Redis?', 'yes')
+        ->assertExitCode(Command::SUCCESS);
 });
+```
 
-Mocking Services
+## Mocking Services
 
 ```php
-test('command uses service correctly', function () {
-    $service = Mockery::mock(SomeService::class);
-    $service->shouldReceive('doSomething')->once()->andReturn('result');
+use App\Services\Stack\StackInitializationService;
+
+test('command uses service', function () {
+    $mock = Mockery::mock(StackInitializationService::class);
+    $mock->shouldReceive('initialize')
+        ->once()
+        ->with(['stack' => 'laravel'])
+        ->andReturn(true);
     
-    $this->app->instance(SomeService::class, $service);
+    $this->app->instance(StackInitializationService::class, $mock);
     
-    $this->artisan('command:name')
+    $this->artisan('stack:laravel')
         ->assertExitCode(Command::SUCCESS);
 });
+```
 
-
-Testing Interactions
+## Unit Tests
 
 ```php
-test('command asks for input', function () {
-    $this->artisan('command:name')
-        ->expectsQuestion('What is your name?', 'John')
-        ->expectsOutput('Hello, John')
-        ->assertExitCode(Command::SUCCESS);
-});
+use App\Services\Stack\StackStubLoaderService;
 
-test('command confirms action', function () {
-    $this->artisan('command:name')
-        ->expectsConfirmation('Continue?', 'yes')
-        ->assertExitCode(Command::SUCCESS);
+test('stub loader returns services', function () {
+    $loader = app(StackStubLoaderService::class);
+    
+    $services = $loader->getAvailableServices();
+    
+    expect($services)->toHaveKey('databases.postgres');
 });
+```
+
+## Assertions
+
+```php
+expect($result)->toBe('value');
+expect($array)->toContain('item');
+expect($object)->toBeInstanceOf(MyClass::class);
+expect($array)->toHaveCount(3);
+expect($string)->toContain('substring');
+```
+
+## Run Tests
+
+```bash
+composer test           # All tests
+composer test:unit      # Unit only  
+composer test:feature   # Feature only
+```

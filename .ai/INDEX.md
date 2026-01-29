@@ -1,77 +1,57 @@
-# Tuti CLI AI Guidelines & Skills Index
+# Tuti CLI - AI Guidelines Index
 
-This directory contains AI guidelines and skills for developing Tuti CLI.
+> AI-assisted development guidelines for Tuti CLI (Laravel Zero)
+
+## Quick Reference
+
+| Category | Path | Purpose |
+|----------|------|---------|
+| Core Architecture | `guidelines/core/` | Project structure, coding standards |
+| Laravel Zero | `guidelines/laravel-zero/` | Framework-specific patterns |
+| Skills | `skills/` | On-demand domain knowledge |
 
 ## Guidelines
 
-Guidelines are loaded as context and provide best practices and conventions.
+### Core (`guidelines/core/`)
+- **[architecture.md](guidelines/core/architecture.md)** - Project structure and patterns
+- **[coding-standards.md](guidelines/core/coding-standards.md)** - PHP/Laravel conventions
 
-### Tuti CLI Specific Guidelines
+### Laravel Zero (`guidelines/laravel-zero/`)
+- **[commands.md](guidelines/laravel-zero/commands.md)** - Console command development  
+- **[testing.md](guidelines/laravel-zero/testing.md)** - Testing with Pest
 
-- **[Core Architecture](guidelines/tuti-cli/core-architecture.md)** - Overall architecture and patterns
-- **[Stack System](guidelines/tuti-cli/stack-system.md)** - Stack management architecture
-- **[Docker Integration](guidelines/tuti-cli/docker-integration.md)** - Docker service management
-- **[Laravel Zero Conventions](guidelines/tuti-cli/laravel-zero-conventions.md)** - Tuti CLI's Laravel Zero patterns
-
-### Laravel Zero Guidelines
-
-- **[Commands](guidelines/laravel-zero/commands.md)** - Command development
-- **[Dependencies](guidelines/laravel-zero/dependencies.md)** - Common dependencies
-- **[Testing](guidelines/laravel-zero/testing.md)** - Testing with Pest
+### Tuti CLI (`guidelines/tuti-cli/`)
+- **[stack-system.md](guidelines/tuti-cli/stack-system.md)** - Stack architecture
+- **[docker-integration.md](guidelines/tuti-cli/docker-integration.md)** - Docker management
 
 ## Skills
 
-Skills are activated on-demand for specific domains.
+Activate for specific tasks:
 
-- **[Stack Management](skills/stack-management/SKILL.md)** - Work with stacks and installers
-- **[Docker Compose Generation](skills/docker-compose-generation/SKILL.md)** - Generate docker-compose files
-- **[Service Stubs](skills/service-stubs/SKILL.md)** - Manage service stubs
-- **[Laravel Zero Commands](skills/laravel-zero-commands/SKILL.md)** - Develop commands
+| Skill | When to Use |
+|-------|-------------|
+| [stack-management](skills/stack-management/SKILL.md) | Creating/modifying stacks |
+| [docker-compose-generation](skills/docker-compose-generation/SKILL.md) | Generating docker-compose files |
+| [service-stubs](skills/service-stubs/SKILL.md) | Adding service stubs |
+| [laravel-zero-commands](skills/laravel-zero-commands/SKILL.md) | Developing commands |
+| [phar-binary](skills/phar-binary/SKILL.md) | Building PHAR/binaries |
 
-## How to Use
+## Usage Examples
 
-### For GLM
+```
+# Adding a new framework stack
+@AI: Use stack-management skill to add Next.js stack with Node.js runtime.
 
-Reference guidelines in your conversation:
+# Creating framework-specific command  
+@AI: Follow laravel-zero-commands skill to create stack:wordpress command.
 
-@GLM: Use the stack-system guidelines to create a new WordPress stack installer.
+# Adding universal service
+@AI: Use service-stubs skill to add Elasticsearch that works with all frameworks.
+```
 
-Activate specific skills:
+## Resources
 
-@GLM: Activate the stack-management skill. I need to add a new service.
-
-### For Claude
-
-Claude can read these files as context. Reference them directly:
-
-
-@Claude: Please review the docker-compose-generation skill and help me...
-
-## Configuration
-
-See `boost-config.json` for the active guidelines and skills.
-
-## Updating
-
-To add new guidelines or skills:
-1. Create the file in the appropriate directory
-2. Add to `boost-config.json`
-3. Reference it in conversations
-
-## Documentation Resources
-
-- Laravel Documentation: https://laravel.com/docs
-- Laravel Zero Documentation: https://laravel-zero.com
-- Tuti CLI Documentation: `docs/` directory
-
-
-How to Use with GLM and Claude
-
-
-Example with GLM
-
-@GLM: I need to create a new WordPress stack for Tuti CLI. Please use the stack-management skill and follow the guidelines in .ai/guidelines/tuti-cli/stack-system.md to implement this. The stack should be similar to the Laravel stack but for WordPress.
-
-Example with Claude
-
-@Claude: I want to add a Memcached service stub to Tuti CLI. Please refer to the service-stubs skill at .ai/skills/service-stubs/SKILL.md and the docker-integration guidelines. Follow the naming conventions and include health checks.
+- [Laravel Docs](https://laravel.com/docs)
+- [Laravel Zero Docs](https://laravel-zero.com)
+- [Project README](../README.md)
+- [CONTRIBUTING](../CONTRIBUTING.md)

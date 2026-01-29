@@ -1,85 +1,99 @@
 ---
 name: stack-management
-description: Work with Tuti CLI's stack system, including templates, installers, and service stubs.
+description: Create and modify Tuti CLI stacks, installers, and service stubs
+globs:
+  - app/Services/Stack/**
+  - app/Commands/Stack/**
+  - stubs/stacks/**
+  - stubs/services/**
 ---
 
-# Stack Management
+# Stack Management Skill
 
 ## When to Use
-Working with stack templates, installers, service stubs, or initialization.
+- Adding new framework stack (WordPress, Next.js, Django, etc.)
+- Modifying existing stack installer
+- Working with universal service stubs
 
 ## Key Files
 
-- `app/Services/Stack/StackRepositoryService.php` - Stack management
-- `app/Services/Stack/StackInitializationService.php` - Initialization
-- `app/Services/Stack/StackComposeBuilderService.php` - Docker compose generation
-- `app/Services/Stack/StackStubLoaderService.php` - Service stubs
-- `stubs/stacks/registry.json` - Stack definitions
-- `stubs/services/registry.json` - Service definitions
+```
+app/Services/Stack/
+├── StackRepositoryService.php      # Download/cache stacks
+├── StackInitializationService.php  # Project initialization
+├── StackComposeBuilderService.php  # docker-compose generation
+├── StackStubLoaderService.php      # Load service stubs
+├── StackInstallerRegistry.php      # Installer management
+└── Installers/
+    └── LaravelStackInstaller.php   # Reference implementation
 
-## Adding a New Stack
-
-### 1. Create Stack Repository
-```bash
-mkdir -p stacks/my-stack/{docker,environments}
+stubs/
+├── stacks/registry.json            # Stack definitions
+└── services/registry.json          # Service definitions
 ```
 
-### 2. Create stack.json
+## Add New Stack
 
+### 1. Registry Entry (`stubs/stacks/registry.json`)
 ```json
 {
-    "name": "My Stack",
-    "version": "1.0.0",
-    "description": "Description",
-    "framework": "laravel",
-    "type": "php"
-}
-```
-
-### 3. Create Installer
-4. 
-```php
-final class MyStackInstaller implements StackInstallerInterface
-{
-    public function getIdentifier(): string
-    {
-        return 'my-stack';
+    "wordpress": {
+        "name": "WordPress Stack",
+        "repository": "https://github.com/tuti-cli/wordpress-stack.git",
+        "framework": "wordpress",
+        "type": "php"
+    },
+    "nextjs": {
+        "name": "Next.js Stack",
+        "repository": "https://github.com/tuti-cli/nextjs-stack.git",
+        "framework": "nextjs", 
+        "type": "nodejs"
     }
-    
-    // Implement other interface methods
 }
 ```
 
-### 4. Register in StackServiceProvider
-### 5. Create Command
+### 2. Installer (`app/Services/Stack/Installers/WordPressStackInstaller.php`)
 ```php
-final class StackMyStackCommand extends Command
+final class WordPressStackInstaller implements StackInstallerInterface
 {
-    protected $signature = 'stack:my-stack {project-name?}';
-    // ...
+    public function getIdentifier(): string { return 'wordpress'; }
+    public function supports(string $stack): bool { return $stack === 'wordpress'; }
+    // ... implement other methods
 }
+```
 
-Service Stubs
+### 3. Register in Provider
+```php
+// app/Providers/StackServiceProvider.php
+$this->app->tag([WordPressStackInstaller::class], 'stack.installers');
+```
 
-Service stubs are in `stubs/services/{category}/{service}.stub`:
+### 4. Command (`app/Commands/Stack/WordPressCommand.php`)
+```php
+final class StackWordPressCommand extends Command
+{
+    protected $signature = 'stack:wordpress {project-name?}';
+}
+```
 
-Example: `stubs/services/databases/postgres.stub`
+## Add Service Stub
+
+### 1. Create Stub (`stubs/services/cache/memcached.stub`)
 ```yaml
 services:
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: ${DB_DATABASE:-laravel}
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+  memcached:
+    image: memcached:alpine
+    container_name: ${PROJECT_NAME:-app}-memcached
 ```
 
-Best Practices
-
-- Stacks: framework-specific
-- Service stubs: framework-agnostic
-- Installers: implement both fresh and existing modes
-- Use constructor injection
-- Write tests
+### 2. Register (`stubs/services/registry.json`)
+```json
+{
+    "cache": {
+        "memcached": {
+            "name": "Memcached",
+            "stub": "cache/memcached.stub"
+        }
+    }
+}
+```
