@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Local;
 
+use App\Concerns\HasBrandedOutput;
 use App\Contracts\OrchestratorInterface;
 use App\Domain\Project\Project;
 use App\Services\Project\ProjectDirectoryService;
@@ -13,6 +14,8 @@ use Throwable;
 
 final class LogsCommand extends Command
 {
+    use HasBrandedOutput;
+
     protected $signature = 'local:logs
                             {service? : Optional specific service name}
                             {--f|follow : Follow log output}';
@@ -32,7 +35,7 @@ final class LogsCommand extends Command
             $service = $this->argument('service');
             $follow = $this->option('follow');
 
-            $this->info('Fetching logs for ' . ($service ?? 'all services') . '...');
+            $this->action('Fetching logs', $service ?? 'all services');
 
             // This will stream output directly to stdout
             $orchestrator->logs($project, $service, $follow);
@@ -40,7 +43,7 @@ final class LogsCommand extends Command
             return self::SUCCESS;
 
         } catch (Throwable $e) {
-            $this->error('Failed to retrieve logs: ' . $e->getMessage());
+            $this->failed('Failed to retrieve logs: ' . $e->getMessage());
 
             return self::FAILURE;
         }

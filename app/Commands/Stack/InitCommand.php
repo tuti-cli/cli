@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Stack;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
@@ -20,6 +21,7 @@ use function Laravel\Prompts\warning;
 
 final class InitCommand extends Command
 {
+    use HasBrandedOutput;
     // already defined in base Command class
     // {--env= :   Environment (dev, staging, production)}
     // {--no-interaction :   Run in non-interactive mode}
@@ -37,19 +39,19 @@ final class InitCommand extends Command
         ProjectDirectoryService $directoryManager,
         StackInitializationService $initService
     ): int {
-        $this->displayHeader();
+        $this->brandedHeader('Stack Initialization');
 
         try {
             // 1. Pre-flight checks
             if ($directoryManager->exists() && ! $this->option('force')) {
-                $this->error('Project already initialized. ".tuti/" directory already exists in your project root.');
-                $this->line('Use --force to reinitialize (this will remove existing configuration)');
+                $this->failure('Project already initialized. ".tuti/" directory already exists in your project root.');
+                $this->hint('Use --force to reinitialize (this will remove existing configuration)');
 
                 return self::FAILURE;
             }
 
             if ($directoryManager->exists() && $this->option('force')) {
-                $this->warn('Removing existing .tuti directory...');
+                $this->warning('Removing existing .tuti directory...');
                 $directoryManager->clean();
             }
 
@@ -57,12 +59,12 @@ final class InitCommand extends Command
             $stackPath = $this->getStackPath();
 
             if ($stackPath === null) {
-                $this->error('No stack selected. Exiting.');
+                $this->failure('No stack selected. Exiting.');
 
                 return self::FAILURE;
             }
 
-            $this->info('Using stack: ' . basename($stackPath));
+            $this->note('Using stack: ' . basename($stackPath));
             $this->newLine();
 
             // 3. Load and display stack info
@@ -76,7 +78,7 @@ final class InitCommand extends Command
             $selectedServices = $this->selectServices($registry, $stackLoader, $manifest);
 
             if ($selectedServices === []) {
-                $this->error('No services selected. Exiting.');
+                $this->failure('No services selected. Exiting.');
 
                 return self::FAILURE;
             }
@@ -85,7 +87,7 @@ final class InitCommand extends Command
 
             // 5. Confirm before proceeding
             if (! $this->confirmSelection($projectName, $environment, $selectedServices)) {
-                $this->warn('Initialization cancelled.');
+                $this->warning('Initialization cancelled.');
 
                 return self::SUCCESS;
             }
@@ -101,35 +103,37 @@ final class InitCommand extends Command
                 'Initializing project from stack...'
             );
 
-            $this->components->info('✓ Stack initialized');
+            $this->success('Stack initialized');
 
             $this->displayNextSteps($environment);
 
             return self::SUCCESS;
 
         } catch (Throwable $e) {
-            $this->error('Initialization failed:   ' . $e->getMessage());
+            $this->failure('Initialization failed: ' . $e->getMessage());
 
             if ($directoryManager->exists()) {
                 $this->newLine();
-                $this->warn('Cleaning up partial initialization...');
+                $this->warning('Cleaning up partial initialization...');
                 $directoryManager->clean();
-                $this->info('✓ Cleanup complete');
+                $this->success('Cleanup complete');
             }
 
             return self::FAILURE;
         }
     }
 
-    private function displayHeader(): void
+    /**
+     * @param  array<string, mixed>  $manifest
+     */
+    private function displayStackInfo(array $manifest): void
     {
-        $this->newLine();
-        $this->line('╔══════════════════════════════════════════════════════════╗');
-        $this->line('║                                                          ║');
-        $this->line('║              🚀 TUTI Stack Initialization                ║');
-        $this->line('║                                                          ║');
-        $this->line('╚══════════════════════════════════════════════════════════╝');
-        $this->newLine();
+        $this->box('Stack Info', [
+            'Name' => $manifest['name'],
+            'Type' => $manifest['type'],
+            'Framework' => $manifest['framework'],
+            'Description' => $manifest['description'],
+        ], 60, true);
     }
 
     private function getStackPath(): ?string
@@ -153,7 +157,7 @@ final class InitCommand extends Command
             }
 
             if (! $this->option('no-interaction')) {
-                warning("Stack not found:   {$stackArg}");
+                warning("Stack not found: {$stackArg}");
             }
         }
 
@@ -169,7 +173,7 @@ final class InitCommand extends Command
         $availableStacks = $this->discoverStacks();
 
         if ($availableStacks === []) {
-            $this->warn('No stacks found in:   ' . stack_path());
+            $this->warning('No stacks found in: ' . stack_path());
 
             $customPath = text(
                 label: 'Enter stack name or path:',
@@ -188,7 +192,7 @@ final class InitCommand extends Command
                 }
             }
 
-            $this->error('Invalid stack path');
+            $this->failure('Invalid stack path');
 
             return null;
         }
@@ -235,17 +239,6 @@ final class InitCommand extends Command
         return $stacks;
     }
 
-    /**
-     * @param  array<string, mixed>  $manifest
-     */
-    private function displayStackInfo(array $manifest): void
-    {
-        $this->info('Stack:   ' . $manifest['name']);
-        $this->line('  Type: ' . $manifest['type']);
-        $this->line('  Framework: ' . $manifest['framework']);
-        $this->line('  Description: ' . $manifest['description']);
-        $this->newLine();
-    }
 
     private function getProjectName(): string
     {
@@ -381,13 +374,15 @@ final class InitCommand extends Command
             return true;
         }
 
-        $this->info('Configuration Summary:');
-        $this->line("  Project:   {$projectName}");
-        $this->line("  Environment: {$environment}");
-        $this->line('  Services:  ');
+        $this->section('Configuration Summary');
+
+        $this->keyValue('Project', $projectName);
+        $this->keyValue('Environment', $environment);
+        $this->newLine();
+        $this->header('Services');
 
         foreach ($selectedServices as $service) {
-            $this->line("    - {$service}");
+            $this->bullet($service);
         }
 
         $this->newLine();
@@ -397,22 +392,12 @@ final class InitCommand extends Command
 
     private function displayNextSteps(string $environment): void
     {
-        $this->newLine();
-        $this->components->info('✅ Stack initialized successfully!');
-        $this->newLine();
+        $startCommand = $environment === 'dev' ? 'tuti local:start' : "tuti deploy {$environment}";
 
-        $this->info('Next Steps:');
-        $this->line('  1. Review stack configuration in .tuti/');
-        $this->line('  2. Configure environment variables');
-        $this->line('  3. Start your environment: ');
-        $this->newLine();
-
-        if ($environment === 'dev') {
-            $this->line('     tuti local: start');
-        } else {
-            $this->line("     tuti deploy {$environment}");
-        }
-
-        $this->newLine();
+        $this->completed('Stack initialized successfully!', [
+            'Review stack configuration in .tuti/',
+            'Configure environment variables',
+            "Start your environment: {$startCommand}",
+        ]);
     }
 }
