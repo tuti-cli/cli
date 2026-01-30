@@ -54,6 +54,9 @@ final class DockerExecutorService implements DockerExecutorInterface
         $image = $this->getPhpImage($this->phpVersion);
         $fullCommand = "php artisan {$command}";
 
+        // Disable ServerSideUp banner/output
+        $env['DISABLE_DEFAULT_CONFIG'] = 'true';
+
         return $this->exec($image, $fullCommand, $projectPath, $env);
     }
 

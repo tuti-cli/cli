@@ -422,13 +422,15 @@ final class LaravelCommand extends Command
             $this->note('Generating APP_KEY via Docker...');
             $appKey = $installer->generateAppKey($config['project_path']);
 
-            if ($appKey !== null) {
-                $this->success('APP_KEY generated: ' . substr($appKey, 0, 20) . '...');
+            if ($appKey !== null && str_starts_with($appKey, 'base64:')) {
+                $this->success('APP_KEY generated successfully');
+                $this->line('  ' . substr($appKey, 0, 30) . '...');
 
                 // Update .env file with the key
                 $this->updateEnvFile($config['project_path'], 'APP_KEY', $appKey);
             } else {
-                $this->warning('Could not generate APP_KEY automatically. Please run: php artisan key:generate');
+                $this->warning('Could not generate APP_KEY automatically');
+                $this->hint('Run manually: cd ' . $config['project_name'] . ' && php artisan key:generate');
             }
         }
     }

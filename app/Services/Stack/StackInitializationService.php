@@ -163,9 +163,28 @@ final readonly class StackInitializationService
     }
 
     /**
-     * Copy environment file from stack template and substitute variables.
+     * Add tuti-specific environment variables to Laravel's .env file.
      */
     private function copyEnvironmentFile(string $stackPath, string $environment, string $projectName = ''): void
+    {
+        $projectRoot = $this->directoryService->getProjectRoot();
+        $laravelEnv = $projectRoot . '/.env';
+
+        // Check if Laravel .env exists (it should after composer create-project)
+        if (! file_exists($laravelEnv)) {
+            // If not, copy the full template
+            $this->copyFullEnvTemplate($stackPath, $environment, $projectName);
+            return;
+        }
+
+        // Laravel .env exists, append tuti-specific variables
+        $this->appendTutiVariablesToEnv($laravelEnv, $projectName);
+    }
+
+    /**
+     * Copy full .env template when Laravel .env doesn't exist.
+     */
+    private function copyFullEnvTemplate(string $stackPath, string $environment, string $projectName): void
     {
         $envTemplates = [
             "{$stackPath}/environments/.env.{$environment}.example",
@@ -173,7 +192,8 @@ final readonly class StackInitializationService
             "{$stackPath}/environments/.env.example",
         ];
 
-        $targetEnv = tuti_path('.env');
+        $projectRoot = $this->directoryService->getProjectRoot();
+        $targetEnv = $projectRoot . '/.env';
 
         foreach ($envTemplates as $template) {
             if (file_exists($template)) {
@@ -198,6 +218,54 @@ final readonly class StackInitializationService
                 return;
             }
         }
+    }
+
+    /**
+     * Append tuti-specific variables to existing Laravel .env.
+     */
+    private function appendTutiVariablesToEnv(string $envPath, string $projectName): void
+    {
+        $content = file_get_contents($envPath);
+        $appDomain = $projectName . '.local.test';
+
+        // Check if tuti section already exists
+        if (str_contains($content, '# TUTI-CLI DOCKER CONFIGURATION')) {
+            return; // Already has tuti variables
+        }
+
+        // Prepare tuti-specific variables
+        $tutiVars = <<<EOT
+
+
+# ============================================================================
+# 🐳 TUTI-CLI DOCKER CONFIGURATION
+# ============================================================================
+# The following variables are used by Docker Compose for container setup.
+# These are managed by tuti-cli and should not be changed manually unless
+# you know what you're doing.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Project Configuration
+# ----------------------------------------------------------------------------
+PROJECT_NAME={$projectName}
+APP_DOMAIN={$appDomain}
+
+# ----------------------------------------------------------------------------
+# Docker Build Configuration
+# ----------------------------------------------------------------------------
+PHP_VERSION=8.4
+PHP_VARIANT=fpm-nginx
+BUILD_TARGET=development
+
+# Docker User/Group IDs (for Linux file permissions)
+# Set these to match your host user: `id -u` and `id -g`
+DOCKER_USER_ID=1000
+DOCKER_GROUP_ID=1000
+EOT;
+
+        // Append to the file
+        file_put_contents($envPath, $content . $tutiVars);
     }
 
     /**

@@ -247,7 +247,30 @@ final class LaravelStackInstaller implements StackInstallerInterface
             return null;
         }
 
-        return trim($result->output);
+        // The output may contain Docker/PHP banner text before the actual key
+        // We need to extract only the base64 key (format: base64:xxx...)
+        $output = $result->output;
+
+        // Look for a line that starts with "base64:"
+        $lines = explode("\n", $output);
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (str_starts_with($line, 'base64:')) {
+                return $line;
+            }
+        }
+
+        // Fallback: if no base64: prefix found, return the last non-empty line
+        $nonEmptyLines = array_filter($lines, fn($l) => !empty(trim($l)));
+        $lastLine = trim(end($nonEmptyLines));
+
+        // Only return if it looks like a base64 key
+        if (str_starts_with($lastLine, 'base64:') || strlen($lastLine) > 40) {
+            return $lastLine;
+        }
+
+        return null;
     }
 
     /**
