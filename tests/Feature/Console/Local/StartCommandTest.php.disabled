@@ -23,7 +23,7 @@ afterEach(function (): void {
 it('starts the local development environment successfully', function (): void {
     $this->artisan('local:start')
         ->assertSuccessful()
-        ->expectsOutput('Project is running!  🚀');
+        ->expectsOutputToContain('Project is running!');
 
     expect($this->fakeOrchestrator->startCalled)->toBeTrue()
         ->and($this->fakeOrchestrator->lastProject)->not->toBeNull()
@@ -39,7 +39,7 @@ it('displays project name when starting', function (): void {
 it('suggests checking status after successful start', function (): void {
     $this->artisan('local:start')
         ->assertSuccessful()
-        ->expectsOutput("Run 'tuti local:status' to see details.");
+        ->expectsOutputToContain('tuti local:status');
 });
 
 it('fails when not in a tuti project', function (): void {

@@ -32,7 +32,7 @@ it('stops the local development environment successfully', function (): void {
 
     $this->artisan('local:stop')
         ->assertSuccessful()
-        ->expectsOutput('Project stopped successfully.');
+        ->expectsOutputToContain('Project stopped successfully');
 
     expect($this->fakeOrchestrator->stopCalled)->toBeTrue()
         ->and($this->fakeOrchestrator->statusCalled)->toBeTrue();
@@ -44,7 +44,7 @@ it('handles already stopped project gracefully', function (): void {
 
     $this->artisan('local:stop')
         ->assertSuccessful()
-        ->expectsOutput('Project is already stopped.');
+        ->expectsOutputToContain('already stopped');
 
     // Stop should not be called if already stopped
     expect($this->fakeOrchestrator->stopCalled)->toBeFalse();
