@@ -1,5 +1,8 @@
 # Base Docker Compose Configuration for Laravel
 # This file contains shared services and configurations
+#
+# Environment variables are loaded from ../.env (project root)
+# This ensures both Laravel and Docker Compose use the same configuration.
 
 # Shared environment variables anchor
 x-app-env: &app-env

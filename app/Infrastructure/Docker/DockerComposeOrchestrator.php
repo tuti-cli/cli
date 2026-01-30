@@ -219,6 +219,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
         $tutiPath = $project->path . '/.tuti';
         $mainCompose = $tutiPath . '/docker-compose.yml';
         $devCompose = $tutiPath . '/docker-compose.dev.yml';
+        $projectEnv = $project->path . '/.env';
 
         // Fallback to old location if new doesn't exist
         if (! file_exists($mainCompose)) {
@@ -235,6 +236,12 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             $command[] = $devCompose;
         }
 
+        // Explicitly specify env file from project root
+        if (file_exists($projectEnv)) {
+            $command[] = '--env-file';
+            $command[] = $projectEnv;
+        }
+
         // Add project name context
         $command[] = '-p';
         $command[] = $project->config->name;
@@ -248,6 +255,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
                 'main' => $mainCompose,
                 'dev' => file_exists($devCompose) ? $devCompose : null,
             ],
+            'env_file' => file_exists($projectEnv) ? $projectEnv : 'not found',
         ]);
 
         $process = new Process($command);
