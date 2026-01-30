@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
+use App\Concerns\HasBrandedOutput;
 use Exception;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
 
 final class InstallCommand extends Command
 {
+    use HasBrandedOutput;
+
     protected $signature = 'install
                           {--force : Force reinstallation of global directory}';
 
@@ -17,7 +20,7 @@ final class InstallCommand extends Command
 
     public function handle(): int
     {
-        $this->displayHeader();
+        $this->welcomeBanner();
 
         try {
             $globalPath = $this->setupGlobalDirectory();
@@ -26,47 +29,37 @@ final class InstallCommand extends Command
 
             return self::SUCCESS;
         } catch (Exception $e) {
-            $this->error('Installation failed: ' . $e->getMessage());
-            $this->newLine();
-            $this->warn('Please try running with sudo or check directory permissions.');
+            $this->failed('Installation failed: ' . $e->getMessage(), [
+                'Try running with sudo or check directory permissions',
+            ]);
 
             return self::FAILURE;
         }
-    }
-
-    private function displayHeader(): void
-    {
-        $this->newLine();
-        $this->line('╔══════════════════════════════════════════════════════════╗');
-        $this->line('║                                                          ║');
-        $this->line('║                 🚀 Tuti CLI Setup                        ║');
-        $this->line('║                                                          ║');
-        $this->line('╚══════════════════════════════════════════════════════════╝');
-        $this->newLine();
     }
 
     private function setupGlobalDirectory(): string
     {
         $globalPath = $this->getGlobalTutiPath();
 
-        $this->info("Setting up global directory: {$globalPath}");
+        $this->section('Setting Up Global Directory');
+        $this->note("Target: {$globalPath}");
 
         if (is_dir($globalPath) && ! $this->option('force')) {
-            $this->line('  Global directory already exists.');
+            $this->skipped('Global directory already exists');
 
             return $globalPath;
         }
 
         // Create main directory
         $this->createDirectory($globalPath);
-        $this->line('  ✓ Created: ' . $globalPath);
+        $this->created($globalPath);
 
         // Create subdirectories
         $subdirs = ['stacks', 'cache', 'logs'];
         foreach ($subdirs as $subdir) {
             $path = $globalPath . DIRECTORY_SEPARATOR . $subdir;
             $this->createDirectory($path);
-            $this->line("  ✓ Created: {$subdir}/");
+            $this->created("{$subdir}/");
         }
 
         return $globalPath;
@@ -77,7 +70,7 @@ final class InstallCommand extends Command
         $configPath = $globalPath . DIRECTORY_SEPARATOR . 'config.json';
 
         if (file_exists($configPath) && ! $this->option('force')) {
-            $this->line('  Config already exists.');
+            $this->skipped('Config already exists');
 
             return;
         }
@@ -99,7 +92,7 @@ final class InstallCommand extends Command
             throw new RuntimeException("Failed to create config file: {$configPath}");
         }
 
-        $this->line('  ✓ Created: config.json');
+        $this->created('config.json');
     }
 
     private function createDirectory(string $path): void
@@ -151,21 +144,19 @@ final class InstallCommand extends Command
 
     private function displaySuccess(string $globalPath): void
     {
-        $this->newLine();
-        $this->components->info('✅ Tuti CLI setup complete!');
-        $this->newLine();
+        $this->section('Directory Structure');
 
-        $this->info('Global directory structure:');
-        $this->line("  {$globalPath}/");
-        $this->line('  ├── config.json     (global configuration)');
-        $this->line('  ├── stacks/         (cached stack templates)');
-        $this->line('  ├── cache/          (temporary files)');
-        $this->line('  └── logs/           (global logs)');
-        $this->newLine();
+        $this->box('Global Tuti Directory', [
+            'Path' => $globalPath,
+            'config.json' => 'global configuration',
+            'stacks/' => 'cached stack templates',
+            'cache/' => 'temporary files',
+            'logs/' => 'global logs',
+        ], 60, true);
 
-        $this->info('Next steps:');
-        $this->line('  1. Initialize a new project:  tuti init');
-        $this->line('  2. Or use Laravel stack:      tuti stack:laravel myapp');
-        $this->newLine();
+        $this->completed('Tuti CLI setup complete!', [
+            'Initialize a new project: tuti init',
+            'Or use Laravel stack: tuti stack:laravel myapp',
+        ]);
     }
 }

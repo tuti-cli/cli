@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Local;
 
+use App\Concerns\HasBrandedOutput;
 use App\Contracts\OrchestratorInterface;
 use App\Domain\Project\Project;
 use App\Services\Project\ProjectDirectoryService;
@@ -13,6 +14,8 @@ use Throwable;
 
 final class StatusCommand extends Command
 {
+    use HasBrandedOutput;
+
     protected $signature = 'local:status';
 
     protected $description = 'Check the status of project services';
@@ -22,28 +25,37 @@ final class StatusCommand extends Command
         ProjectMetadataService $metaService,
         OrchestratorInterface $orchestrator
     ): int {
+        $this->brandedHeader('Service Status');
+
         try {
             $root = $dirService->getProjectRoot();
             $config = $metaService->load();
             $project = new Project($root, $config);
 
-            $this->info("Project: <comment>{$project->getName()}</comment>");
+            $this->labeledValue('Project', $project->getName());
 
             $services = $orchestrator->status($project);
 
             if ($services === []) {
-                $this->warn('No running services found.');
+                $this->warning('No running services found');
+                $this->hint("Run 'tuti local:start' to start services");
 
                 return self::SUCCESS;
             }
 
+            $this->section('Services');
+
             $rows = [];
             foreach ($services as $service) {
-                // Docker compose v2 output structure varies, but generally has Name, State, Status
+                $state = $service['State'] ?? '?';
+                $stateDisplay = $state === 'running'
+                    ? $this->badgeSuccess('RUNNING')
+                    : $this->badgeError(mb_strtoupper($state));
+
                 $rows[] = [
                     $service['Name'] ?? '?',
                     $service['Service'] ?? '?',
-                    $service['State'] ?? '?',
+                    $stateDisplay,
                     $service['Status'] ?? '?',
                     $service['Publishers'] ?? ($service['Ports'] ?? ''),
                 ];
@@ -57,7 +69,7 @@ final class StatusCommand extends Command
             return self::SUCCESS;
 
         } catch (Throwable $e) {
-            $this->error('Failed to check status: ' . $e->getMessage());
+            $this->failed('Failed to check status: ' . $e->getMessage());
 
             return self::FAILURE;
         }

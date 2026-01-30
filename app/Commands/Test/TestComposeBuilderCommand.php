@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Stack\StackComposeBuilderService;
 use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestComposeBuilderCommand extends Command
 {
+    use HasBrandedOutput;
+
     protected $signature = 'test:compose-builder';
 
     protected $description = 'Test compose builder functionality';
 
     public function handle(StackComposeBuilderService $builder): int
     {
-        $this->info('🔍 Testing ComposeBuilder...');
-        $this->newLine();
+        $this->brandedHeader('Compose Builder Test');
 
         // Test configuration
         $selectedServices = [
@@ -29,36 +31,31 @@ final class TestComposeBuilderCommand extends Command
             'PROJECT_NAME' => 'testapp',
         ];
 
-        $this->info('📋 Building docker-compose for: ');
-        $this->line('  Services: ' . implode(', ', $selectedServices));
-        $this->line('  Project: ' . $projectConfig['PROJECT_NAME']);
-        $this->newLine();
+        $this->section('Build Configuration');
+        $this->keyValue('Services', implode(', ', $selectedServices));
+        $this->keyValue('Project', $projectConfig['PROJECT_NAME']);
 
         // Build compose
         try {
             $compose = $builder->build($selectedServices, $projectConfig, 'dev');
 
-            $this->info('✅ Compose structure built successfully! ');
-            $this->newLine();
+            $this->success('Compose structure built successfully');
 
             // Show structure
-            $this->info('📦 Services: ');
+            $this->section('Services');
             foreach (array_keys($compose['services']) as $service) {
-                $this->line("  - {$service}");
+                $this->bullet($service);
             }
-            $this->newLine();
 
-            $this->info('🗄️  Volumes:');
+            $this->section('Volumes');
             foreach (array_keys($compose['volumes']) as $volume) {
-                $this->line("  - {$volume}");
+                $this->bullet($volume);
             }
-            $this->newLine();
 
-            $this->info('🌐 Networks:');
+            $this->section('Networks');
             foreach (array_keys($compose['networks']) as $network) {
-                $this->line("  - {$network}");
+                $this->bullet($network);
             }
-            $this->newLine();
 
             $outputPath = app_path('/Commands/Test') . '/docker-compose.test.yml';
 
@@ -67,15 +64,13 @@ final class TestComposeBuilderCommand extends Command
             }
 
             $builder->writeToFile($compose, $outputPath);
-            $this->info("💾 Compose file written to: {$outputPath}");
+            $this->created($outputPath);
 
-            $this->newLine();
-            $this->info('✅ All tests passed!');
+            $this->completed('All tests passed!');
 
             return self::SUCCESS;
         } catch (Exception $e) {
-            $this->error('❌ Test failed: ' . $e->getMessage());
-            $this->line('Trace: ' . $e->getTraceAsString());
+            $this->failed('Test failed: ' . $e->getMessage());
 
             return self::FAILURE;
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackRegistryManagerService;
 use Exception;
@@ -11,14 +12,15 @@ use LaravelZero\Framework\Commands\Command;
 
 final class QuickValidateCommand extends Command
 {
+    use HasBrandedOutput;
+
     protected $signature = 'validate:quick';
 
     protected $description = 'Quick validation check';
 
     public function handle(StackRegistryManagerService $registry, StackComposeBuilderService $builder): int
     {
-        $this->info('🚀 Quick Validation Check');
-        $this->newLine();
+        $this->brandedHeader('Quick Validation');
 
         $checks = [
             'Registry loads' => fn (): true => $registry->getVersion() !== null,
@@ -31,19 +33,21 @@ final class QuickValidateCommand extends Command
         $passed = 0;
         $failed = 0;
 
+        $this->section('Running Checks');
+
         foreach ($checks as $name => $check) {
             try {
                 $result = $check();
 
                 if ($result) {
-                    $this->components->info("{$name}");
+                    $this->success($name);
                     $passed++;
                 } else {
-                    $this->components->error("{$name}");
+                    $this->failure($name);
                     $failed++;
                 }
             } catch (Exception $e) {
-                $this->components->error("{$name}:  {$e->getMessage()}");
+                $this->failure("{$name}: {$e->getMessage()}");
                 $failed++;
             }
         }
@@ -51,12 +55,12 @@ final class QuickValidateCommand extends Command
         $this->newLine();
 
         if ($failed === 0) {
-            $this->components->info("✅ All {$passed} checks passed!");
+            $this->completed("All {$passed} checks passed!");
 
             return self::SUCCESS;
         }
 
-        $this->components->error("⚠️  {$failed} check(s) failed!");
+        $this->failed("{$failed} check(s) failed");
 
         return self::FAILURE;
     }

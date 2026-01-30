@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Stack;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Stack\Installers\LaravelStackInstaller;
 use App\Services\Stack\StackInitializationService;
@@ -20,6 +21,7 @@ use function Laravel\Prompts\text;
 
 final class LaravelCommand extends Command
 {
+    use HasBrandedOutput;
     protected $signature = 'stack:laravel
                           {project-name? : Project name for fresh installation}
                           {--mode= : Installation mode (fresh, existing)}
@@ -37,14 +39,14 @@ final class LaravelCommand extends Command
         ProjectDirectoryService $directoryService,
         StackInitializationService $initService
     ): int {
-        $this->displayHeader();
+        $this->brandedHeader('Laravel Stack Installation');
 
         try {
             // 1. Determine installation mode
             $mode = $this->getInstallationMode($installer);
 
             if ($mode === null) {
-                $this->error('Installation cancelled.');
+                $this->failure('Installation cancelled.');
 
                 return self::FAILURE;
             }
@@ -58,14 +60,14 @@ final class LaravelCommand extends Command
             $config = $this->gatherConfiguration($installer, $registry, $stackLoader, $mode);
 
             if ($config === null) {
-                $this->error('Configuration cancelled.');
+                $this->failure('Configuration cancelled.');
 
                 return self::FAILURE;
             }
 
             // 4. Confirm before proceeding
             if (! $this->confirmConfiguration($config)) {
-                $this->warn('Installation cancelled.');
+                $this->warning('Installation cancelled.');
 
                 return self::SUCCESS;
             }
@@ -78,28 +80,20 @@ final class LaravelCommand extends Command
             return self::SUCCESS;
 
         } catch (Throwable $e) {
-            $this->error('Installation failed: ' . $e->getMessage());
+            $this->failed('Installation failed: ' . $e->getMessage(), [
+                'Ensure Docker is running',
+                'Check your internet connection',
+            ]);
 
             if ($directoryService->exists()) {
                 $this->newLine();
-                $this->warn('Cleaning up partial initialization...');
+                $this->warning('Cleaning up partial initialization...');
                 $directoryService->clean();
-                $this->info('✓ Cleanup complete');
+                $this->success('Cleanup complete');
             }
 
             return self::FAILURE;
         }
-    }
-
-    private function displayHeader(): void
-    {
-        $this->newLine();
-        $this->line('╔══════════════════════════════════════════════════════════╗');
-        $this->line('║                                                          ║');
-        $this->line('║           🚀 Laravel Stack Installation                  ║');
-        $this->line('║                                                          ║');
-        $this->line('╚══════════════════════════════════════════════════════════╝');
-        $this->newLine();
     }
 
     private function getInstallationMode(LaravelStackInstaller $installer): ?string
@@ -124,7 +118,7 @@ final class LaravelCommand extends Command
             $options['existing'] = '📁 Apply Docker configuration to this existing Laravel project';
             $options['fresh'] = '✨ Create a new Laravel project in a subdirectory';
 
-            $this->info('✓ Existing Laravel project detected in current directory');
+            $this->success('Existing Laravel project detected in current directory');
             $this->newLine();
         } else {
             $options['fresh'] = '✨ Create a new Laravel project with Docker configuration';
@@ -141,14 +135,14 @@ final class LaravelCommand extends Command
     private function preFlightChecks(ProjectDirectoryService $directoryService, string $mode): bool
     {
         if ($directoryService->exists() && ! $this->option('force')) {
-            $this->error('Project already initialized. ".tuti/" directory already exists.');
-            $this->line('Use --force to reinitialize (this will remove existing configuration)');
+            $this->failure('Project already initialized. ".tuti/" directory already exists.');
+            $this->hint('Use --force to reinitialize (this will remove existing configuration)');
 
             return false;
         }
 
         if ($directoryService->exists() && $this->option('force')) {
-            $this->warn('Removing existing .tuti directory...');
+            $this->warning('Removing existing .tuti directory...');
             $directoryService->clean();
         }
 
@@ -257,11 +251,12 @@ final class LaravelCommand extends Command
      */
     private function displayStackInfo(array $manifest): void
     {
-        $this->info('Stack: ' . $manifest['name']);
-        $this->line('  Type: ' . $manifest['type']);
-        $this->line('  Framework: ' . $manifest['framework']);
-        $this->line('  Description: ' . $manifest['description']);
-        $this->newLine();
+        $this->box('Stack Info', [
+            'Name' => $manifest['name'],
+            'Type' => $manifest['type'],
+            'Framework' => $manifest['framework'],
+            'Description' => $manifest['description'],
+        ], 60, true);
     }
 
     /**
@@ -353,16 +348,17 @@ final class LaravelCommand extends Command
             return true;
         }
 
-        $this->newLine();
-        $this->info('📋 Configuration Summary:');
-        $this->line('  Mode: ' . ($config['mode'] === 'fresh' ? '✨ Fresh installation' : '📁 Apply to existing'));
-        $this->line("  Project: {$config['project_name']}");
-        $this->line("  Path: {$config['project_path']}");
-        $this->line("  Environment: {$config['environment']}");
-        $this->line('  Services:');
+        $this->section('Configuration Summary');
 
+        $modeLabel = $config['mode'] === 'fresh' ? '✨ Fresh installation' : '📁 Apply to existing';
+        $this->keyValue('Mode', $modeLabel);
+        $this->keyValue('Project', $config['project_name']);
+        $this->keyValue('Path', $config['project_path']);
+        $this->keyValue('Environment', $config['environment']);
+
+        $this->header('Services');
         foreach ($config['selected_services'] as $service) {
-            $this->line("    - {$service}");
+            $this->bullet($service);
         }
 
         $this->newLine();
@@ -399,7 +395,7 @@ final class LaravelCommand extends Command
                 'Creating Laravel project...'
             );
 
-            $this->components->info('✓ Laravel project created');
+            $this->success('Laravel project created');
 
             // Change to the new project directory for stack initialization
             chdir($config['project_path']);
@@ -416,7 +412,7 @@ final class LaravelCommand extends Command
             'Applying Docker stack configuration...'
         );
 
-        $this->components->info('✓ Stack initialized');
+        $this->success('Stack initialized');
     }
 
     /**
@@ -424,38 +420,32 @@ final class LaravelCommand extends Command
      */
     private function displayNextSteps(array $config): void
     {
-        $this->newLine();
-        $this->components->info('✅ Laravel stack installed successfully!');
-        $this->newLine();
-
-        $this->info('📂 Project structure:');
+        $this->section('Project Structure');
 
         if ($config['mode'] === 'fresh') {
-            $this->line("  {$config['project_name']}/");
-            $this->line('  ├── app/           (Laravel application)');
+            $this->bullet("{$config['project_name']}/", 'cyan');
+            $this->subItem('app/ (Laravel application)');
         }
 
-        $this->line('  ├── .tuti/         (Tuti configuration)');
-        $this->line('  │   ├── config.json');
-        $this->line('  │   ├── docker/');
-        $this->line('  │   ├── docker-compose.yml');
-        $this->line('  │   └── environments/');
-        $this->newLine();
+        $this->bullet('.tuti/', 'cyan');
+        $this->subItem('config.json');
+        $this->subItem('docker/');
+        $this->subItem('docker-compose.yml');
+        $this->subItem('environments/');
 
-        $this->info('🚀 Next Steps:');
-        $this->line('  1. Review configuration in .tuti/');
-        $this->line('  2. Configure environment variables in .tuti/environments/');
-        $this->line('  3. Start your development environment:');
-        $this->newLine();
+        $nextSteps = [
+            'Review configuration in .tuti/',
+            'Configure environment variables in .tuti/environments/',
+        ];
 
         if ($config['mode'] === 'fresh') {
-            $this->line("     cd {$config['project_name']}");
+            $nextSteps[] = "cd {$config['project_name']}";
         }
 
-        $this->line('     tuti local:start');
-        $this->newLine();
+        $nextSteps[] = 'tuti local:start';
 
-        $this->comment('💡 Tip: Use "tuti local:status" to check running services');
-        $this->newLine();
+        $this->completed('Laravel stack installed successfully!', $nextSteps);
+
+        $this->hint('Use "tuti local:status" to check running services');
     }
 }

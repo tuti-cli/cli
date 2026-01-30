@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Stack;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Stack\StackRepositoryService;
 use LaravelZero\Framework\Commands\Command;
 
@@ -13,6 +14,8 @@ use function Laravel\Prompts\spin;
 
 final class ManageCommand extends Command
 {
+    use HasBrandedOutput;
+
     protected $signature = 'stack:manage
                           {action? : Action to perform (list, download, update, clear)}
                           {stack? : Stack name for download/update/clear actions}
@@ -22,6 +25,8 @@ final class ManageCommand extends Command
 
     public function handle(StackRepositoryService $repositoryService): int
     {
+        $this->brandedHeader('Stack Management');
+
         $action = $this->argument('action') ?? $this->selectAction();
 
         return match ($action) {
@@ -29,7 +34,7 @@ final class ManageCommand extends Command
             'download' => $this->downloadStack($repositoryService),
             'update' => $this->updateStack($repositoryService),
             'clear' => $this->clearCache($repositoryService),
-            default => $this->error("Unknown action: {$action}") ?? self::FAILURE,
+            default => $this->failure("Unknown action: {$action}") ?? self::FAILURE,
         };
     }
 
@@ -51,24 +56,22 @@ final class ManageCommand extends Command
         $stacks = $repositoryService->getAvailableStacks();
 
         if (empty($stacks)) {
-            $this->warn('No stacks available.');
+            $this->warning('No stacks available');
 
             return self::SUCCESS;
         }
 
-        $this->info('📦 Available Stacks:');
-        $this->newLine();
+        $this->section('Available Stacks');
 
         foreach ($stacks as $name => $info) {
-            $cached = ($info['cached'] ?? false) ? '✓ cached' : '○ not cached';
+            $cached = ($info['cached'] ?? false) ? $this->badgeSuccess('cached') : $this->badgeWarning('not cached');
             $source = $info['source'] ?? 'unknown';
 
-            $this->line("  <fg=cyan>{$name}</>");
-            $this->line("    Name: {$info['name']}");
-            $this->line("    Description: {$info['description']}");
-            $this->line("    Framework: {$info['framework']}");
-            $this->line("    Source: {$source} ({$cached})");
-            $this->newLine();
+            $this->header($name);
+            $this->keyValue('Name', $info['name']);
+            $this->keyValue('Description', $info['description']);
+            $this->keyValue('Framework', $info['framework']);
+            $this->keyValue('Source', "{$source} {$cached}");
         }
 
         return self::SUCCESS;
@@ -79,13 +82,13 @@ final class ManageCommand extends Command
         $stackName = $this->argument('stack') ?? $this->selectStack($repositoryService, 'download');
 
         if ($stackName === null) {
-            $this->error('No stack specified.');
+            $this->failure('No stack specified');
 
             return self::FAILURE;
         }
 
         if (! $repositoryService->hasStack($stackName)) {
-            $this->error("Stack not found: {$stackName}");
+            $this->failure("Stack not found: {$stackName}");
 
             return self::FAILURE;
         }
@@ -95,7 +98,7 @@ final class ManageCommand extends Command
             "Downloading {$stackName} stack..."
         );
 
-        $this->info("✓ Stack downloaded to: {$path}");
+        $this->success("Stack downloaded to: {$path}");
 
         return self::SUCCESS;
     }
@@ -109,7 +112,7 @@ final class ManageCommand extends Command
         $stackName = $this->argument('stack') ?? $this->selectStack($repositoryService, 'update');
 
         if ($stackName === null) {
-            $this->error('No stack specified.');
+            $this->failure('No stack specified');
 
             return self::FAILURE;
         }
@@ -119,7 +122,7 @@ final class ManageCommand extends Command
             "Updating {$stackName} stack..."
         );
 
-        $this->info("✓ Stack updated: {$path}");
+        $this->success("Stack updated: {$path}");
 
         return self::SUCCESS;
     }
@@ -134,7 +137,7 @@ final class ManageCommand extends Command
                     fn () => $repositoryService->updateStack($name),
                     "Updating {$name}..."
                 );
-                $this->info("✓ Updated: {$name}");
+                $this->success("Updated: {$name}");
             }
         }
 
@@ -145,13 +148,13 @@ final class ManageCommand extends Command
     {
         if ($this->option('all')) {
             if (! confirm('Clear ALL cached stacks?', false)) {
-                $this->warn('Cancelled.');
+                $this->warning('Cancelled');
 
                 return self::SUCCESS;
             }
 
             $repositoryService->clearCache();
-            $this->info('✓ All stack caches cleared.');
+            $this->success('All stack caches cleared');
 
             return self::SUCCESS;
         }
@@ -159,13 +162,13 @@ final class ManageCommand extends Command
         $stackName = $this->argument('stack') ?? $this->selectStack($repositoryService, 'clear cache for');
 
         if ($stackName === null) {
-            $this->error('No stack specified.');
+            $this->failure('No stack specified');
 
             return self::FAILURE;
         }
 
         $repositoryService->clearCache($stackName);
-        $this->info("✓ Cache cleared for: {$stackName}");
+        $this->success("Cache cleared for: {$stackName}");
 
         return self::SUCCESS;
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectInitializationService;
 use App\Services\Stack\StackInstallerRegistry;
@@ -16,6 +17,7 @@ use function Laravel\Prompts\text;
 
 final class InitCommand extends Command
 {
+    use HasBrandedOutput;
     // already defined in base Command class
     // {--env=dev :   Environment (dev, staging, production)}
     // {--no-interaction :   Run in non-interactive mode}
@@ -31,7 +33,7 @@ final class InitCommand extends Command
         ProjectInitializationService $initService,
         StackInstallerRegistry $installerRegistry
     ): int {
-        $this->displayHeader();
+        $this->brandedHeader('Project Initialization');
 
         try {
             // Check if user wants to use a stack
@@ -46,13 +48,13 @@ final class InitCommand extends Command
             return $this->runBasicInitialization($directoryService, $initService);
 
         } catch (Throwable $e) {
-            $this->error('Initialization failed: ' . $e->getMessage());
+            $this->failure('Initialization failed: ' . $e->getMessage());
 
             if ($directoryService->exists()) {
                 $this->newLine();
-                $this->warn('Cleaning up partial initialization...');
+                $this->warning('Cleaning up partial initialization...');
                 $directoryService->clean();
-                $this->info('✓ Cleanup complete');
+                $this->success('Cleanup complete');
             }
 
             return self::FAILURE;
@@ -129,7 +131,7 @@ final class InitCommand extends Command
             $arguments['--no-interaction'] = true;
         }
 
-        $this->info("Delegating to {$command}...");
+        $this->note("Delegating to {$command}...");
         $this->newLine();
 
         return $this->call($command, $arguments);
@@ -141,14 +143,14 @@ final class InitCommand extends Command
     ): int {
         // 1. Pre-flight checks
         if ($directoryService->exists() && ! $this->option('force')) {
-            $this->error('Project already initialized. ".tuti/" directory already exists.');
-            $this->line('Use --force to reinitialize (this will remove existing configuration)');
+            $this->failure('Project already initialized. ".tuti/" directory already exists.');
+            $this->hint('Use --force to reinitialize (this will remove existing configuration)');
 
             return self::FAILURE;
         }
 
         if ($directoryService->exists() && $this->option('force')) {
-            $this->warn('Removing existing .tuti directory...');
+            $this->warning('Removing existing .tuti directory...');
             $directoryService->clean();
         }
 
@@ -162,22 +164,28 @@ final class InitCommand extends Command
             'Initializing project...'
         );
 
-        $this->components->info('✓ Project initialized');
+        $this->success('Project initialized');
 
         $this->displayNextSteps();
 
         return self::SUCCESS;
     }
 
-    private function displayHeader(): void
+    private function displayNextSteps(): void
     {
-        $this->newLine();
-        $this->line('╔══════════════════════════════════════════════════════════╗');
-        $this->line('║                                                          ║');
-        $this->line('║              🚀 TUTI Project Initialization              ║');
-        $this->line('║                                                          ║');
-        $this->line('╚══════════════════════════════════════════════════════════╝');
-        $this->newLine();
+        $this->section('Project Structure');
+
+        $this->bullet('.tuti/', 'cyan');
+        $this->subItem('config.json');
+        $this->subItem('docker/');
+        $this->subItem('environments/');
+        $this->subItem('scripts/');
+
+        $this->completed('Project initialized successfully!', [
+            'Place your docker-compose.yml in .tuti/docker/',
+            'Start your environment: tuti local:start',
+            'Or use a stack template: tuti stack:init laravel',
+        ]);
     }
 
     private function getProjectName(): string
@@ -223,24 +231,5 @@ final class InitCommand extends Command
             ],
             default: 'dev'
         );
-    }
-
-    private function displayNextSteps(): void
-    {
-        $this->newLine();
-        $this->components->info('✅ Project initialized successfully!');
-        $this->newLine();
-        $this->info('Next Steps:');
-        $this->line('  1. Place your docker-compose.yml in .tuti/docker/');
-        $this->line('  2.Start your environment:  tuti local: start');
-        $this->line('  3. Or use a stack template: tuti stack:init laravel');
-        $this->newLine();
-        $this->comment('📂 Project structure created: ');
-        $this->line('  .tuti/');
-        $this->line('  ├── config.json      ✓');
-        $this->line('  ├── docker/          ✓');
-        $this->line('  ├── environments/    ✓');
-        $this->line('  └── scripts/         ✓');
-        $this->newLine();
     }
 }

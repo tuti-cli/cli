@@ -4,50 +4,49 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Stack\StackRegistryManagerService;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestRegistryCommand extends Command
 {
+    use HasBrandedOutput;
+
     protected $signature = 'test:registry';
 
     protected $description = 'Test service registry functionality';
 
     public function handle(StackRegistryManagerService $registry): int
     {
-        $this->info('🔍 Testing Service Registry...');
-        $this->newLine();
+        $this->brandedHeader('Registry Test');
 
         // Test 1: Get version
-        $this->info('Registry Version:  ' . $registry->getVersion());
+        $this->labeledValue('Registry Version', $registry->getVersion());
         $this->newLine();
 
         // Test 2: Get all services
-        $this->info('📋 All Available Services:');
+        $this->section('All Available Services');
         foreach ($registry->getAllServices() as $category => $services) {
-            $this->line("  <fg=cyan>{$category}</>:");
+            $this->header($category);
             foreach ($services as $name => $config) {
-                $this->line("    - {$name}: {$config['description']}");
+                $this->bullet("{$name}: {$config['description']}");
             }
         }
-        $this->newLine();
 
         // Test 3: Get specific service
-        $this->info('🔍 PostgreSQL Service Details:');
+        $this->section('PostgreSQL Service Details');
         $postgres = $registry->getService('databases', 'postgres');
-        $this->line('  Name: ' . $postgres['name']);
-        $this->line('  Stub: ' . $postgres['stub']);
-        $this->line('  Compatible:  ' . implode(', ', $postgres['compatible_with']));
-        $this->newLine();
+        $this->keyValue('Name', $postgres['name']);
+        $this->keyValue('Stub', $postgres['stub']);
+        $this->keyValue('Compatible', implode(', ', $postgres['compatible_with']));
 
         // Test 4: Get compatible services for Laravel
-        $this->info('🎯 Services Compatible with Laravel: ');
+        $this->section('Services Compatible with Laravel');
         foreach ($registry->getCompatibleServices('laravel') as $category => $services) {
-            $this->line("  {$category}:  " . implode(', ', array_keys($services)));
+            $this->keyValue($category, implode(', ', array_keys($services)));
         }
 
-        $this->newLine();
-        $this->info('✅ Service Registry tests completed successfully.');
+        $this->completed('Service Registry tests completed successfully');
 
         return self::SUCCESS;
     }

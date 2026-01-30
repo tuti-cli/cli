@@ -4,32 +4,33 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Stack\StackComposeBuilderService;
-use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 final class TestStackOverridesCommand extends Command
 {
-    protected $signature = 'test:stack-overrides {stack-path? }';
+    use HasBrandedOutput;
+
+    protected $signature = 'test:stack-overrides {stack-path?}';
 
     protected $description = 'Test stack overrides functionality';
 
     public function handle(StackComposeBuilderService $builder): int
     {
-        $this->info('🔍 Testing Stack Overrides...');
-        $this->newLine();
+        $this->brandedHeader('Stack Overrides Test');
 
         // Get stack path
         $stackPath = $this->argument('stack-path') ?? stack_path() . '/laravel-stack';
 
         if (! is_dir($stackPath)) {
-            $this->error("Stack directory not found: {$stackPath}");
-            $this->line('Usage: php artisan test:stack-overrides /path/to/laravel-stack');
+            $this->failure("Stack directory not found: {$stackPath}");
+            $this->hint('Usage: php artisan test:stack-overrides /path/to/laravel-stack');
 
             return self::FAILURE;
         }
 
-        $this->line("Stack path: {$stackPath}");
+        $this->keyValue('Stack path', $stackPath);
         $this->newLine();
 
         $selectedServices = [
@@ -42,15 +43,14 @@ final class TestStackOverridesCommand extends Command
         ];
 
         // Test 1: Development environment
-        $this->info('🧪 Test 1: Development Environment');
+        $this->section('Test 1: Development Environment');
         $this->testEnvironment($builder, $stackPath, $selectedServices, $projectConfig, 'dev');
 
         // Test 2: Production environment
-        $this->info('🧪 Test 2: Production Environment');
+        $this->section('Test 2: Production Environment');
         $this->testEnvironment($builder, $stackPath, $selectedServices, $projectConfig, 'production');
 
-        $this->newLine();
-        $this->info('✅ All stack override tests passed!');
+        $this->completed('All stack override tests passed!');
 
         return self::SUCCESS;
     }
@@ -66,7 +66,7 @@ final class TestStackOverridesCommand extends Command
         array $projectConfig,
         string $environment
     ): void {
-        $this->line("  Environment: {$environment}");
+        $this->keyValue('Environment', $environment);
 
         try {
             $compose = $builder->buildWithStack(
@@ -80,20 +80,21 @@ final class TestStackOverridesCommand extends Command
             if (isset($compose['services']['redis'])) {
                 $redis = $compose['services']['redis'];
 
-                $this->line('  Redis command: ' . (is_array($redis['command'])
-                        ? implode(' ', $redis['command'])
-                        : $redis['command']));
+                $redisCommand = is_array($redis['command'])
+                    ? implode(' ', $redis['command'])
+                    : $redis['command'];
+                $this->keyValue('Redis command', $redisCommand);
 
                 // Check memory limit based on environment
                 if ($environment === 'dev') {
-                    $this->line('  ✓ Dev memory configuration applied');
+                    $this->success('Dev memory configuration applied');
                 } elseif ($environment === 'production') {
-                    $this->line('  ✓ Production memory configuration applied');
+                    $this->success('Production memory configuration applied');
 
                     // Check resource limits
                     if (isset($redis['deploy']['resources'])) {
                         $limits = $redis['deploy']['resources']['limits']['memory'] ?? 'not set';
-                        $this->line("  ✓ Resource limits:  {$limits}");
+                        $this->success("Resource limits: {$limits}");
                     }
                 }
             }
@@ -104,17 +105,17 @@ final class TestStackOverridesCommand extends Command
 
                 if ($environment === 'production' && isset($postgres['deploy']['resources'])) {
                     $limits = $postgres['deploy']['resources']['limits'] ?? [];
-                    $this->line('  ✓ PostgreSQL production resources applied');
-                    $this->line('    CPU: ' . ($limits['cpus'] ?? 'not set'));
-                    $this->line('    Memory: ' . ($limits['memory'] ?? 'not set'));
+                    $this->success('PostgreSQL production resources applied');
+                    $this->keyValue('CPU', $limits['cpus'] ?? 'not set');
+                    $this->keyValue('Memory', $limits['memory'] ?? 'not set');
                 }
             }
 
-            $this->line('  ✅ Test passed');
+            $this->success('Test passed');
             $this->newLine();
 
-        } catch (Exception $e) {
-            $this->error("  ❌ Test failed:  {$e->getMessage()}");
+        } catch (\Exception $e) {
+            $this->failure("Test failed: {$e->getMessage()}");
             $this->newLine();
         }
     }

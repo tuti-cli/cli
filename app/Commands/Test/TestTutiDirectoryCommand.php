@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Test;
 
+use App\Concerns\HasBrandedOutput;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use Exception;
@@ -11,16 +12,17 @@ use LaravelZero\Framework\Commands\Command;
 
 final class TestTutiDirectoryCommand extends Command
 {
-    protected $signature = 'test:tuti-directory {--clean :  Clean up after test}';
+    use HasBrandedOutput;
 
-    protected $description = 'Test . tuti directory management';
+    protected $signature = 'test:tuti-directory {--clean : Clean up after test}';
+
+    protected $description = 'Test .tuti directory management';
 
     public function handle(
         ProjectDirectoryService $directoryManager,
         ProjectMetadataService $metadata
     ): int {
-        $this->info('🔍 Testing .tuti Directory Management.. .');
-        $this->newLine();
+        $this->brandedHeader('Directory Management Test');
 
         $testDir = base_path() . '/tuti-test-' . uniqid();
         mkdir($testDir);
@@ -31,53 +33,46 @@ final class TestTutiDirectoryCommand extends Command
             $testMetadata = new ProjectMetadataService($testManager);
 
             // Test 1: Check non-existence
-            $this->info('Test 1: Check . tuti does not exist initially');
+            $this->step(1, 8, 'Check .tuti does not exist initially');
             if (! $testManager->exists()) {
-                $this->components->info('✓ PASSED');
+                $this->success('PASSED');
             } else {
-                $this->components->error('✗ FAILED');
+                $this->failure('FAILED');
 
                 return self::FAILURE;
             }
-            $this->newLine();
 
             // Test 2: Initialize directory structure
-            $this->info('Test 2: Initialize .tuti directory');
+            $this->step(2, 8, 'Initialize .tuti directory');
             $testManager->initialize();
 
             if (is_dir($testManager->getTutiPath())) {
-                $this->components->info('✓ Directory created');
+                $this->success('Directory created');
             } else {
-                $this->components->error('✗ Failed to create directory');
+                $this->failure('Failed to create directory');
 
                 return self::FAILURE;
             }
-            $this->newLine();
 
             // Test 3: Check required directories
-            $this->info('Test 3: Validate directory structure');
+            $this->step(3, 8, 'Validate directory structure');
             $requiredDirs = $testManager->getRequiredDirectories();
 
             foreach ($requiredDirs as $dir) {
                 $path = $testManager->getTutiPath($dir);
 
-                if (! in_array($dir, $requiredDirs)) {
-                    $this->error("  Validation error: Unexpected directory {$dir}/ found.");
-                }
-
                 if (is_dir($path)) {
-                    $this->line("  ✓ {$dir}/");
+                    $this->created("{$dir}/");
                 } else {
-                    $this->components->error("  ✗ {$dir}/ - NOT FOUND");
+                    $this->failure("{$dir}/ - NOT FOUND");
 
                     return self::FAILURE;
                 }
             }
-            $this->components->info('✓ PASSED');
-            $this->newLine();
+            $this->success('PASSED');
 
             // Test 4: Create metadata
-            $this->info('Test 4: Create project metadata');
+            $this->step(4, 8, 'Create project metadata');
             $testMetadata->create([
                 'stack' => 'laravel-stack',
                 'stack_version' => '1.0.0',
@@ -93,34 +88,32 @@ final class TestTutiDirectoryCommand extends Command
             ]);
 
             if ($testMetadata->exists()) {
-                $this->components->info('✓ Metadata created');
+                $this->success('Metadata created');
             } else {
-                $this->components->error('✗ Failed to create metadata');
+                $this->failure('Failed to create metadata');
 
                 return self::FAILURE;
             }
-            $this->newLine();
 
             // Test 5: Load metadata
-            $this->info('Test 5: Load and validate metadata');
+            $this->step(5, 8, 'Load and validate metadata');
             $loadedMetadata = $testMetadata->load();
 
-            $this->line('  Stack: ' . $loadedMetadata['stack']);
-            $this->line('  Project: ' . $loadedMetadata['project_name']);
-            $this->line('  Environment: ' . $loadedMetadata['environments']['current']);
-            $this->line('  Services: ' . json_encode($loadedMetadata['services']));
+            $this->keyValue('Stack', $loadedMetadata['stack']);
+            $this->keyValue('Project', $loadedMetadata['project_name']);
+            $this->keyValue('Environment', $loadedMetadata['environments']['current']);
+            $this->keyValue('Services', json_encode($loadedMetadata['services']));
 
             if ($loadedMetadata['stack'] === 'laravel-stack') {
-                $this->components->info('✓ PASSED');
+                $this->success('PASSED');
             } else {
-                $this->components->error('✗ FAILED');
+                $this->failure('FAILED');
 
                 return self::FAILURE;
             }
-            $this->newLine();
 
             // Test 6: Update metadata
-            $this->info('Test 6: Update metadata');
+            $this->step(6, 8, 'Update metadata');
             $testMetadata->update([
                 'services' => [
                     'databases' => ['postgres'],
@@ -132,58 +125,54 @@ final class TestTutiDirectoryCommand extends Command
             $updatedMetadata = $testMetadata->load();
 
             if (isset($updatedMetadata['services']['search'])) {
-                $this->components->info('✓ Metadata updated');
+                $this->success('Metadata updated');
             } else {
-                $this->components->error('✗ Failed to update metadata');
+                $this->failure('Failed to update metadata');
 
                 return self::FAILURE;
             }
-            $this->newLine();
 
             // Test 7: Helper functions
-            $this->info('Test 7: Test helper functions');
+            $this->step(7, 8, 'Test helper functions');
             $tutiPath = tuti_path(null, $testDir);
-            $this->line("  tuti_path(): {$tutiPath}");
+            $this->keyValue('tuti_path()', $tutiPath);
 
             $dockerPath = tuti_path('docker', $testDir);
-            $this->line("  tuti_path('docker'): {$dockerPath}");
+            $this->keyValue("tuti_path('docker')", $dockerPath);
 
             if (tuti_exists($testDir)) {
-                $this->components->info('✓ Helper functions work');
+                $this->success('Helper functions work');
             } else {
-                $this->components->error('✗ Helper functions failed');
+                $this->failure('Helper functions failed');
 
                 return self::FAILURE;
             }
-            $this->newLine();
 
             // Test 8: Accessor methods
-            $this->info('Test 8: Test metadata accessor methods');
-            $this->line('  getStack(): ' . $testMetadata->getStack());
-            $this->line('  getProjectName(): ' . $testMetadata->getProjectName());
-            $this->line('  getCurrentEnvironment(): ' . $testMetadata->getCurrentEnvironment());
+            $this->step(8, 8, 'Test metadata accessor methods');
+            $this->keyValue('getStack()', $testMetadata->getStack());
+            $this->keyValue('getProjectName()', $testMetadata->getProjectName());
+            $this->keyValue('getCurrentEnvironment()', $testMetadata->getCurrentEnvironment());
 
-            $this->components->info('✓ PASSED');
-            $this->newLine();
+            $this->success('PASSED');
 
-            $this->info('✅ All tests passed! ');
+            $this->completed('All tests passed!');
 
             return self::SUCCESS;
         } catch (Exception $e) {
-            $this->error('❌ Test failed: ' . $e->getMessage());
-            $this->line($e->getTraceAsString());
+            $this->failed('Test failed: ' . $e->getMessage());
 
             return self::FAILURE;
         } finally {
             // Cleanup
             if ($this->option('clean') && is_dir($testDir)) {
-                $this->info('🧹 Cleaning up test directory...');
+                $this->action('Cleaning up test directory');
                 $testManager = new ProjectDirectoryService($testDir);
                 $testManager->clean();
                 rmdir($testDir);
-                $this->line('✓ Cleaned up');
+                $this->success('Cleaned up');
             } else {
-                $this->line("Test directory:  {$testDir}");
+                $this->note("Test directory: {$testDir}");
             }
         }
     }

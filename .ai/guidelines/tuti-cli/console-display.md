@@ -8,7 +8,7 @@ The trait provides themed branding, clear status messages, progress indicators, 
 ## Quick Start
 
 ```php
-use App\Traits\HasBrandedOutput;
+use App\Concerns\HasBrandedOutput;
 
 final class MyCommand extends Command
 {
