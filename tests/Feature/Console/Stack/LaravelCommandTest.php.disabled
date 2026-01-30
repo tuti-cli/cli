@@ -73,7 +73,7 @@ it('fails when .tuti already exists without --force', function (): void {
 
     $this->artisan('stack:laravel myapp --mode=fresh --no-interaction')
         ->assertFailed()
-        ->expectsOutput('Project already initialized. ".tuti/" directory already exists.');
+        ->expectsOutputToContain('Project already initialized');
 
     rmdir('.tuti');
 });

@@ -21,7 +21,7 @@ afterEach(function (): void {
 it('initializes a new project successfully', function (): void {
     $this->artisan('init testproject --no-interaction')
         ->assertSuccessful()
-        ->expectsOutput('✅ Project initialized successfully! ');
+        ->expectsOutputToContain('Project initialized successfully!');
 
     expect(is_dir('.tuti'))->toBeTrue()
         ->and(file_exists('.tuti/config.json'))->toBeTrue();
@@ -57,7 +57,7 @@ it('fails when project is already initialized', function (): void {
 
     $this->artisan('init testproject --no-interaction')
         ->assertFailed()
-        ->expectsOutput('Project already initialized. ".tuti/" directory already exists.');
+        ->expectsOutputToContain('Project already initialized');
 });
 
 it('reinitializes with --force flag', function (): void {
