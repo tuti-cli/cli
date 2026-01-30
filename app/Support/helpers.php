@@ -2,7 +2,38 @@
 
 declare(strict_types=1);
 
+use App\Services\Debug\DebugLogService;
 use Illuminate\Support\Str;
+
+if (! function_exists('tuti_debug')) {
+    /**
+     * Get the debug log service instance.
+     */
+    function tuti_debug(): DebugLogService
+    {
+        return DebugLogService::getInstance();
+    }
+}
+
+if (! function_exists('debug_log')) {
+    /**
+     * Log a debug message.
+     *
+     * @param array<string, mixed> $data
+     */
+    function debug_log(string $message, array $data = [], string $level = 'DEBUG'): void
+    {
+        $debug = DebugLogService::getInstance();
+
+        match (strtoupper($level)) {
+            'ERROR' => $debug->error($message, $data),
+            'WARNING' => $debug->warning($message, $data),
+            'INFO' => $debug->info($message, $data),
+            'COMMAND' => $debug->command($message, $data),
+            default => $debug->debug($message, $data),
+        };
+    }
+}
 
 if (! function_exists('tuti_path')) {
     /**

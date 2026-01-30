@@ -64,8 +64,8 @@ services:
   # App service - Base configuration
   app:
     build:
-      context: .
-      dockerfile: docker/Dockerfile
+      context: ..
+      dockerfile: .tuti/docker/Dockerfile
       target: ${BUILD_TARGET:-production}
       args:
         PHP_VERSION: ${PHP_VERSION:-8.4}
