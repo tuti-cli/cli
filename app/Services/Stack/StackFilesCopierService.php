@@ -40,7 +40,15 @@ final readonly class StackFilesCopierService
             }
         }
 
-        $individualFiles = ['deploy.sh', 'PREDEPLOYMENT-CHECKLIST.md', 'stack.json'];
+        $individualFiles = [
+            'deploy.sh',
+            'PREDEPLOYMENT-CHECKLIST.md',
+            'stack.json',
+            'docker-compose.yml',
+            'docker-compose.dev.yml',
+            'docker-compose.staging.yml',
+            'docker-compose.prod.yml',
+        ];
 
         foreach ($individualFiles as $file) {
             if (file_exists($stackPath . '/' . $file)) {
@@ -75,6 +83,10 @@ final readonly class StackFilesCopierService
             'deploy.sh',
             'PREDEPLOYMENT-CHECKLIST.md',
             'stack.json',
+            'docker-compose.yml',
+            'docker-compose.dev.yml',
+            'docker-compose.staging.yml',
+            'docker-compose.prod.yml',
         ];
 
         foreach ($files as $file) {

@@ -27,7 +27,6 @@ final readonly class StackInitializationService
         private ProjectDirectoryService $directoryService,
         private ProjectMetadataService $metadataService,
         private StackFilesCopierService $copierService,
-        private StackComposeBuilderService $composeBuilder,
         private StackLoaderService $stackLoader
     ) {}
 
@@ -54,7 +53,7 @@ final readonly class StackInitializationService
         $this->directoryService->create();
         $this->directoryService->createSubDirectories();
 
-        // 3. Copy stack files
+        // 3. Copy stack files (including docker-compose.yml)
         $this->copierService->copyFromStack($stackPath);
 
         // 4. Create project metadata
@@ -66,20 +65,139 @@ final readonly class StackInitializationService
         );
         $this->metadataService->create($config);
 
-        // 5. Generate docker-compose.yml
-        $this->generateDockerCompose(
-            $stackPath,
-            $selectedServices,
-            $projectName,
-            $environment
-        );
+        // 5. Process docker-compose files with variable substitution
+        $this->processDockerComposeFiles($projectName, $environment);
 
-        // 6. Validate initialization
+        // 6. Copy environment file template with project-specific values (for docker-compose)
+        $this->copyEnvironmentFile($stackPath, $environment, $projectName);
+
+        // 7. Update Laravel project's .env with Docker service settings
+        $this->updateLaravelEnv($projectName);
+
+        // 8. Validate initialization
         if (! $this->directoryService->validate()) {
             throw new RuntimeException('Stack initialization validation failed');
         }
 
         return true;
+    }
+
+    /**
+     * Update Laravel project's .env file with Docker service connection settings.
+     */
+    private function updateLaravelEnv(string $projectName): void
+    {
+        $projectRoot = $this->directoryService->getProjectRoot();
+        $laravelEnv = $projectRoot . '/.env';
+
+        if (! file_exists($laravelEnv)) {
+            return;
+        }
+
+        $content = file_get_contents($laravelEnv);
+
+        // Update database settings to use Docker postgres
+        $replacements = [
+            '/^DB_CONNECTION=.*$/m' => 'DB_CONNECTION=pgsql',
+            '/^DB_HOST=.*$/m' => 'DB_HOST=postgres',
+            '/^DB_PORT=.*$/m' => 'DB_PORT=5432',
+            '/^DB_DATABASE=.*$/m' => 'DB_DATABASE=laravel',
+            '/^DB_USERNAME=.*$/m' => 'DB_USERNAME=laravel',
+            '/^DB_PASSWORD=.*$/m' => 'DB_PASSWORD=secret',
+            // Update Redis settings
+            '/^REDIS_HOST=.*$/m' => 'REDIS_HOST=redis',
+            // Update cache/session to use Redis
+            '/^CACHE_STORE=.*$/m' => 'CACHE_STORE=redis',
+            '/^SESSION_DRIVER=.*$/m' => 'SESSION_DRIVER=redis',
+            '/^QUEUE_CONNECTION=.*$/m' => 'QUEUE_CONNECTION=redis',
+            // Update app URL
+            '/^APP_URL=.*$/m' => "APP_URL=https://{$projectName}.local.test",
+        ];
+
+        foreach ($replacements as $pattern => $replacement) {
+            $content = preg_replace($pattern, $replacement, $content);
+        }
+
+        file_put_contents($laravelEnv, $content);
+    }
+
+    /**
+     * Process docker-compose files with variable substitution.
+     */
+    private function processDockerComposeFiles(string $projectName, string $environment): void
+    {
+        $composeFile = tuti_path('docker-compose.yml');
+
+        if (! file_exists($composeFile)) {
+            return;
+        }
+
+        // Generate APP_DOMAIN from project name
+        $appDomain = $projectName . '.local.test';
+
+        // Replace variables in docker-compose.yml
+        $content = file_get_contents($composeFile);
+
+        $replacements = [
+            '${PROJECT_NAME:-laravel}' => $projectName,
+            '${PROJECT_NAME}' => $projectName,
+            '${APP_DOMAIN:-app.local.test}' => $appDomain,
+            '${APP_DOMAIN}' => $appDomain,
+        ];
+
+        foreach ($replacements as $search => $replace) {
+            $content = str_replace($search, $replace, $content);
+        }
+
+        file_put_contents($composeFile, $content);
+
+        // Also process dev compose file if exists
+        $devComposeFile = tuti_path('docker-compose.dev.yml');
+        if (file_exists($devComposeFile)) {
+            $content = file_get_contents($devComposeFile);
+            foreach ($replacements as $search => $replace) {
+                $content = str_replace($search, $replace, $content);
+            }
+            file_put_contents($devComposeFile, $content);
+        }
+    }
+
+    /**
+     * Copy environment file from stack template and substitute variables.
+     */
+    private function copyEnvironmentFile(string $stackPath, string $environment, string $projectName = ''): void
+    {
+        $envTemplates = [
+            "{$stackPath}/environments/.env.{$environment}.example",
+            "{$stackPath}/environments/.env.dev.example",
+            "{$stackPath}/environments/.env.example",
+        ];
+
+        $targetEnv = tuti_path('.env');
+
+        foreach ($envTemplates as $template) {
+            if (file_exists($template)) {
+                $content = file_get_contents($template);
+
+                // Substitute project-specific variables
+                if ($projectName !== '') {
+                    $appDomain = $projectName . '.local.test';
+                    $replacements = [
+                        'PROJECT_NAME=laravel' => "PROJECT_NAME={$projectName}",
+                        'APP_DOMAIN=app.local.test' => "APP_DOMAIN={$appDomain}",
+                        'APP_URL=https://app.local.test' => "APP_URL=https://{$appDomain}",
+                        'APP_NAME=Laravel' => "APP_NAME={$projectName}",
+                    ];
+
+                    foreach ($replacements as $search => $replace) {
+                        $content = str_replace($search, $replace, $content);
+                    }
+                }
+
+                file_put_contents($targetEnv, $content);
+                return;
+            }
+        }
     }
 
     /**
@@ -131,29 +249,5 @@ final readonly class StackInitializationService
         }
 
         return $grouped;
-    }
-
-    /**
-     * Generate docker-compose.yml file.
-     *
-     * @param  array<int, string>  $selectedServices
-     */
-    private function generateDockerCompose(
-        string $stackPath,
-        array $selectedServices,
-        string $projectName,
-        string $environment
-    ): void {
-        $projectConfig = ['PROJECT_NAME' => $projectName];
-
-        $compose = $this->composeBuilder->buildWithStack(
-            $stackPath,
-            $selectedServices,
-            $projectConfig,
-            $environment
-        );
-
-        $outputPath = tuti_path('docker-compose.yml');
-        $this->composeBuilder->writeToFile($compose, $outputPath);
     }
 }

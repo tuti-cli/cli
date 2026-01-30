@@ -62,7 +62,7 @@ return [
 
         'single' => [
             'driver' => 'single',
-            'path' => base_path('storage/logs/tuti-dev-cli.log'),
+            'path' => ($_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? '/tmp') . '/.tuti/logs/tuti-cli.log',
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
         ],

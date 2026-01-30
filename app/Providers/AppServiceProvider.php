@@ -9,6 +9,7 @@ use App\Contracts\InfrastructureManagerInterface;
 use App\Contracts\OrchestratorInterface;
 use App\Contracts\StateManagerInterface;
 use App\Infrastructure\Docker\DockerComposeOrchestrator;
+use App\Services\Debug\DebugLogService;
 use App\Services\Docker\DockerExecutorService;
 use App\Services\Infrastructure\GlobalInfrastructureManager;
 use App\Services\Project\ProjectStateManagerService;
@@ -25,6 +26,11 @@ final class AppServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // Register Debug Service as singleton (shared instance)
+        $this->app->singleton(DebugLogService::class, function () {
+            return DebugLogService::getInstance();
+        });
+
         $this->app->bind(OrchestratorInterface::class, DockerComposeOrchestrator::class);
         $this->app->bind(StateManagerInterface::class, ProjectStateManagerService::class);
         $this->app->bind(DockerExecutorInterface::class, DockerExecutorService::class);

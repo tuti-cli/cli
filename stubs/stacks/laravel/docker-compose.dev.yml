@@ -32,8 +32,8 @@ services:
       AUTORUN_ENABLED: "false"
 
     volumes:
-      # Mount entire Laravel app for hot reload
-      - .:/var/www/html:cached
+      # Mount entire Laravel app for hot reload (parent directory is project root)
+      - ..:/var/www/html:cached
       # Preserve vendor directory in container
       - vendor:/var/www/html/vendor
       - node_modules:/var/www/html/node_modules
