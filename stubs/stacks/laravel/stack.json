@@ -1,0 +1,116 @@
+{
+    "name": "laravel-stack",
+    "version": "1.0.0",
+    "type": "php",
+    "framework": "laravel",
+    "description": "Production-ready Laravel application stack with Docker",
+
+    "metadata": {
+        "maintainer": "tuti-cli",
+        "repository": "https://github.com/tuti-cli/laravel-stack",
+        "php_version": "8.4"
+    },
+
+    "app_service": {
+        "name": "app",
+        "image": "serversideup/php",
+        "variants": {
+            "fpm-nginx": "{{PHP_VERSION}}-fpm-nginx",
+            "fpm-apache": "{{PHP_VERSION}}-fpm-apache",
+            "cli": "{{PHP_VERSION}}-cli"
+        },
+        "default_variant": "fpm-nginx"
+    },
+
+    "required_services": {
+        "database": {
+            "category": "databases",
+            "options": ["postgres", "mysql", "mariadb"],
+            "default": "postgres",
+            "prompt": "Which database would you like to use?"
+        },
+        "cache": {
+            "category": "cache",
+            "options": ["redis"],
+            "default": "redis",
+            "prompt": "Which cache driver would you like to use?"
+        }
+    },
+
+    "optional_services": {
+        "search": {
+            "category": "search",
+            "options": ["meilisearch", "typesense"],
+            "default": null,
+            "prompt": "Would you like to add a search engine?"
+        },
+        "storage": {
+            "category": "storage",
+            "options": ["minio"],
+            "default": null,
+            "prompt": "Would you like to add S3-compatible storage?"
+        },
+        "mail": {
+            "category": "mail",
+            "options": ["mailpit"],
+            "default": "mailpit",
+            "prompt": "Would you like to add mail testing?"
+        }
+    },
+
+    "environments": {
+        "dev": {
+            "app_replicas": 1,
+            "features": {
+                "hot_reload": true,
+                "debug": true,
+                "telescope": true
+            }
+        },
+        "staging": {
+            "app_replicas": 2,
+            "features": {
+                "hot_reload": false,
+                "debug": false,
+                "ssl": true,
+                "telescope": false
+            }
+        },
+        "production": {
+            "app_replicas": 3,
+            "features": {
+                "hot_reload": false,
+                "debug": false,
+                "ssl": true,
+                "opcache": true,
+                "telescope": false
+            }
+        }
+    },
+
+    "required_variables": [
+        "APP_NAME",
+        "APP_KEY",
+        "APP_URL",
+        "DB_PASSWORD",
+        "APP_DOMAIN"
+    ],
+
+    "generated_variables": {
+        "APP_KEY": {
+            "generator": "laravel_key",
+            "command": "php artisan key:generate --show",
+            "description": "Laravel application encryption key"
+        },
+        "DB_PASSWORD": {
+            "generator": "secure_random",
+            "length": 32,
+            "description": "Database password"
+        },
+        "REDIS_PASSWORD": {
+            "generator": "secure_random_or_null",
+            "length": 32,
+            "description": "Redis password (optional for dev)"
+        }
+    }
+}

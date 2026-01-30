@@ -107,11 +107,11 @@ if (! function_exists('stub_path')) {
 
 if (! function_exists('stack_path')) {
     /**
-     * Get the stacks directory path
+     * Get the stacks directory path (stubs/stacks)
      */
     function stack_path(?string $path = null): string
     {
-        $base = cli_base_path('stacks');
+        $base = cli_base_path('stubs/stacks');
 
         return $path ? $base . '/' . mb_ltrim($path, '/') : $base;
     }

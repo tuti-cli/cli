@@ -375,7 +375,10 @@ final class LaravelCommand extends Command
         array $config
     ): void {
         if ($config['mode'] === 'fresh') {
-            // First, create the Laravel project
+            // First, create the Laravel project via Docker
+            $this->note('Creating Laravel project via Docker...');
+            $this->hint('This may take a few minutes on first run (downloading PHP image)');
+
             spin(
                 function () use ($installer, $config): void {
                     $options = [];
@@ -392,7 +395,7 @@ final class LaravelCommand extends Command
                         $options
                     );
                 },
-                'Creating Laravel project...'
+                'Creating Laravel project (composer create-project via Docker)...'
             );
 
             $this->success('Laravel project created');
@@ -413,6 +416,42 @@ final class LaravelCommand extends Command
         );
 
         $this->success('Stack initialized');
+
+        // Generate APP_KEY if fresh installation
+        if ($config['mode'] === 'fresh') {
+            $this->note('Generating APP_KEY via Docker...');
+            $appKey = $installer->generateAppKey($config['project_path']);
+
+            if ($appKey !== null) {
+                $this->success('APP_KEY generated: ' . substr($appKey, 0, 20) . '...');
+
+                // Update .env file with the key
+                $this->updateEnvFile($config['project_path'], 'APP_KEY', $appKey);
+            } else {
+                $this->warning('Could not generate APP_KEY automatically. Please run: php artisan key:generate');
+            }
+        }
+    }
+
+    /**
+     * Update a value in the .env file.
+     */
+    private function updateEnvFile(string $projectPath, string $key, string $value): void
+    {
+        $envPath = $projectPath . '/.env';
+
+        if (! file_exists($envPath)) {
+            return;
+        }
+
+        $content = file_get_contents($envPath);
+        $content = preg_replace(
+            "/^{$key}=.*$/m",
+            "{$key}={$value}",
+            $content
+        );
+
+        file_put_contents($envPath, $content);
     }
 
     /**
@@ -433,18 +472,29 @@ final class LaravelCommand extends Command
         $this->subItem('docker-compose.yml');
         $this->subItem('environments/');
 
-        $nextSteps = [
-            'Review configuration in .tuti/',
-            'Configure environment variables in .tuti/environments/',
-        ];
+        // Generate the project URL
+        $projectDomain = $config['project_name'] . '.local.test';
+
+        $nextSteps = [];
 
         if ($config['mode'] === 'fresh') {
             $nextSteps[] = "cd {$config['project_name']}";
         }
 
-        $nextSteps[] = 'tuti local:start';
+        $nextSteps = array_merge($nextSteps, [
+            'Add to /etc/hosts: 127.0.0.1 ' . $projectDomain,
+            'tuti local:start',
+            'Visit: https://' . $projectDomain,
+        ]);
 
         $this->completed('Laravel stack installed successfully!', $nextSteps);
+
+        $this->newLine();
+        $this->box('Project URLs', [
+            'Application' => "https://{$projectDomain}",
+            'Mailpit' => "https://mail.{$projectDomain}",
+            'Traefik Dashboard' => 'https://traefik.local.test',
+        ], 60, true);
 
         $this->hint('Use "tuti local:status" to check running services');
     }

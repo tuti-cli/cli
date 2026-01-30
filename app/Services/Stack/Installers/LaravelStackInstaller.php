@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Stack\Installers;
 
+use App\Contracts\DockerExecutorInterface;
+use App\Contracts\InfrastructureManagerInterface;
 use App\Contracts\StackInstallerInterface;
 use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRepositoryService;
-use Illuminate\Support\Facades\Process;
 use RuntimeException;
 
 /**
@@ -18,6 +19,8 @@ use RuntimeException;
  * Supports two modes:
  * - Fresh installation: Creates a new Laravel project with Docker configuration
  * - Apply to existing: Adds Docker configuration to an existing Laravel project
+ *
+ * Uses Docker to run Composer, so no local PHP/Composer installation is required.
  */
 final class LaravelStackInstaller implements StackInstallerInterface
 {
@@ -32,6 +35,8 @@ final class LaravelStackInstaller implements StackInstallerInterface
         private readonly StackLoaderService $stackLoader,
         private readonly StackFilesCopierService $copierService,
         private readonly StackRepositoryService $repositoryService,
+        private readonly DockerExecutorInterface $dockerExecutor,
+        private readonly InfrastructureManagerInterface $infrastructureManager,
     ) {}
 
     public function getIdentifier(): string
@@ -89,7 +94,10 @@ final class LaravelStackInstaller implements StackInstallerInterface
     {
         $this->validateFreshInstallation($projectPath);
 
-        // Create the project using composer create-project
+        // Ensure infrastructure is ready (Traefik)
+        $this->ensureInfrastructureReady();
+
+        // Create the project using Docker + Composer
         $result = $this->createLaravelProject($projectPath, $projectName, $options);
 
         if (! $result) {
@@ -104,6 +112,9 @@ final class LaravelStackInstaller implements StackInstallerInterface
         if (! $this->detectExistingProject($projectPath)) {
             throw new RuntimeException('No Laravel project detected in the specified path');
         }
+
+        // Ensure infrastructure is ready (Traefik)
+        $this->ensureInfrastructureReady();
 
         // Copy Docker configuration files from stack
         $stackPath = $this->getStackPath();
@@ -136,31 +147,40 @@ final class LaravelStackInstaller implements StackInstallerInterface
     }
 
     /**
-     * Create a new Laravel project using Composer.
+     * Ensure the global infrastructure (Traefik) is ready.
+     */
+    private function ensureInfrastructureReady(): void
+    {
+        if (! $this->infrastructureManager->ensureReady()) {
+            throw new RuntimeException(
+                'Failed to start global infrastructure. Please run "tuti install" first.'
+            );
+        }
+    }
+
+    /**
+     * Create a new Laravel project using Docker + Composer.
      *
      * @param  array<string, mixed>  $options
      */
     private function createLaravelProject(string $projectPath, string $projectName, array $options): bool
     {
-        $parentDir = dirname($projectPath);
-        $projectDir = basename($projectPath);
-
-        // Ensure parent directory exists
-        if (! is_dir($parentDir)) {
-            mkdir($parentDir, 0755, true);
+        // Ensure project directory exists
+        if (! is_dir($projectPath)) {
+            if (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath)) {
+                throw new RuntimeException("Failed to create directory: {$projectPath}");
+            }
         }
 
-        // Build the composer create-project command
-        $command = $this->buildComposerCommand($projectDir, $options);
+        // Build the composer command
+        $composerCommand = $this->buildComposerCommand($options);
 
-        // Execute composer create-project
-        $process = Process::path($parentDir)
-            ->timeout(600) // 10 minutes timeout for slow connections
-            ->run($command);
+        // Execute composer create-project via Docker
+        $result = $this->dockerExecutor->runComposer($composerCommand, $projectPath);
 
-        if (! $process->successful()) {
+        if (! $result->successful) {
             throw new RuntimeException(
-                'Failed to create Laravel project: ' . $process->errorOutput()
+                'Failed to create Laravel project: ' . $result->errorOutput
             );
         }
 
@@ -172,23 +192,23 @@ final class LaravelStackInstaller implements StackInstallerInterface
      *
      * @param  array<string, mixed>  $options
      */
-    private function buildComposerCommand(string $projectDir, array $options): string
+    private function buildComposerCommand(array $options): string
     {
         $package = 'laravel/laravel';
         $version = $options['laravel_version'] ?? null;
 
-        $command = "composer create-project {$package}";
+        $command = "create-project {$package}";
 
         if ($version !== null) {
             $command .= ":{$version}";
         }
 
-        $command .= " {$projectDir}";
+        // Install in current directory (which is mounted as /app in container)
+        $command .= " .";
 
         // Add options
-        if (! empty($options['prefer_dist'])) {
-            $command .= ' --prefer-dist';
-        }
+        $command .= ' --prefer-dist';
+        $command .= ' --no-interaction';
 
         if (! empty($options['no_dev'])) {
             $command .= ' --no-dev';
@@ -208,13 +228,45 @@ final class LaravelStackInstaller implements StackInstallerInterface
             );
         }
 
-        // Check if composer is available
-        $process = Process::run('composer --version');
-
-        if (! $process->successful()) {
+        // Check if Docker is available (instead of local Composer)
+        if (! $this->dockerExecutor->isDockerAvailable()) {
             throw new RuntimeException(
-                'Composer is not available. Please install Composer to create Laravel projects.'
+                'Docker is not available. Please install Docker to create Laravel projects.'
             );
         }
+    }
+
+    /**
+     * Generate Laravel APP_KEY using Docker.
+     */
+    public function generateAppKey(string $projectPath): ?string
+    {
+        $result = $this->dockerExecutor->runArtisan('key:generate --show', $projectPath);
+
+        if (! $result->successful) {
+            return null;
+        }
+
+        return trim($result->output);
+    }
+
+    /**
+     * Run artisan command in the project.
+     */
+    public function runArtisan(string $command, string $projectPath): bool
+    {
+        $result = $this->dockerExecutor->runArtisan($command, $projectPath);
+
+        return $result->successful;
+    }
+
+    /**
+     * Install npm dependencies using Docker.
+     */
+    public function installNpmDependencies(string $projectPath): bool
+    {
+        $result = $this->dockerExecutor->runNpm('install', $projectPath);
+
+        return $result->successful;
     }
 }

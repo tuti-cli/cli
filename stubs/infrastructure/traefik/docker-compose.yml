@@ -1,0 +1,69 @@
+# Traefik Global Proxy for tuti-cli
+# Local development version (non-Swarm)
+
+services:
+  traefik:
+    image: traefik:v3.2
+    container_name: tuti-traefik
+    hostname: traefik
+    restart: unless-stopped
+    command:
+      # API & Dashboard
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+
+      # Entry Points
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+
+      # HTTP to HTTPS redirect
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+
+      # Docker Provider (for local development)
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=traefik_proxy"
+      - "--providers.docker.watch=true"
+
+      # File Provider (for dynamic config)
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+
+      # Logging
+      - "--log.level=${LOG_LEVEL:-INFO}"
+      - "--log.format=json"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+
+    networks:
+      - traefik_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/certs:ro
+      - ./secrets:/secrets:ro
+      - traefik_certs:/letsencrypt
+    environment:
+      - TZ=${TZ:-UTC}
+    labels:
+      # Enable Traefik for this container
+      - "traefik.enable=true"
+
+      # Dashboard router (secured with basic auth via dynamic config)
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.local.test`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls=true"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.middlewares=dashboard-auth@file,security-headers@file"
+
+networks:
+  traefik_proxy:
+    external: true
+
+volumes:
+  traefik_certs:
+    name: tuti_traefik_certs
