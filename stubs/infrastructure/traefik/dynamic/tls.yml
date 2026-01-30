@@ -1,0 +1,72 @@
+# Dynamic Configuration - Dashboard & TLS
+# This file provides dynamic configuration for Traefik
+
+http:
+  routers:
+    # Dashboard router (backup if labels don't work)
+    dashboard-secure:
+      rule: "Host(`traefik.local.test`)"
+      service: "api@internal"
+      entryPoints:
+        - websecure
+      middlewares:
+        - dashboard-auth
+        - security-headers
+      tls:
+        options: default
+
+  middlewares:
+    # Basic authentication for dashboard
+    dashboard-auth:
+      basicAuth:
+        usersFile: "/secrets/users"
+        removeHeader: true
+
+    # Security headers middleware
+    security-headers:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        frameDeny: false
+        customFrameOptionsValue: "SAMEORIGIN"
+        sslRedirect: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+
+    # Rate limiting middleware (can be used by projects)
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    # Compress middleware
+    compress:
+      compress:
+        excludedContentTypes:
+          - text/event-stream
+
+# TLS Configuration
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: false
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+
+  # Local development certificates
+  certificates:
+    - certFile: /certs/local-cert.pem
+      keyFile: /certs/local-key.pem
+      stores:
+        - default
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/local-cert.pem
+        keyFile: /certs/local-key.pem

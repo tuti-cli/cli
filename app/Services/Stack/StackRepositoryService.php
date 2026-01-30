@@ -38,10 +38,16 @@ final class StackRepositoryService
      */
     public function getStackPath(string $stackName, bool $forceUpdate = false): string
     {
-        // First, check if stack exists locally in CLI (for development/bundled stacks)
-        $localPath = stack_path("{$stackName}-stack");
-        if (is_dir($localPath) && file_exists($localPath . '/stack.json')) {
-            return $localPath;
+        // Check multiple possible local paths for bundled stacks
+        $localPaths = [
+            stack_path($stackName),                    // stubs/stacks/laravel
+            stack_path("{$stackName}-stack"),          // stubs/stacks/laravel-stack
+        ];
+
+        foreach ($localPaths as $localPath) {
+            if (is_dir($localPath) && file_exists($localPath . '/stack.json')) {
+                return $localPath;
+            }
         }
 
         // Check global cache
@@ -274,7 +280,7 @@ final class StackRepositoryService
         // If still doesn't exist, throw helpful error
         if (! is_dir($globalPath)) {
             throw new RuntimeException(
-                "Failed to create global tuti directory: {$globalPath}. " .
+                "Failed to create global tuti directory: ~{$globalPath}. " .
                 "Please run 'tuti install' first or create the directory manually: mkdir -p {$globalPath}"
             );
         }

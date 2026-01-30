@@ -5,36 +5,79 @@ declare(strict_types=1);
 namespace App\Commands;
 
 use App\Concerns\HasBrandedOutput;
+use App\Contracts\InfrastructureManagerInterface;
 use Exception;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\spin;
 
 final class InstallCommand extends Command
 {
     use HasBrandedOutput;
 
     protected $signature = 'install
-                          {--force : Force reinstallation of global directory}';
+                          {--force : Force reinstallation of global directory}
+                          {--skip-infra : Skip infrastructure (Traefik) installation}';
 
-    protected $description = 'Set up tuti CLI global configuration and directories';
+    protected $description = 'Set up tuti CLI global configuration, directories, and infrastructure';
 
-    public function handle(): int
+    public function handle(InfrastructureManagerInterface $infrastructureManager): int
     {
         $this->welcomeBanner();
 
         try {
+            // Step 1: Check Docker availability
+            if (! $this->checkDockerAvailable()) {
+                return self::FAILURE;
+            }
+
+            // Step 2: Setup global directory
             $globalPath = $this->setupGlobalDirectory();
+
+            // Step 3: Create global config
             $this->createGlobalConfig($globalPath);
-            $this->displaySuccess($globalPath);
+
+            // Step 4: Setup infrastructure (Traefik)
+            if (! $this->option('skip-infra')) {
+                $this->setupInfrastructure($infrastructureManager);
+            }
+
+            // Step 5: Display success
+            $this->displaySuccess($globalPath, $infrastructureManager);
 
             return self::SUCCESS;
         } catch (Exception $e) {
             $this->failed('Installation failed: ' . $e->getMessage(), [
                 'Try running with sudo or check directory permissions',
+                'Ensure Docker is running',
             ]);
 
             return self::FAILURE;
         }
+    }
+
+    /**
+     * Check if Docker is available and running.
+     */
+    private function checkDockerAvailable(): bool
+    {
+        $this->section('Checking Prerequisites');
+
+        $process = \Illuminate\Support\Facades\Process::run('docker info');
+
+        if (! $process->successful()) {
+            $this->failure('Docker is not available or not running');
+            $this->hint('Please install Docker Desktop and ensure it is running');
+            $this->hint('Download from: https://www.docker.com/products/docker-desktop');
+
+            return false;
+        }
+
+        $this->success('Docker is available');
+
+        return true;
     }
 
     private function setupGlobalDirectory(): string
@@ -55,7 +98,7 @@ final class InstallCommand extends Command
         $this->created($globalPath);
 
         // Create subdirectories
-        $subdirs = ['stacks', 'cache', 'logs'];
+        $subdirs = ['stacks', 'cache', 'logs', 'infrastructure'];
         foreach ($subdirs as $subdir) {
             $path = $globalPath . DIRECTORY_SEPARATOR . $subdir;
             $this->createDirectory($path);
@@ -80,6 +123,10 @@ final class InstallCommand extends Command
             'auto_update_stacks' => true,
             'telemetry' => false,
             'default_environment' => 'dev',
+            'infrastructure' => [
+                'network' => 'traefik_proxy',
+                'domain' => 'local.test',
+            ],
             'created_at' => date('c'),
         ];
 
@@ -93,6 +140,91 @@ final class InstallCommand extends Command
         }
 
         $this->created('config.json');
+    }
+
+    /**
+     * Setup global infrastructure (Traefik reverse proxy).
+     */
+    private function setupInfrastructure(InfrastructureManagerInterface $infrastructureManager): void
+    {
+        $this->section('Setting Up Infrastructure');
+
+        // Check if already installed
+        if ($infrastructureManager->isInstalled() && ! $this->option('force')) {
+            $this->skipped('Traefik infrastructure already installed');
+
+            // Start if not running
+            if (! $infrastructureManager->isRunning()) {
+                $this->note('Starting Traefik...');
+                spin(
+                    fn () => $infrastructureManager->start(),
+                    'Starting Traefik reverse proxy...'
+                );
+                $this->success('Traefik started');
+            } else {
+                $this->success('Traefik is running');
+            }
+
+            return;
+        }
+
+        // Ask for confirmation if reinstalling
+        if ($infrastructureManager->isInstalled() && $this->option('force')) {
+            if (! confirm('This will reinstall the Traefik infrastructure. Continue?', true)) {
+                $this->skipped('Infrastructure reinstallation cancelled');
+                return;
+            }
+        }
+
+        // Ensure network exists
+        $this->note('Creating Docker network: traefik_proxy');
+        $infrastructureManager->ensureNetworkExists();
+        $this->success('Docker network ready');
+
+        // Install Traefik
+        $this->note('Installing Traefik reverse proxy...');
+        spin(
+            fn () => $infrastructureManager->install(),
+            'Copying Traefik configuration...'
+        );
+        $this->success('Traefik configuration installed');
+
+        // Start Traefik
+        $this->note('Starting Traefik...');
+        spin(
+            fn () => $infrastructureManager->start(),
+            'Starting Traefik containers...'
+        );
+        $this->success('Traefik started');
+
+        // Display info about /etc/hosts
+        $this->displayHostsInfo();
+    }
+
+    /**
+     * Display information about setting up /etc/hosts.
+     */
+    private function displayHostsInfo(): void
+    {
+        $this->newLine();
+        $this->note('To access local projects, add these entries to your hosts file:');
+        $this->newLine();
+
+        $hostsContent = <<<HOSTS
+        127.0.0.1 traefik.local.test
+        127.0.0.1 *.local.test
+        HOSTS;
+
+        $this->line("  <fg=cyan>{$hostsContent}</>");
+        $this->newLine();
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->hint('Edit: C:\\Windows\\System32\\drivers\\etc\\hosts');
+        } else {
+            $this->hint('Run: sudo nano /etc/hosts');
+        }
+
+        $this->hint('Or use dnsmasq for wildcard support');
     }
 
     private function createDirectory(string $path): void
@@ -142,9 +274,11 @@ final class InstallCommand extends Command
         return mb_rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
     }
 
-    private function displaySuccess(string $globalPath): void
+    private function displaySuccess(string $globalPath, InfrastructureManagerInterface $infrastructureManager): void
     {
-        $this->section('Directory Structure');
+        $this->section('Installation Summary');
+
+        $status = $infrastructureManager->getStatus();
 
         $this->box('Global Tuti Directory', [
             'Path' => $globalPath,
@@ -152,11 +286,21 @@ final class InstallCommand extends Command
             'stacks/' => 'cached stack templates',
             'cache/' => 'temporary files',
             'logs/' => 'global logs',
+            'infrastructure/' => 'Traefik proxy',
+        ], 60, true);
+
+        $this->newLine();
+
+        $this->box('Infrastructure Status', [
+            'Traefik' => $status['traefik']['running'] ? '✅ Running' : '❌ Stopped',
+            'Network' => $status['network']['installed'] ? '✅ traefik_proxy' : '❌ Missing',
+            'Dashboard' => 'https://traefik.local.test',
         ], 60, true);
 
         $this->completed('Tuti CLI setup complete!', [
-            'Initialize a new project: tuti init',
-            'Or use Laravel stack: tuti stack:laravel myapp',
+            'Create a Laravel project: tuti stack:laravel myapp',
+            'Check infrastructure: tuti infra:status',
+            'View all commands: tuti list',
         ]);
     }
 }

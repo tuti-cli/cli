@@ -5,7 +5,9 @@
 .env
 .tuti/*
 .tmp/*
-stacks/*
+
+# Global stacks cache (not bundled stacks in stubs/)
+/stacks/*
 
 # Ideas
 /.idea

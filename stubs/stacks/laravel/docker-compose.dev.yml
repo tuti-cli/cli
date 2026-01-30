@@ -1,0 +1,96 @@
+# Development Environment Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  app:
+    build:
+      args:
+        USER_ID: ${DOCKER_USER_ID:-1000}
+        GROUP_ID: ${DOCKER_GROUP_ID:-1000}
+      target: development
+    container_name: ${PROJECT_NAME:-laravel}_app
+    environment:
+      # Override for Development
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: https://${APP_DOMAIN:-app.local.test}
+
+      # Development-specific features
+      TELESCOPE_ENABLED: "true"
+      LOG_LEVEL: debug
+
+      # PHP Settings - Development
+      PHP_OPCACHE_ENABLE: "0"
+      PHP_ERROR_REPORTING: "E_ALL"
+      PHP_DISPLAY_ERRORS: "1"
+      PHP_DISPLAY_STARTUP_ERRORS: "1"
+
+      # SSL Settings
+      SSL_MODE: off
+
+      # Autorun - Disabled in dev
+      AUTORUN_ENABLED: "false"
+
+    volumes:
+      # Mount entire Laravel app for hot reload
+      - .:/var/www/html:cached
+      # Preserve vendor directory in container
+      - vendor:/var/www/html/vendor
+      - node_modules:/var/www/html/node_modules
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+
+      # HTTP Router (redirect to HTTPS)
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-http.rule=Host(`${APP_DOMAIN:-app.local.test}`)"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-http.entrypoints=web"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-http.middlewares=redirect-to-https"
+
+      # HTTPS Router
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}.rule=Host(`${APP_DOMAIN:-app.local.test}`)"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}.tls=true"
+      - "traefik.http.services.${PROJECT_NAME:-laravel}.loadbalancer.server.port=8080"
+
+      # Middleware for HTTP to HTTPS redirect
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+
+      # Vite HMR WebSocket Support
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-vite.rule=Host(`${APP_DOMAIN:-app.local.test}`) && PathPrefix(`/@vite`)"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-vite.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-vite.tls=true"
+      - "traefik.http.services.${PROJECT_NAME:-laravel}-vite.loadbalancer.server.port=5173"
+
+  postgres:
+    container_name: ${PROJECT_NAME:-laravel}_postgres
+    ports:
+      - "${DB_PORT:-5432}:5432"
+
+  redis:
+    container_name: ${PROJECT_NAME:-laravel}_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  # Mailpit for local email testing
+  mailpit:
+    image: axllent/mailpit
+    container_name: ${PROJECT_NAME:-laravel}_mailpit
+    networks:
+      - traefik_proxy
+      - app_network
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-mail.rule=Host(`mail.${APP_DOMAIN:-app.local.test}`)"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-mail.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}-mail.tls=true"
+      - "traefik.http.services.${PROJECT_NAME:-laravel}-mail.loadbalancer.server.port=8025"
+
+volumes:
+  vendor:
+  node_modules:
