@@ -9,7 +9,8 @@
         "laravel-zero/commands",
         "laravel-zero/testing",
         "tuti-cli/stack-system",
-        "tuti-cli/docker-integration"
+        "tuti-cli/docker-integration",
+        "tuti-cli/console-display"
     ],
     "skills": [
         "stack-management",

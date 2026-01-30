@@ -23,6 +23,7 @@
 ### Tuti CLI (`guidelines/tuti-cli/`)
 - **[stack-system.md](guidelines/tuti-cli/stack-system.md)** - Stack architecture
 - **[docker-integration.md](guidelines/tuti-cli/docker-integration.md)** - Docker management
+- **[console-display.md](guidelines/tuti-cli/console-display.md)** - Console UI components
 
 ## Skills
 
