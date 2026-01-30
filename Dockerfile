@@ -29,7 +29,8 @@ RUN apt-get update \
 # Install PHP extensions
 RUN install-php-extensions \
     sodium \
-    yaml
+    yaml \
+    pcov
 
 WORKDIR /var/www/html
 
