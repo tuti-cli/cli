@@ -47,6 +47,7 @@ trait HasBrandedOutput
 
     protected function brandedHeader(string $featureName, ?string $projectName = null, ?Theme $theme = null): void
     {
+        $this->newLine();
         $this->initTheme($theme);
         $this->tutiLogo();
         $this->tagline($featureName);
@@ -111,8 +112,8 @@ trait HasBrandedOutput
 
     protected function tagline(string $featureName): void
     {
-        $tagline = " ✦ TUTI :: {$featureName} :: Environments Made Simple ✦ ";
-        $this->output->writeln($this->badge($tagline));
+        $tagline = "✦ TUTI :: {$featureName} :: Environments Made Simple ✦ ";
+        $this->output->writeln('  '. $this->badge($tagline));
     }
 
     protected function outro(string $text, ?string $linkLabel = null, ?string $linkUrl = null, int $terminalWidth = 80): void
