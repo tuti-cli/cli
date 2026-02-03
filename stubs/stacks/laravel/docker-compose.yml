@@ -21,7 +21,7 @@ x-app-env: &app-env
   DB_PORT: 5432
   DB_DATABASE: ${DB_DATABASE:-laravel}
   DB_USERNAME: ${DB_USERNAME:-laravel}
-  DB_PASSWORD: ${DB_PASSWORD}
+  DB_PASSWORD: ${DB_PASSWORD:-secret}
 
   # Redis
   REDIS_CLIENT: phpredis
@@ -104,7 +104,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_DATABASE:-laravel}
       POSTGRES_USER: ${DB_USERNAME:-laravel}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data

@@ -202,11 +202,16 @@ final readonly class StackInitializationService
                 // Substitute project-specific variables
                 if ($projectName !== '') {
                     $appDomain = $projectName . '.local.test';
+                    $userId = $this->getCurrentUserId();
+                    $groupId = $this->getCurrentGroupId();
+
                     $replacements = [
                         'PROJECT_NAME=laravel' => "PROJECT_NAME={$projectName}",
                         'APP_DOMAIN=app.local.test' => "APP_DOMAIN={$appDomain}",
                         'APP_URL=https://app.local.test' => "APP_URL=https://{$appDomain}",
                         'APP_NAME=Laravel' => "APP_NAME={$projectName}",
+                        'DOCKER_USER_ID=1000' => "DOCKER_USER_ID={$userId}",
+                        'DOCKER_GROUP_ID=1000' => "DOCKER_GROUP_ID={$groupId}",
                     ];
 
                     foreach ($replacements as $search => $replace) {
@@ -228,10 +233,18 @@ final readonly class StackInitializationService
         $content = file_get_contents($envPath);
         $appDomain = $projectName . '.local.test';
 
+        // First, update Docker-specific service hostnames in existing variables
+        $content = $this->updateDockerServiceVariables($content, $appDomain);
+
         // Check if tuti section already exists
         if (str_contains($content, '# TUTI-CLI DOCKER CONFIGURATION')) {
-            return; // Already has tuti variables
+            file_put_contents($envPath, $content);
+            return; // Already has tuti variables, just save updated content
         }
+
+        // Get current user's UID and GID for Docker file permissions
+        $userId = $this->getCurrentUserId();
+        $groupId = $this->getCurrentGroupId();
 
         // Prepare tuti-specific variables
         $tutiVars = <<<EOT
@@ -258,14 +271,158 @@ PHP_VERSION=8.4
 PHP_VARIANT=fpm-nginx
 BUILD_TARGET=development
 
-# Docker User/Group IDs (for Linux file permissions)
-# Set these to match your host user: `id -u` and `id -g`
-DOCKER_USER_ID=1000
-DOCKER_GROUP_ID=1000
+# Docker User/Group IDs (auto-detected from current user)
+DOCKER_USER_ID={$userId}
+DOCKER_GROUP_ID={$groupId}
 EOT;
 
         // Append to the file
         file_put_contents($envPath, $content . $tutiVars);
+    }
+
+    /**
+     * Get current user's UID.
+     */
+    private function getCurrentUserId(): int
+    {
+        // First try shell command (most reliable for WSL and Linux)
+        $output = $this->executeShellCommand('id -u');
+        if ($output !== null && is_numeric(trim($output))) {
+            return (int) trim($output);
+        }
+
+        // Fallback to posix_getuid() (available on Unix systems)
+        if (function_exists('posix_getuid')) {
+            $uid = posix_getuid();
+            if ($uid > 0) {
+                return $uid;
+            }
+        }
+
+        // Default fallback for Windows or if detection fails
+        return 1000;
+    }
+
+    /**
+     * Get current user's GID.
+     */
+    private function getCurrentGroupId(): int
+    {
+        // First try shell command (most reliable for WSL and Linux)
+        $output = $this->executeShellCommand('id -g');
+        if ($output !== null && is_numeric(trim($output))) {
+            return (int) trim($output);
+        }
+
+        // Fallback to posix_getgid() (available on Unix systems)
+        if (function_exists('posix_getgid')) {
+            $gid = posix_getgid();
+            if ($gid > 0) {
+                return $gid;
+            }
+        }
+
+        // Default fallback for Windows or if detection fails
+        return 1000;
+    }
+
+    /**
+     * Execute a shell command and return output.
+     */
+    private function executeShellCommand(string $command): ?string
+    {
+        // Try different execution methods for compatibility
+        $output = null;
+
+        // Method 1: proc_open (most reliable)
+        if (function_exists('proc_open')) {
+            $descriptors = [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+
+            $process = @proc_open($command, $descriptors, $pipes);
+            if (is_resource($process)) {
+                fclose($pipes[0]);
+                $output = stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                proc_close($process);
+
+                if ($output !== false && trim($output) !== '') {
+                    return trim($output);
+                }
+            }
+        }
+
+        // Method 2: shell_exec
+        $output = @shell_exec($command . ' 2>/dev/null');
+        if ($output !== null && trim($output) !== '') {
+            return trim($output);
+        }
+
+        // Method 3: exec
+        if (function_exists('exec')) {
+            $result = [];
+            @exec($command . ' 2>/dev/null', $result, $returnCode);
+            if ($returnCode === 0 && ! empty($result)) {
+                return trim($result[0]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Update environment variables to use Docker service names.
+     */
+    private function updateDockerServiceVariables(string $content, string $appDomain): string
+    {
+        // Update APP_URL to use local domain
+        $content = preg_replace(
+            '/^APP_URL=.*/m',
+            "APP_URL=https://{$appDomain}",
+            $content
+        );
+
+        // Update database configuration for PostgreSQL Docker container
+        // Handle commented, uncommented, and malformed variables
+        $dbReplacements = [
+            // Handle commented variables with optional spaces (common in fresh Laravel installs)
+            '/^[\s]*#[\s]*DB_HOST=.*/m' => 'DB_HOST=postgres',
+            '/^[\s]*#[\s]*DB_PORT=.*/m' => 'DB_PORT=5432',
+            '/^[\s]*#[\s]*DB_DATABASE=.*/m' => 'DB_DATABASE=laravel',
+            '/^[\s]*#[\s]*DB_USERNAME=.*/m' => 'DB_USERNAME=laravel',
+            '/^[\s]*#[\s]*DB_PASSWORD=.*/m' => 'DB_PASSWORD=secret',
+        ];
+
+        foreach ($dbReplacements as $pattern => $replacement) {
+            $content = preg_replace($pattern, $replacement, $content);
+        }
+
+        // Handle existing uncommented variables (with possible leading spaces)
+        $dbUpdates = [
+            '/^[\s]*DB_HOST=.*/m' => 'DB_HOST=postgres',
+            '/^[\s]*DB_PORT=.*/m' => 'DB_PORT=5432',
+            '/^[\s]*DB_DATABASE=.*/m' => 'DB_DATABASE=laravel',
+            '/^[\s]*DB_USERNAME=.*/m' => 'DB_USERNAME=laravel',
+            '/^[\s]*DB_PASSWORD=.*/m' => 'DB_PASSWORD=secret',
+        ];
+
+        foreach ($dbUpdates as $pattern => $replacement) {
+            $content = preg_replace($pattern, $replacement, $content);
+        }
+
+        // Update Redis configuration for Docker container
+        $content = preg_replace('/^[\s]*#?[\s]*REDIS_HOST=.*/m', 'REDIS_HOST=redis', $content);
+
+        // Update Mail configuration for Mailpit in Docker
+        $content = preg_replace('/^[\s]*MAIL_HOST=.*/m', 'MAIL_HOST=mailpit', $content);
+        $content = preg_replace('/^[\s]*MAIL_PORT=.*/m', 'MAIL_PORT=1025', $content);
+        $content = preg_replace('/^[\s]*MAIL_MAILER=.*/m', 'MAIL_MAILER=smtp', $content);
+
+        return $content;
     }
 
     /**
