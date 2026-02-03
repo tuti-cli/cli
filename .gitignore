@@ -5,7 +5,7 @@
 .env
 .tuti/*
 .tmp/*
-
+.cloude/*
 # Global stacks cache (not bundled stacks in stubs/)
 /stacks/*
 

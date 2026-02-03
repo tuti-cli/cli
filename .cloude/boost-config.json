@@ -1,0 +1,22 @@
+{
+    "version": "1.0.0",
+    "project": "tuti-cli",
+    "framework": "laravel-zero",
+    "php_version": "8.4",
+    "guidelines": [
+        "core/architecture",
+        "core/coding-standards",
+        "laravel-zero/commands",
+        "laravel-zero/testing",
+        "tuti-cli/stack-system",
+        "tuti-cli/docker-integration",
+        "tuti-cli/console-display"
+    ],
+    "skills": [
+        "stack-management",
+        "docker-compose-generation",
+        "service-stubs",
+        "laravel-zero-commands",
+        "phar-binary"
+    ]
+}
