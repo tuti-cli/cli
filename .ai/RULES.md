@@ -1,70 +1,131 @@
-# Tuti CLI AI Rules
+# Tuti CLI - AI Assistant Context
 
-> Quick reference for AI assistants working on Tuti CLI
+> You are an expert in Laravel Zero, PHP 8.4, Docker, and CLI development.
+> This is a multi-framework Docker environment management tool that builds to a self-contained binary.
 
-## Project Info
+---
 
-| Property | Value |
-|----------|-------|
-| Framework | Laravel Zero 12.x |
-| PHP | 8.4 (strict types required) |
-| Purpose | Multi-framework Docker environment management |
-| Output | Self-contained binary (phpacker) |
-| Tests | Pest |
-| Supported | Laravel, WordPress, Next.js (planned), Django (planned) |
+## 🎯 Core Principles
 
-## Code Style
+- Write concise, technical responses with accurate PHP/Laravel Zero examples
+- Prioritize SOLID principles and clean architecture
+- Design for scalability - system manages multiple framework stacks (Laravel, WordPress, Next.js, Django)
+- Prefer iteration and modularization over duplication
+- Use consistent, descriptive names for variables, methods, and classes
+- All code must work when compiled to PHAR/native binary
 
+## 🔧 Dependencies & Environment
+
+| Dependency | Version | Purpose |
+|------------|---------|---------|
+| PHP | 8.4+ | Runtime |
+| Laravel Zero | 12.x | CLI Framework |
+| Pest | Latest | Testing |
+| PHPStan | Level 5+ | Static analysis |
+| Docker Compose | v2 | Container orchestration |
+| Phpacker | Latest | Binary compilation |
+
+## 📐 PHP & Laravel Zero Standards
+
+### Strict Typing (Required)
 ```php
+<?php
+
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Stack;
 
-final class MyService
+final readonly class LaravelInstaller implements StackInstallerInterface
 {
     public function __construct(
-        private readonly Dependency $dep,
+        private DockerExecutorInterface $docker,
+        private StateManagerInterface $state,
     ) {}
 
-    public function execute(): Result
+    public function install(string $projectName): bool
     {
         // Implementation
     }
 }
 ```
 
-**Always:**
-- `declare(strict_types=1)` at file top
-- `final` classes by default
-- `private readonly` for injected dependencies
-- Constructor injection only
-- Return `Command::SUCCESS` or `Command::FAILURE` from commands
-- Type hints on all parameters and returns
+### Class Design Rules
+- **All classes `final`** - Prevent inheritance, prefer composition
+- **Services `final readonly`** - Immutable service objects
+- **Constructor injection only** - No property injection or setters
+- **Explicit return types** - Always declare return types
+- **Type hints everywhere** - Parameters, properties, returns
 
-## Directory Map
+### Command Pattern
+```php
+final class StackLaravelCommand extends Command
+{
+    protected $signature = 'stack:laravel {name} {--mode=}';
+    protected $description = 'Install Laravel stack';
 
-| Need to work with... | Look in... |
-|---------------------|------------|
-| Console commands | `app/Commands/` |
-| Business logic | `app/Services/` |
-| Interfaces | `app/Contracts/` |
-| Service providers | `app/Providers/` |
-| Stack templates | `stubs/stacks/` |
-| Service stubs | `stubs/services/` |
-| Tests | `tests/` |
-| Config | `config/` |
+    public function handle(LaravelInstaller $installer): int
+    {
+        // Use method injection for dependencies
+        return $installer->install($this->argument('name'))
+            ? Command::SUCCESS
+            : Command::FAILURE;
+    }
+}
+```
 
-## Common Tasks
+### Error Handling
+- Use custom exceptions: `App\Exceptions\{Domain}Exception`
+- Log errors via Laravel's logging facade
+- Return `Command::FAILURE` on errors, never `exit()`
+- Provide user-friendly error messages via `$this->error()`
 
-| Task | Files to modify |
-|------|----------------|
-| Add command | `app/Commands/{Category}/Command.php` |
-| Add service | `app/Services/{Domain}/Service.php` + Provider |
-| Add framework stack | `stubs/stacks/registry.json` + Installer + Command |
-| Add service stub | `stubs/services/{category}/name.stub` + registry.json |
+## 📁 Directory Structure
 
-## Testing
+| Directory | Purpose | Example |
+|-----------|---------|---------|
+| `app/Commands/` | CLI commands grouped by domain | `Stack/LaravelCommand.php` |
+| `app/Services/` | Business logic | `Stack/LaravelInstaller.php` |
+| `app/Contracts/` | Interfaces | `StackInstallerInterface.php` |
+| `app/Providers/` | Service providers | `StackServiceProvider.php` |
+| `stubs/stacks/` | Framework templates | `laravel/`, `wordpress/` |
+| `stubs/services/` | Optional services | `databases/mysql.stub` |
+| `tests/` | Pest tests | `Feature/`, `Unit/` |
 
+## 🐳 Docker Integration Patterns
+
+### Compose Generation
+- Use YAML anchors for shared config (`x-app-env`)
+- Network naming: `${PROJECT_NAME}_${APP_ENV}_network`
+- Container naming: `${PROJECT_NAME}_${APP_ENV}_{service}`
+- Always include healthchecks for services
+
+### Service Stubs
+```yaml
+# stubs/services/workers/scheduler.stub
+scheduler:
+  container_name: ${PROJECT_NAME}_${APP_ENV}_scheduler
+  build:
+    context: ..
+    dockerfile: .tuti/docker/Dockerfile
+    target: ${TARGET:-development}
+  command: ["php", "/var/www/html/artisan", "schedule:work"]
+  networks:
+    - ${PROJECT_NAME}_${APP_ENV}_network
+```
+
+## ✅ Testing Standards
+
+```php
+// Pest test example
+it('installs laravel stack', function () {
+    $installer = app(LaravelInstaller::class);
+    
+    expect($installer->install('test-app'))->toBeTrue()
+        ->and(file_exists('test-app/.tuti'))->toBeTrue();
+});
+```
+
+**Commands:**
 ```bash
 composer test           # All tests
 composer test:unit      # Unit only
@@ -73,47 +134,74 @@ composer pint           # Code formatting
 composer phpstan        # Static analysis
 ```
 
-## Build
+## 🏗️ Build Process
 
 ```bash
 make build-phar         # Build PHAR first
-make test-phar          # Test PHAR
-make build-binary       # Build native binaries
+make test-phar          # Test PHAR works
+make build-binary       # Compile native binaries
 make test-binary        # Test binary
 ```
 
-## Key Interfaces
+**Binary considerations:**
+- No runtime file access outside project directory
+- Stubs embedded in PHAR/binary
+- Use `base_path()` for stub resolution
+
+## 🔑 Key Interfaces
 
 ```php
-// Stack installer must implement
 interface StackInstallerInterface {
     public function getIdentifier(): string;
     public function supports(string $stack): bool;
-    public function installFresh(...): bool;
-    public function applyToExisting(...): bool;
+    public function installFresh(string $name, array $options): bool;
+    public function applyToExisting(string $path, array $options): bool;
+}
+
+interface DockerExecutorInterface {
+    public function compose(string $path, array $args): ProcessResult;
+    public function exec(string $container, array $command): ProcessResult;
 }
 ```
 
+## 📋 Common Tasks
+
+| Task | Files to modify |
+|------|----------------|
+| Add CLI command | `app/Commands/{Category}/Command.php` + register in provider |
+| Add service class | `app/Services/{Domain}/Service.php` + bind in provider |
+| Add framework stack | `stubs/stacks/{name}/` + Installer + Command |
+| Add optional service | `stubs/services/{category}/name.stub` + registry.json |
+
 ---
 
-## 📂 Folder Governance
+## 📂 Folder Governance (.ai/)
 
-### What belongs in .ai/
+### ✅ Allowed
 
-| Type | Add? | Example |
-|------|------|---------|
-| Coding standards | ✅ | guidelines/core/coding-standards.md |
-| Architecture patterns | ✅ | guidelines/core/architecture.md |
-| Skills (reusable how-tos) | ✅ | skills/stack-management/SKILL.md |
-| Framework patterns | ✅ | guidelines/laravel-zero/commands.md |
-| **Temporary notes** | ❌ | "implementation-complete.md" |
-| **Feature summaries** | ❌ | "quick-reference.md" |
-| **Session logs** | ❌ | Any file tracking single session work |
+| Type | Path | Description |
+|------|------|-------------|
+| Rules | `RULES.md` | This file - AI context |
+| Index | `INDEX.md` | Navigation |
+| Guidelines | `guidelines/**/*.md` | Coding patterns |
+| Skills | `skills/*/SKILL.md` | Reusable task guides |
 
-### Rules
+### ❌ Not Allowed
 
-1. **No temporary files** - Don't save implementation notes/summaries
-2. **Consolidate, don't duplicate** - .ai mirrors .claude (keep in sync)
-3. **Skills are reusable** - Only create skill if pattern repeats
-4. **Keep it minimal** - If it's in README.md or docs/, don't duplicate here
-- [skills/](skills/) - Domain-specific knowledge
+| Type | Reason |
+|------|--------|
+| Implementation summaries | Use CHANGELOG.md |
+| Feature docs | Put in `docs/` |
+| Session logs | Temporary |
+| Quick references | Temporary |
+
+### Decision Tree
+
+```
+Need to document something?
+├─ One-time implementation → CHANGELOG.md
+├─ User-facing feature → docs/*.md
+├─ Coding pattern (3+ uses) → guidelines/**/*.md
+├─ Repeatable AI task → skills/*/SKILL.md
+└─ Project context → RULES.md (this file)
+```
