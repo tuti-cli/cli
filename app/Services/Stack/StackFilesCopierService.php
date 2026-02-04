@@ -22,8 +22,41 @@ final readonly class StackFilesCopierService
         $this->copyDirectories($stackPath);
         $this->copyIndividualFiles($stackPath);
         $this->makeScriptsExecutable();
+        $this->createHealthCheckFile();
 
         return true;
+    }
+
+    /**
+     * Create health.php file in the Laravel public directory.
+     * This file bypasses Laravel for faster Docker health checks.
+     */
+    public function createHealthCheckFile(): void
+    {
+        $publicPath = $this->directoryManager->getProjectRoot() . '/public';
+
+        if (! is_dir($publicPath)) {
+            return; // Not a Laravel project or public dir doesn't exist yet
+        }
+
+        $healthFile = $publicPath . '/health.php';
+
+        if (file_exists($healthFile)) {
+            return; // Don't overwrite existing health file
+        }
+
+        $content = <<<'PHP'
+<?php
+// Health check endpoint for Docker
+// This file bypasses Laravel for faster health checks
+http_response_code(200);
+header('Content-Type: application/json');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+echo json_encode(['status' => 'ok', 'timestamp' => time()]);
+exit;
+PHP;
+
+        file_put_contents($healthFile, $content);
     }
 
     public function getFileList(string $stackPath): array
