@@ -55,6 +55,12 @@
             "options": ["mailpit"],
             "default": "mailpit",
             "prompt": "Would you like to add mail testing?"
+        },
+        "workers": {
+            "category": "workers",
+            "options": ["scheduler"],
+            "default": null,
+            "prompt": "Would you like to add Laravel Task Scheduler?"
         }
     },
 

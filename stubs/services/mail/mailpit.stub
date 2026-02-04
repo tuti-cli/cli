@@ -1,5 +1,6 @@
 mailpit:
   image: axllent/mailpit:{{MAILPIT_VERSION}}
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mailpit
   networks:
     - {{NETWORK_NAME}}
   healthcheck:

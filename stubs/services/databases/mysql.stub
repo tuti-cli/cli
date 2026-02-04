@@ -1,5 +1,6 @@
 mysql:
   image: mysql:{{MYSQL_VERSION}}
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mysql
   environment:
     MYSQL_DATABASE: ${DB_DATABASE}
     MYSQL_USER: ${DB_USERNAME}

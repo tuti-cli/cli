@@ -1,0 +1,23 @@
+scheduler:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_scheduler
+  build:
+    context: ..
+    dockerfile: .tuti/docker/Dockerfile
+    target: ${BUILD_TARGET:-development}
+    args:
+      PHP_VERSION: ${PHP_VERSION:-8.4}
+      VARIANT: ${PHP_VARIANT:-fpm-nginx}
+      USER_ID: ${DOCKER_USER_ID:-1000}
+      GROUP_ID: ${DOCKER_GROUP_ID:-1000}
+  command: ["php", "/var/www/html/artisan", "schedule:work"]
+  stop_signal: SIGTERM
+  environment:
+    <<: *app-env
+  volumes:
+    - ..:/var/www/html:cached
+  networks:
+    - {{NETWORK_NAME}}
+  depends_on:
+    app:
+      condition: service_started
+  restart: unless-stopped

@@ -1,5 +1,6 @@
 typesense:
   image: typesense/typesense:{{TYPESENSE_VERSION}}
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_typesense
   environment:
     TYPESENSE_DATA_DIR: /data
     TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}

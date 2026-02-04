@@ -95,7 +95,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: ${PROJECT_NAME:-laravel}_postgres
+    container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_postgres
     environment:
       POSTGRES_DB: ${DB_DATABASE:-laravel}
       POSTGRES_USER: ${DB_USERNAME:-laravel}
@@ -115,7 +115,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: ${PROJECT_NAME:-laravel}_redis
+    container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_redis
     command: >
       redis-server
       --appendonly yes
@@ -138,11 +138,11 @@ networks:
   traefik_proxy:
     external: true
   app_network:
-    name: ${PROJECT_NAME:-laravel}_network
+    name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_network
     driver: bridge
 
 volumes:
   postgres_data:
-    name: ${PROJECT_NAME:-laravel}_postgres_data
+    name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_postgres_data
   redis_data:
-    name: ${PROJECT_NAME:-laravel}_redis_data
+    name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_redis_data

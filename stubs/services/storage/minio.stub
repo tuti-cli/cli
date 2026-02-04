@@ -1,5 +1,6 @@
 minio:
   image: minio/minio:{{MINIO_VERSION}}
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_minio
   command: server /data --console-address ":9001"
   environment:
     MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}

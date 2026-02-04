@@ -195,6 +195,25 @@
                 },
                 "required_variables": []
             }
+        },
+        "workers": {
+            "scheduler": {
+                "name": "Laravel Scheduler",
+                "description": "Run scheduled tasks in dedicated container",
+                "stub": "workers/scheduler.stub",
+                "compatible_with": ["laravel"],
+                "volumes": [],
+                "ports": {},
+                "default_variables": {},
+                "required_variables": [],
+                "health_check": {
+                    "test": ["CMD", "healthcheck-schedule"],
+                    "interval": "10s",
+                    "timeout": "5s",
+                    "retries": 5,
+                    "start_period": "10s"
+                }
+            }
         }
     }
 }
