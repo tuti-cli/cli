@@ -56,9 +56,10 @@ USER root
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
-# Modify www-data user to match host user
-RUN usermod -u ${USER_ID} www-data \
-    && groupmod -g ${GROUP_ID} www-data
+# Use ServerSideUp's method to change UID/GID of www-data
+# This ensures proper file permissions with mounted volumes
+RUN docker-php-serversideup-set-id www-data ${USER_ID}:${GROUP_ID} && \
+    docker-php-serversideup-set-file-permissions --owner ${USER_ID}:${GROUP_ID}
 
 # Install development tools
 RUN apt-get update \
@@ -78,7 +79,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 ENV PHP_OPCACHE_ENABLE=0 \
     PHP_DISPLAY_ERRORS=1 \
     PHP_DISPLAY_STARTUP_ERRORS=1 \
-    PHP_ERROR_REPORTING="E_ALL"
+    PHP_ERROR_REPORTING="E_ALL" \
+    SSL_MODE=off
+
+# Copy custom entrypoint script to ServerSideUp's entrypoint.d directory
+# Scripts here run before S6 services start (executed in numerical order)
+COPY --chmod=755 .tuti/scripts/entrypoint-dev.sh /etc/entrypoint.d/50-laravel-permissions.sh
 
 USER www-data
 

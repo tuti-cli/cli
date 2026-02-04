@@ -34,9 +34,9 @@ services:
     volumes:
       # Mount entire Laravel app for hot reload (parent directory is project root)
       - ..:/var/www/html:cached
-      # Preserve vendor directory in container
-      - vendor:/var/www/html/vendor
-      - node_modules:/var/www/html/node_modules
+    networks:
+      - traefik_proxy
+      - app_network
     labels:
       # Enable Traefik
       - "traefik.enable=true"
@@ -51,6 +51,9 @@ services:
       - "traefik.http.routers.${PROJECT_NAME:-laravel}.rule=Host(`${APP_DOMAIN:-app.local.test}`)"
       - "traefik.http.routers.${PROJECT_NAME:-laravel}.entrypoints=websecure"
       - "traefik.http.routers.${PROJECT_NAME:-laravel}.tls=true"
+      - "traefik.http.routers.${PROJECT_NAME:-laravel}.service=${PROJECT_NAME:-laravel}"
+
+      # Service definition
       - "traefik.http.services.${PROJECT_NAME:-laravel}.loadbalancer.server.port=8080"
 
       # Middleware for HTTP to HTTPS redirect
@@ -90,7 +93,3 @@ services:
       - "traefik.http.routers.${PROJECT_NAME:-laravel}-mail.entrypoints=websecure"
       - "traefik.http.routers.${PROJECT_NAME:-laravel}-mail.tls=true"
       - "traefik.http.services.${PROJECT_NAME:-laravel}-mail.loadbalancer.server.port=8025"
-
-volumes:
-  vendor:
-  node_modules:

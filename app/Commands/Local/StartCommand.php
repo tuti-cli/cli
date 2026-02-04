@@ -34,6 +34,7 @@ final class StartCommand extends Command
     ): int {
         $this->brandedHeader('Local Environment');
 
+        $this->newLine();
         $debugService->setContext('local:start');
         $debugService->info('Starting local environment');
 

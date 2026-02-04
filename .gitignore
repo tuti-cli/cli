@@ -7,7 +7,10 @@
 .tmp/*
 .cloude/*
 # Global stacks cache (not bundled stacks in stubs/)
-/stacks/*
+stacks/*
+
+# Test instaletion files
+laravel-app/*
 
 # Ideas
 /.idea
