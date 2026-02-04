@@ -77,7 +77,7 @@ final readonly class StackInitializationService
         $this->copyEnvironmentFile($stackPath, $environment, $projectName);
 
         // 8. Update Laravel project's .env with Docker service settings
-        $this->updateLaravelEnv($projectName);
+        $this->updateLaravelEnv($projectName, $selectedServices);
 
         // 9. Validate initialization
         if (! $this->directoryService->validate()) {
@@ -89,8 +89,10 @@ final readonly class StackInitializationService
 
     /**
      * Update Laravel project's .env file with Docker service connection settings.
+     *
+     * @param  array<int, string>  $selectedServices
      */
-    private function updateLaravelEnv(string $projectName): void
+    private function updateLaravelEnv(string $projectName, array $selectedServices): void
     {
         $projectRoot = $this->directoryService->getProjectRoot();
         $laravelEnv = $projectRoot . '/.env';
@@ -101,6 +103,9 @@ final readonly class StackInitializationService
 
         $content = file_get_contents($laravelEnv);
 
+        // Check if Redis is selected
+        $hasRedis = in_array('cache.redis', $selectedServices, true);
+
         // Update database settings to use Docker postgres
         $replacements = [
             '/^DB_CONNECTION=.*$/m' => 'DB_CONNECTION=pgsql',
@@ -109,16 +114,18 @@ final readonly class StackInitializationService
             '/^DB_DATABASE=.*$/m' => 'DB_DATABASE=laravel',
             '/^DB_USERNAME=.*$/m' => 'DB_USERNAME=laravel',
             '/^DB_PASSWORD=.*$/m' => 'DB_PASSWORD=secret',
-            // Update Redis settings
-            '/^REDIS_HOST=.*$/m' => 'REDIS_HOST=redis',
-            '/^REDIS_PASSWORD=.*$/m' => 'REDIS_PASSWORD=',
-            // Update cache/session to use Redis
-            '/^CACHE_STORE=.*$/m' => 'CACHE_STORE=redis',
-            '/^SESSION_DRIVER=.*$/m' => 'SESSION_DRIVER=redis',
-            '/^QUEUE_CONNECTION=.*$/m' => 'QUEUE_CONNECTION=redis',
             // Update app URL
             '/^APP_URL=.*$/m' => "APP_URL=https://{$projectName}.local.test",
         ];
+
+        // Add Redis settings only if Redis is selected
+        if ($hasRedis) {
+            $replacements['/^REDIS_HOST=.*$/m'] = 'REDIS_HOST=redis';
+            $replacements['/^REDIS_PASSWORD=.*$/m'] = 'REDIS_PASSWORD=';
+            $replacements['/^CACHE_STORE=.*$/m'] = 'CACHE_STORE=redis';
+            $replacements['/^SESSION_DRIVER=.*$/m'] = 'SESSION_DRIVER=redis';
+            $replacements['/^QUEUE_CONNECTION=.*$/m'] = 'QUEUE_CONNECTION=redis';
+        }
 
         foreach ($replacements as $pattern => $replacement) {
             $content = preg_replace($pattern, $replacement, $content);
@@ -182,9 +189,9 @@ final readonly class StackInitializationService
         }
 
         // Categories that are already in the base docker-compose.yml
-        $baseCategories = ['databases', 'cache', 'mail'];
+        $baseCategories = ['databases'];
 
-        // Filter to only optional services (workers, search, storage, etc.)
+        // Filter to only optional services (cache, mail, workers, search, storage, etc.)
         $optionalServices = array_filter($selectedServices, function (string $serviceKey) use ($baseCategories): bool {
             [$category] = explode('.', $serviceKey);
             return ! in_array($category, $baseCategories, true);

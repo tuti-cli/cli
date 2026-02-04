@@ -28,16 +28,16 @@
             "options": ["postgres", "mysql", "mariadb"],
             "default": "postgres",
             "prompt": "Which database would you like to use?"
-        },
-        "cache": {
-            "category": "cache",
-            "options": ["redis"],
-            "default": "redis",
-            "prompt": "Which cache driver would you like to use?"
         }
     },
 
     "optional_services": {
+        "cache": {
+            "category": "cache",
+            "options": ["redis"],
+            "default": null,
+            "prompt": "Would you like to add Redis cache?"
+        },
         "search": {
             "category": "search",
             "options": ["meilisearch", "typesense"],
@@ -53,7 +53,7 @@
         "mail": {
             "category": "mail",
             "options": ["mailpit"],
-            "default": "mailpit",
+            "default": null,
             "prompt": "Would you like to add mail testing?"
         },
         "workers": {
