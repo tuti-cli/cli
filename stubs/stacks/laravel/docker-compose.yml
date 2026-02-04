@@ -23,17 +23,11 @@ x-app-env: &app-env
   DB_USERNAME: ${DB_USERNAME:-laravel}
   DB_PASSWORD: ${DB_PASSWORD:-secret}
 
-  # Redis
-  REDIS_CLIENT: phpredis
-  REDIS_HOST: redis
-  REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-  REDIS_PORT: 6379
-
-  # Cache & Session
-  CACHE_STORE: redis
-  SESSION_DRIVER: redis
+  # Cache & Session (file-based by default, override if Redis is selected)
+  CACHE_STORE: ${CACHE_STORE:-file}
+  SESSION_DRIVER: ${SESSION_DRIVER:-file}
   SESSION_LIFETIME: 120
-  QUEUE_CONNECTION: redis
+  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
 
   # Mail
   MAIL_MAILER: ${MAIL_MAILER:-log}
@@ -81,8 +75,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
@@ -112,28 +104,6 @@ services:
       retries: 5
       start_period: 10s
 
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_redis
-    command: >
-      redis-server
-      --appendonly yes
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD", "sh", "-c", "redis-cli ping || redis-cli -a \"$$REDIS_PASSWORD\" ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-
 networks:
   traefik_proxy:
     external: true
@@ -144,5 +114,3 @@ networks:
 volumes:
   postgres_data:
     name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_postgres_data
-  redis_data:
-    name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_redis_data
