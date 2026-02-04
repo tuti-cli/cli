@@ -1,58 +1,38 @@
-# Tuti CLI - AI Guidelines Index
+# Tuti CLI - AI Guidelines
 
-> AI-assisted development guidelines for Tuti CLI (Laravel Zero)
+> Start with [RULES.md](RULES.md) for quick reference | [GOVERNANCE.md](GOVERNANCE.md) for adding files
 
-## Quick Reference
-
-| Category | Path | Purpose |
-|----------|------|---------|
-| Core Architecture | `guidelines/core/` | Project structure, coding standards |
-| Laravel Zero | `guidelines/laravel-zero/` | Framework-specific patterns |
-| Skills | `skills/` | On-demand domain knowledge |
-
-## Guidelines
-
-### Core (`guidelines/core/`)
-- **[architecture.md](guidelines/core/architecture.md)** - Project structure and patterns
-- **[coding-standards.md](guidelines/core/coding-standards.md)** - PHP/Laravel conventions
-
-### Laravel Zero (`guidelines/laravel-zero/`)
-- **[commands.md](guidelines/laravel-zero/commands.md)** - Console command development  
-- **[testing.md](guidelines/laravel-zero/testing.md)** - Testing with Pest
-
-### Tuti CLI (`guidelines/tuti-cli/`)
-- **[stack-system.md](guidelines/tuti-cli/stack-system.md)** - Stack architecture
-- **[docker-integration.md](guidelines/tuti-cli/docker-integration.md)** - Docker management
-- **[console-display.md](guidelines/tuti-cli/console-display.md)** - Console UI components
-
-## Skills
-
-Activate for specific tasks:
-
-| Skill | When to Use |
-|-------|-------------|
-| [stack-management](skills/stack-management/SKILL.md) | Creating/modifying stacks |
-| [docker-compose-generation](skills/docker-compose-generation/SKILL.md) | Generating docker-compose files |
-| [service-stubs](skills/service-stubs/SKILL.md) | Adding service stubs |
-| [laravel-zero-commands](skills/laravel-zero-commands/SKILL.md) | Developing commands |
-| [phar-binary](skills/phar-binary/SKILL.md) | Building PHAR/binaries |
-
-## Usage Examples
+## Structure
 
 ```
-# Adding a new framework stack
-@AI: Use stack-management skill to add Next.js stack with Node.js runtime.
-
-# Creating framework-specific command  
-@AI: Follow laravel-zero-commands skill to create stack:wordpress command.
-
-# Adding universal service
-@AI: Use service-stubs skill to add Elasticsearch that works with all frameworks.
+.ai/
+├── RULES.md          # Quick reference + governance rules
+├── INDEX.md          # This file
+├── guidelines/       # Permanent coding/architecture docs
+│   ├── core/         # PHP, architecture patterns
+│   ├── laravel-zero/ # Framework patterns
+│   └── tuti-cli/     # Project-specific patterns
+└── skills/           # Reusable how-to guides
+    ├── stack-management/
+    ├── docker-compose-generation/
+    └── service-stubs/
 ```
 
-## Resources
+## When to Add Files
 
-- [Laravel Docs](https://laravel.com/docs)
-- [Laravel Zero Docs](https://laravel-zero.com)
-- [Project README](../README.md)
-- [CONTRIBUTING](../CONTRIBUTING.md)
+| Scenario | Action |
+|----------|--------|
+| New coding pattern used 3+ times | Add to `guidelines/` |
+| New skill (repeatable task) | Add to `skills/{name}/SKILL.md` |
+| One-time implementation | **Don't add - just commit code** |
+| Feature summary | **Don't add - use CHANGELOG.md** |
+
+## Skills Index
+
+| Skill | Use for |
+|-------|---------|
+| [stack-management](skills/stack-management/SKILL.md) | Add/modify framework stacks |
+| [docker-compose-generation](skills/docker-compose-generation/SKILL.md) | Generate docker-compose files |
+| [service-stubs](skills/service-stubs/SKILL.md) | Add services (redis, mysql, etc) |
+| [laravel-zero-commands](skills/laravel-zero-commands/SKILL.md) | Create CLI commands |
+| [phar-binary](skills/phar-binary/SKILL.md) | Build PHAR/native binaries |
