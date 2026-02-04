@@ -1,5 +1,6 @@
 mariadb:
   image: mariadb:{{MARIADB_VERSION}}
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mariadb
   environment:
     MARIADB_DATABASE: ${DB_DATABASE}
     MARIADB_USER: ${DB_USERNAME}

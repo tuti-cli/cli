@@ -1,5 +1,6 @@
 redis:
   image: redis:{{REDIS_VERSION}}-alpine
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_redis
   command: "redis-server {{REDIS_APPEND_ONLY}} {{REDIS_MAX_MEMORY}} {{REDIS_EVICTION_POLICY}} {{REDIS_PASSWORD_CONFIG}}"
   volumes:
     - redis_data:/data

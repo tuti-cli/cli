@@ -51,6 +51,7 @@ trait HasBrandedOutput
         $this->initTheme($theme);
         $this->tutiLogo();
         $this->tagline($featureName);
+        $this->newLine();
 
         if ($projectName !== null) {
             $this->newLine();

@@ -1,5 +1,6 @@
 postgres:
   image: postgres:{{POSTGRES_VERSION}}-alpine
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_postgres
   environment:
     POSTGRES_DB: ${DB_DATABASE}
     POSTGRES_USER: ${DB_USERNAME}

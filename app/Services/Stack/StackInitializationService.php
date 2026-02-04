@@ -27,7 +27,9 @@ final readonly class StackInitializationService
         private ProjectDirectoryService $directoryService,
         private ProjectMetadataService $metadataService,
         private StackFilesCopierService $copierService,
-        private StackLoaderService $stackLoader
+        private StackLoaderService $stackLoader,
+        private StackStubLoaderService $stubLoader,
+        private StackRegistryManagerService $registryManager
     ) {}
 
     /**
@@ -68,13 +70,16 @@ final readonly class StackInitializationService
         // 5. Process docker-compose files with variable substitution
         $this->processDockerComposeFiles($projectName, $environment);
 
-        // 6. Copy environment file template with project-specific values (for docker-compose)
+        // 6. Append optional services to docker-compose.yml
+        $this->appendOptionalServices($selectedServices, $projectName, $environment);
+
+        // 7. Copy environment file template with project-specific values (for docker-compose)
         $this->copyEnvironmentFile($stackPath, $environment, $projectName);
 
-        // 7. Update Laravel project's .env with Docker service settings
+        // 8. Update Laravel project's .env with Docker service settings
         $this->updateLaravelEnv($projectName);
 
-        // 8. Validate initialization
+        // 9. Validate initialization
         if (! $this->directoryService->validate()) {
             throw new RuntimeException('Stack initialization validation failed');
         }
@@ -106,6 +111,7 @@ final readonly class StackInitializationService
             '/^DB_PASSWORD=.*$/m' => 'DB_PASSWORD=secret',
             // Update Redis settings
             '/^REDIS_HOST=.*$/m' => 'REDIS_HOST=redis',
+            '/^REDIS_PASSWORD=.*$/m' => 'REDIS_PASSWORD=',
             // Update cache/session to use Redis
             '/^CACHE_STORE=.*$/m' => 'CACHE_STORE=redis',
             '/^SESSION_DRIVER=.*$/m' => 'SESSION_DRIVER=redis',
@@ -160,6 +166,105 @@ final readonly class StackInitializationService
             }
             file_put_contents($devComposeFile, $content);
         }
+    }
+
+    /**
+     * Append optional services to docker-compose.yml based on user selection.
+     *
+     * @param  array<int, string>  $selectedServices
+     */
+    private function appendOptionalServices(array $selectedServices, string $projectName, string $environment): void
+    {
+        $composeFile = tuti_path('docker-compose.yml');
+
+        if (! file_exists($composeFile)) {
+            return;
+        }
+
+        // Categories that are already in the base docker-compose.yml
+        $baseCategories = ['databases', 'cache', 'mail'];
+
+        // Filter to only optional services (workers, search, storage, etc.)
+        $optionalServices = array_filter($selectedServices, function (string $serviceKey) use ($baseCategories): bool {
+            [$category] = explode('.', $serviceKey);
+            return ! in_array($category, $baseCategories, true);
+        });
+
+        if (empty($optionalServices)) {
+            return;
+        }
+
+        $content = file_get_contents($composeFile);
+
+        // Find the position to insert services (before 'networks:' section)
+        $networksPos = strpos($content, "\nnetworks:");
+        if ($networksPos === false) {
+            // If no networks section, append at end
+            $networksPos = strlen($content);
+        }
+
+        $servicesToAppend = "\n";
+
+        foreach ($optionalServices as $serviceKey) {
+            [$category, $serviceName] = explode('.', $serviceKey);
+
+            // Check if service exists in registry
+            if (! $this->registryManager->hasService($category, $serviceName)) {
+                continue;
+            }
+
+            // Get stub path and load it
+            $stubPath = $this->registryManager->getServiceStubPath($category, $serviceName);
+
+            $replacements = [
+                'PROJECT_NAME' => $projectName,
+                'NETWORK_NAME' => 'app_network',
+            ];
+
+            try {
+                $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
+                // Add comment and service YAML (stub is already properly formatted)
+                $servicesToAppend .= "  # Optional: {$serviceName} service\n";
+                // Indent the service definition to match docker-compose structure
+                $servicesToAppend .= $this->indentServiceYaml($serviceYaml);
+                $servicesToAppend .= "\n";
+            } catch (RuntimeException) {
+                // Skip if stub not found
+                continue;
+            }
+        }
+
+        // Insert services before networks section
+        $newContent = substr($content, 0, $networksPos) . $servicesToAppend . substr($content, $networksPos);
+
+        file_put_contents($composeFile, $newContent);
+    }
+
+    /**
+     * Indent service YAML to match docker-compose.yml structure.
+     * Services in docker-compose are at 2-space indent under 'services:'.
+     */
+    private function indentServiceYaml(string $yaml): string
+    {
+        $lines = explode("\n", trim($yaml));
+        $result = [];
+
+        foreach ($lines as $index => $line) {
+            if ($line === '') {
+                $result[] = '';
+                continue;
+            }
+
+            if ($index === 0) {
+                // First line (service name) gets 2-space indent
+                $result[] = '  ' . $line;
+            } else {
+                // Other lines get 2 more spaces (4 total for properties)
+                $result[] = '  ' . $line;
+            }
+        }
+
+        return implode("\n", $result);
     }
 
     /**
@@ -416,6 +521,7 @@ EOT;
 
         // Update Redis configuration for Docker container
         $content = preg_replace('/^[\s]*#?[\s]*REDIS_HOST=.*/m', 'REDIS_HOST=redis', $content);
+        $content = preg_replace('/^[\s]*#?[\s]*REDIS_PASSWORD=.*/m', 'REDIS_PASSWORD=', $content);
 
         // Update Mail configuration for Mailpit in Docker
         $content = preg_replace('/^[\s]*MAIL_HOST=.*/m', 'MAIL_HOST=mailpit', $content);
