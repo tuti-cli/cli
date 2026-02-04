@@ -116,12 +116,12 @@ final class LaravelCommand extends Command
 
         if ($hasExistingProject) {
             $options['existing'] = '📁 Apply Docker configuration to this existing Laravel project';
-            $options['fresh'] = '✨ Create a new Laravel project in a subdirectory';
+            $options['fresh'] = '✨  Create a new Laravel project in a subdirectory';
 
             $this->success('Existing Laravel project detected in current directory');
             $this->newLine();
         } else {
-            $options['fresh'] = '✨ Create a new Laravel project with Docker configuration';
+            $options['fresh'] = '✨  Create a new Laravel project with Docker configuration';
             $options['existing'] = '📁 Apply Docker configuration to existing project (specify path)';
         }
 
