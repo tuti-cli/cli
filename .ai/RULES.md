@@ -94,8 +94,26 @@ interface StackInstallerInterface {
 }
 ```
 
-## Full Documentation
+---
 
-- [INDEX.md](INDEX.md) - Full guidelines index
-- [guidelines/](guidelines/) - Detailed guidelines
+## 📂 Folder Governance
+
+### What belongs in .ai/
+
+| Type | Add? | Example |
+|------|------|---------|
+| Coding standards | ✅ | guidelines/core/coding-standards.md |
+| Architecture patterns | ✅ | guidelines/core/architecture.md |
+| Skills (reusable how-tos) | ✅ | skills/stack-management/SKILL.md |
+| Framework patterns | ✅ | guidelines/laravel-zero/commands.md |
+| **Temporary notes** | ❌ | "implementation-complete.md" |
+| **Feature summaries** | ❌ | "quick-reference.md" |
+| **Session logs** | ❌ | Any file tracking single session work |
+
+### Rules
+
+1. **No temporary files** - Don't save implementation notes/summaries
+2. **Consolidate, don't duplicate** - .ai mirrors .claude (keep in sync)
+3. **Skills are reusable** - Only create skill if pattern repeats
+4. **Keep it minimal** - If it's in README.md or docs/, don't duplicate here
 - [skills/](skills/) - Domain-specific knowledge
