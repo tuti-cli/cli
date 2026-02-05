@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Stack;
 
+use App\Concerns\BuildsProjectUrls;
 use App\Concerns\HasBrandedOutput;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Stack\Installers\LaravelStackInstaller;
@@ -21,6 +22,7 @@ use function Laravel\Prompts\text;
 
 final class LaravelCommand extends Command
 {
+    use BuildsProjectUrls;
     use HasBrandedOutput;
 
     protected $signature = 'stack:laravel
@@ -564,15 +566,13 @@ final class LaravelCommand extends Command
             'Visit: https://' . $projectDomain,
         ]);
 
-
         $this->completed('Laravel stack installed successfully!', $nextSteps);
 
+        // Build dynamic URLs based on selected services
+        $urls = $this->buildProjectUrlsFromServices($config['selected_services'], $projectDomain);
+
         $this->newLine();
-        $this->box('Project URLs', [
-            'Application' => "https://{$projectDomain}",
-            'Mailpit' => "https://mail.{$projectDomain}",
-            'Traefik Dashboard' => 'https://traefik.local.test',
-        ], 60, true);
+        $this->box('Project URLs', $urls, 60, true);
 
         $this->hint('Use "tuti local:status" to check running services');
     }

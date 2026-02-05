@@ -8,7 +8,16 @@ typesense:
   volumes:
     - typesense_data:/data
   networks:
+    - traefik_proxy
     - {{NETWORK_NAME}}
+  labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=traefik_proxy"
+    - "traefik.http.routers.{{PROJECT_NAME}}-typesense.rule=Host(`search.{{PROJECT_NAME}}.local.test`)"
+    - "traefik.http.routers.{{PROJECT_NAME}}-typesense.entrypoints=websecure"
+    - "traefik.http.routers.{{PROJECT_NAME}}-typesense.tls=true"
+    - "traefik.http.routers.{{PROJECT_NAME}}-typesense.service={{PROJECT_NAME}}-typesense"
+    - "traefik.http.services.{{PROJECT_NAME}}-typesense.loadbalancer.server.port=8108"
   healthcheck:
     test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
     interval: 10s

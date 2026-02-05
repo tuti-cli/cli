@@ -2,7 +2,16 @@ mailpit:
   image: axllent/mailpit:{{MAILPIT_VERSION}}
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mailpit
   networks:
+    - traefik_proxy
     - {{NETWORK_NAME}}
+  labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=traefik_proxy"
+    - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.rule=Host(`mail.{{PROJECT_NAME}}.local.test`)"
+    - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.entrypoints=websecure"
+    - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.tls=true"
+    - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.service={{PROJECT_NAME}}-mailpit"
+    - "traefik.http.services.{{PROJECT_NAME}}-mailpit.loadbalancer.server.port=8025"
   healthcheck:
     test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:8025"]
     interval: 10s
