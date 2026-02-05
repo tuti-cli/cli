@@ -213,6 +213,24 @@
                     "retries": 5,
                     "start_period": "10s"
                 }
+            },
+            "horizon": {
+                "name": "Laravel Horizon",
+                "description": "Dashboard and code-driven configuration for Laravel Redis queues",
+                "stub": "workers/horizon.stub",
+                "compatible_with": ["laravel"],
+                "volumes": [],
+                "ports": {},
+                "default_variables": {
+                    "QUEUE_CONNECTION": "redis",
+                    "HORIZON_PREFIX": "horizon:"
+                },
+                "required_variables": [],
+                "depends_on": ["redis"],
+                "health_check": {
+                    "test": ["CMD", "healthcheck-horizon"],
+                    "start_period": "10s"
+                }
             }
         }
     }

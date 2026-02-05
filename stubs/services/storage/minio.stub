@@ -17,4 +17,4 @@ minio:
     interval: 30s
     timeout: 20s
     retries: 3
-  {{DEPLOY_CONFIG}}
+  restart: unless-stopped

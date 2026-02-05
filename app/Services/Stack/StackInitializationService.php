@@ -211,6 +211,7 @@ final readonly class StackInitializationService
         }
 
         $servicesToAppend = "\n";
+        $volumesToAdd = [];
 
         foreach ($optionalServices as $serviceKey) {
             [$category, $serviceName] = explode('.', $serviceKey);
@@ -220,13 +221,32 @@ final readonly class StackInitializationService
                 continue;
             }
 
+            // Get service config from registry
+            $serviceConfig = $this->registryManager->getService($category, $serviceName);
+
             // Get stub path and load it
             $stubPath = $this->registryManager->getServiceStubPath($category, $serviceName);
 
+            // Build replacements: base + service defaults
             $replacements = [
                 'PROJECT_NAME' => $projectName,
                 'NETWORK_NAME' => 'app_network',
             ];
+
+            // Add default variables from service registry
+            if (isset($serviceConfig['default_variables'])) {
+                $replacements = array_merge($replacements, $serviceConfig['default_variables']);
+            }
+
+            // Add environment-specific variables
+            if ($serviceName === 'redis') {
+                $replacements['REDIS_MAX_MEMORY'] = match ($environment) {
+                    'dev' => '256mb',
+                    'staging' => '512mb',
+                    'production' => '1024mb',
+                    default => '256mb',
+                };
+            }
 
             try {
                 $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
@@ -235,6 +255,13 @@ final readonly class StackInitializationService
                 // Indent the service definition to match docker-compose structure
                 $servicesToAppend .= $this->indentServiceYaml($serviceYaml);
                 $servicesToAppend .= "\n";
+
+                // Collect volumes from service config
+                if (! empty($serviceConfig['volumes'])) {
+                    foreach ($serviceConfig['volumes'] as $volume) {
+                        $volumesToAdd[$volume] = $projectName;
+                    }
+                }
             } catch (RuntimeException) {
                 // Skip if stub not found
                 continue;
@@ -244,7 +271,52 @@ final readonly class StackInitializationService
         // Insert services before networks section
         $newContent = substr($content, 0, $networksPos) . $servicesToAppend . substr($content, $networksPos);
 
+        // Add volumes if any
+        if (! empty($volumesToAdd)) {
+            $newContent = $this->appendVolumesToCompose($newContent, $volumesToAdd);
+        }
+
         file_put_contents($composeFile, $newContent);
+    }
+
+    /**
+     * Append volumes to the volumes section of docker-compose.yml
+     *
+     * @param  array<string, string>  $volumes  Map of volume name => project name
+     */
+    private function appendVolumesToCompose(string $content, array $volumes): string
+    {
+        // Find the volumes section
+        $volumesPos = strpos($content, "\nvolumes:");
+        if ($volumesPos === false) {
+            // No volumes section, add it at the end
+            $volumeSection = "\nvolumes:\n";
+            foreach ($volumes as $volumeName => $projectName) {
+                $volumeSection .= "  {$volumeName}:\n";
+                $volumeSection .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
+            }
+            return $content . $volumeSection;
+        }
+
+        // Find end of volumes section (next section or end of file)
+        $endPos = strlen($content);
+
+        // Add new volumes at the end of the volumes section
+        $volumesToInsert = "";
+        foreach ($volumes as $volumeName => $projectName) {
+            // Check if volume already exists
+            if (strpos($content, "  {$volumeName}:") === false) {
+                $volumesToInsert .= "  {$volumeName}:\n";
+                $volumesToInsert .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
+            }
+        }
+
+        if ($volumesToInsert !== "") {
+            // Insert before the last newline of the file
+            $content = rtrim($content) . "\n" . $volumesToInsert;
+        }
+
+        return $content;
     }
 
     /**

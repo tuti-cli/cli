@@ -276,9 +276,19 @@ final class LaravelStackInstaller implements StackInstallerInterface
     /**
      * Run artisan command in the project.
      */
-    public function runArtisan(string $command, string $projectPath): bool
+    public function runArtisan(string $projectPath, string $command): bool
     {
         $result = $this->dockerExecutor->runArtisan($command, $projectPath);
+
+        return $result->successful;
+    }
+
+    /**
+     * Run composer require to install a package.
+     */
+    public function runComposerRequire(string $projectPath, string $package): bool
+    {
+        $result = $this->dockerExecutor->runComposer("require {$package} --no-interaction", $projectPath);
 
         return $result->successful;
     }
