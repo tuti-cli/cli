@@ -97,24 +97,3 @@ services:
     # Expose port to host for local database tools (DBeaver, TablePlus, etc.)
     ports:
       - "${DB_EXTERNAL_PORT:-5432}:5432"
-
-  # ---------------------------------------------------------------------------
-  # Mailpit - Development Only (local email testing)
-  # ---------------------------------------------------------------------------
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_mailpit
-    restart: unless-stopped
-    networks:
-      - traefik_proxy
-      - app_network
-    environment:
-      MP_SMTP_AUTH_ACCEPT_ANY: "true"
-      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik_proxy"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}-mail.rule=Host(`mail.${APP_DOMAIN:-app.local.test}`)"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}-mail.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}-mail.tls=true"
-      - "traefik.http.services.${PROJECT_NAME:-laravel}-mail.loadbalancer.server.port=8025"

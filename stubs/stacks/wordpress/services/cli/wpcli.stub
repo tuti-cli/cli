@@ -1,0 +1,42 @@
+# @section: base
+# WP-CLI service for WordPress management commands
+# This service is used for running wp-cli commands like core download, plugin install, etc.
+# It shares the same volume as the app service to access WordPress files.
+wpcli:
+  image: wordpress:cli-2-php8.3
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_wpcli
+  environment:
+    WORDPRESS_DB_HOST: ${DB_HOST:-database}
+    WORDPRESS_DB_NAME: ${DB_DATABASE:-wordpress}
+    WORDPRESS_DB_USER: ${DB_USERNAME:-wordpress}
+    WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:-secret}
+    WP_CLI_CACHE_DIR: /tmp/.wp-cli/cache
+    PHP_MEMORY_LIMIT: 512M
+  volumes:
+    - wordpress_data:/var/www/html
+  networks:
+    - {{NETWORK_NAME}}
+  depends_on:
+    database:
+      condition: service_healthy
+  # Keep container running for interactive commands
+  command: ["tail", "-f", "/dev/null"]
+  restart: unless-stopped
+  profiles:
+    - cli
+
+# @section: dev
+wpcli:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_wpcli
+  volumes:
+    # In development, mount from parent directory (project root)
+    - ..:/var/www/html:cached
+  # Override command for development - allows running commands manually
+  command: ["tail", "-f", "/dev/null"]
+
+# @section: volumes
+# No additional volumes needed - uses app's wordpress_data or mounted volume
+
+# @section: env
+# WP-CLI specific environment variables
+WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache

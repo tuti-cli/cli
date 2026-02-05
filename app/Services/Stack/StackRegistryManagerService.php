@@ -8,20 +8,61 @@ use RuntimeException;
 
 /**
  * StackRegistryManagerService is responsible for reading and managing
- * the service registry.json file that contains all available services
- * for Docker stacks.
+ * the service registry.json file for each stack.
+ *
+ * Each stack has its own services/registry.json that defines available services.
  */
 final class StackRegistryManagerService
 {
     /**
-     * @var array<string, mixed>
+     * @var array<string, array<string, mixed>>
      */
-    private array $registry;
+    private array $registryCache = [];
 
-    public function __construct(
-        private readonly string $registryPath = 'services/registry.json'
-    ) {
-        $this->loadRegistry();
+    /**
+     * @var array<string, mixed>|null
+     */
+    private ?array $currentRegistry = null;
+
+    /**
+     * @var string|null
+     */
+    private ?string $currentStackPath = null;
+
+    /**
+     * Load registry for a specific stack.
+     *
+     * @param  string  $stackPath  Path to the stack directory
+     */
+    public function loadForStack(string $stackPath): void
+    {
+        $this->currentStackPath = $stackPath;
+
+        if (isset($this->registryCache[$stackPath])) {
+            $this->currentRegistry = $this->registryCache[$stackPath];
+            return;
+        }
+
+        $registryPath = $stackPath . '/services/registry.json';
+
+        if (! file_exists($registryPath)) {
+            throw new RuntimeException("Service registry not found at: {$registryPath}");
+        }
+
+        $content = file_get_contents($registryPath);
+
+        if ($content === false) {
+            throw new RuntimeException("Failed to read service registry: {$registryPath}");
+        }
+
+        $decoded = json_decode($content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new RuntimeException('Failed to parse service registry JSON: ' . json_last_error_msg());
+        }
+
+        $this->registryCache[$stackPath] = $decoded;
+        $this->currentRegistry = $decoded;
     }
 
     /**
@@ -29,7 +70,8 @@ final class StackRegistryManagerService
      */
     public function getVersion(): string
     {
-        return $this->registry['version'] ?? '0.0.0';
+        $this->ensureRegistryLoaded();
+        return $this->currentRegistry['version'] ?? '0.0.0';
     }
 
     /**
@@ -39,7 +81,8 @@ final class StackRegistryManagerService
      */
     public function getAllServices(): array
     {
-        return $this->registry['services'] ?? [];
+        $this->ensureRegistryLoaded();
+        return $this->currentRegistry['services'] ?? [];
     }
 
     /**
@@ -49,7 +92,8 @@ final class StackRegistryManagerService
      */
     public function getServicesByCategory(string $category): array
     {
-        return $this->registry['services'][$category] ?? [];
+        $this->ensureRegistryLoaded();
+        return $this->currentRegistry['services'][$category] ?? [];
     }
 
     /**
@@ -59,7 +103,8 @@ final class StackRegistryManagerService
      */
     public function getService(string $category, string $serviceName): array
     {
-        $service = $this->registry['services'][$category][$serviceName] ?? null;
+        $this->ensureRegistryLoaded();
+        $service = $this->currentRegistry['services'][$category][$serviceName] ?? null;
 
         if ($service === null) {
             throw new RuntimeException("Service not found: {$category}.{$serviceName}");
@@ -73,37 +118,26 @@ final class StackRegistryManagerService
      */
     public function hasService(string $category, string $serviceName): bool
     {
-        return isset($this->registry['services'][$category][$serviceName]);
+        $this->ensureRegistryLoaded();
+        return isset($this->currentRegistry['services'][$category][$serviceName]);
     }
 
     /**
-     * Get the stub path for a service
+     * Get the stub path for a service (returns absolute path).
+     *
+     * @param  string  $category  Service category (e.g., 'databases')
+     * @param  string  $serviceName  Service name (e.g., 'postgres')
+     * @return string  Absolute path to stub file
      */
     public function getServiceStubPath(string $category, string $serviceName): string
     {
+        $this->ensureRegistryLoaded();
+
         $service = $this->getService($category, $serviceName);
+        $stubRelativePath = $service['stub'] ?? "{$category}/{$serviceName}.stub";
 
-        return $service['stub'] ?? "{$category}/{$serviceName}.stub";
-    }
-
-    /**
-     * Get all services compatible with a framework
-     *
-     * @return array<string, array<string, array<string, mixed>>>
-     */
-    public function getCompatibleServices(string $framework): array
-    {
-        $compatible = [];
-
-        foreach ($this->getAllServices() as $category => $services) {
-            foreach ($services as $name => $config) {
-                if (in_array($framework, $config['compatible_with'] ?? [], true)) {
-                    $compatible[$category][$name] = $config;
-                }
-            }
-        }
-
-        return $compatible;
+        // Return absolute path within current stack
+        return $this->currentStackPath . '/services/' . $stubRelativePath;
     }
 
     /**
@@ -114,7 +148,6 @@ final class StackRegistryManagerService
     public function getServiceDefaultVariables(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
-
         return $service['default_variables'] ?? [];
     }
 
@@ -126,7 +159,6 @@ final class StackRegistryManagerService
     public function getServiceRequiredVariables(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
-
         return $service['required_variables'] ?? [];
     }
 
@@ -137,7 +169,8 @@ final class StackRegistryManagerService
      */
     public function getCategories(): array
     {
-        return array_keys($this->registry['services'] ?? []);
+        $this->ensureRegistryLoaded();
+        return array_keys($this->currentRegistry['services'] ?? []);
     }
 
     /**
@@ -148,7 +181,6 @@ final class StackRegistryManagerService
     public function getServiceDependencies(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
-
         return $service['depends_on'] ?? [];
     }
 
@@ -161,6 +193,8 @@ final class StackRegistryManagerService
      */
     public function resolveDependencies(array $selectedServices): array
     {
+        $this->ensureRegistryLoaded();
+
         $resolved = [];
         $toProcess = $selectedServices;
 
@@ -281,28 +315,14 @@ final class StackRegistryManagerService
     }
 
     /**
-     * Load the service registry from JSON file
+     * Ensure a registry is loaded
      */
-    private function loadRegistry(): void
+    private function ensureRegistryLoaded(): void
     {
-        $path = stub_path($this->registryPath);
-
-        if (! file_exists($path)) {
-            throw new RuntimeException("Service registry not found at: {$path}");
+        if ($this->currentRegistry === null) {
+            throw new RuntimeException(
+                'No stack registry loaded. Call loadForStack() first.'
+            );
         }
-
-        $content = file_get_contents($path);
-
-        if ($content === false) {
-            throw new RuntimeException("Failed to read service registry: {$path}");
-        }
-
-        $decoded = json_decode($content, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new RuntimeException('Failed to parse service registry JSON: ' . json_last_error_msg());
-        }
-
-        $this->registry = $decoded;
     }
 }

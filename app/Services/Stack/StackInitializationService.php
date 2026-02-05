@@ -47,6 +47,9 @@ final readonly class StackInitializationService
     ): bool {
         $this->directoryService->setInitializationRoot(getcwd());
 
+        // 0. Load stack-specific service registry
+        $this->registryManager->loadForStack($stackPath);
+
         // 1. Load and validate stack manifest
         $manifest = $this->stackLoader->load($stackPath);
         $this->stackLoader->validate($manifest);
@@ -183,6 +186,7 @@ final readonly class StackInitializationService
     private function appendOptionalServices(array $selectedServices, string $projectName, string $environment): void
     {
         $composeFile = tuti_path('docker-compose.yml');
+        $devComposeFile = tuti_path('docker-compose.dev.yml');
 
         if (! file_exists($composeFile)) {
             return;
@@ -232,6 +236,10 @@ final readonly class StackInitializationService
             // Get stub path and load it
             $stubPath = $this->registryManager->getServiceStubPath($category, $serviceName);
 
+            if (! file_exists($stubPath)) {
+                continue;
+            }
+
             // Build replacements: base + service defaults
             $replacements = [
                 'PROJECT_NAME' => $projectName,
@@ -279,7 +287,7 @@ final readonly class StackInitializationService
                     }
                 }
             } catch (\Exception $e) {
-                // Skip if stub loading fails
+                // Skip if stub loading fails - service won't be added
                 continue;
             }
         }
@@ -297,6 +305,78 @@ final readonly class StackInitializationService
         }
 
         file_put_contents($composeFile, $newContent);
+
+        // Also append dev sections to docker-compose.dev.yml
+        $this->appendDevSectionsToDevCompose($optionalServices, $projectName, $devComposeFile);
+    }
+
+    /**
+     * Append dev sections of optional services to docker-compose.dev.yml.
+     *
+     * @param  array<int, string>  $optionalServices
+     */
+    private function appendDevSectionsToDevCompose(array $optionalServices, string $projectName, string $devComposeFile): void
+    {
+        if (! file_exists($devComposeFile)) {
+            return;
+        }
+
+        $devContent = file_get_contents($devComposeFile);
+        $devServicesToAppend = '';
+
+        // Build replacements for dev section
+        $replacements = [
+            'PROJECT_NAME' => $projectName,
+            'NETWORK_NAME' => 'app_network',
+            'APP_DOMAIN' => "{$projectName}.local.test",
+        ];
+
+        foreach ($optionalServices as $serviceKey) {
+            [$category, $serviceName] = explode('.', $serviceKey);
+
+            // Skip if service already exists in dev compose
+            if (strpos($devContent, "  {$serviceName}:") !== false) {
+                continue;
+            }
+
+            // Check if service exists in registry
+            if (! $this->registryManager->hasService($category, $serviceName)) {
+                continue;
+            }
+
+            // Get stub path and load dev section
+            $stubPath = $this->registryManager->getServiceStubPath($category, $serviceName);
+
+            try {
+                if ($this->stubLoader->hasSections($stubPath)) {
+                    $devSection = $this->stubLoader->loadSection($stubPath, 'dev', $replacements);
+
+                    if ($devSection !== null && trim($devSection) !== '') {
+                        $indentedYaml = $this->indentServiceYaml($devSection);
+                        $devServicesToAppend .= "\n" . $indentedYaml;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Skip if dev section loading fails
+                continue;
+            }
+        }
+
+        if ($devServicesToAppend === '') {
+            return;
+        }
+
+        // Find insertion point in dev compose (before networks or at end of services)
+        $devInsertionPoint = $this->findServicesInsertionPoint($devContent);
+
+        if ($devInsertionPoint === false) {
+            // Append at end of file
+            $devContent = rtrim($devContent) . "\n" . $devServicesToAppend . "\n";
+        } else {
+            $devContent = substr($devContent, 0, $devInsertionPoint) . $devServicesToAppend . "\n" . substr($devContent, $devInsertionPoint);
+        }
+
+        file_put_contents($devComposeFile, $devContent);
     }
 
     /**

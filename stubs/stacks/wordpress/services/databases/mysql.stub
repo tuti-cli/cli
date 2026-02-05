@@ -1,0 +1,41 @@
+# @section: base
+database:
+  image: mysql:${MYSQL_VERSION:-8.4}
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_database
+  environment:
+    MYSQL_DATABASE: ${DB_DATABASE:-wordpress}
+    MYSQL_USER: ${DB_USERNAME:-wordpress}
+    MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootsecret}
+  volumes:
+    - database_data:/var/lib/mysql
+  networks:
+    - {{NETWORK_NAME}}
+  healthcheck:
+    test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+  restart: unless-stopped
+
+# @section: dev
+database:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_database
+  ports:
+    - "${DB_EXTERNAL_PORT:-3306}:3306"
+
+# @section: volumes
+database_data:
+  name: {{PROJECT_NAME}}_${APP_ENV:-dev}_database_data
+
+# @section: env
+DB_CONNECTION=mysql
+DB_HOST=database
+DB_PORT=3306
+DB_DATABASE=wordpress
+DB_USERNAME=wordpress
+DB_PASSWORD=secret
+MYSQL_VERSION=8.4
+MYSQL_ROOT_PASSWORD=rootsecret
+DB_EXTERNAL_PORT=3306

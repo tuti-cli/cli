@@ -1,17 +1,16 @@
 {
     "version": "1.0.0",
-    "description": "Tuti-CLI Shared Service Registry",
-    "services":  {
+    "description": "Laravel Stack Service Registry",
+    "services": {
         "databases": {
             "postgres": {
                 "name": "PostgreSQL",
                 "description": "PostgreSQL relational database",
                 "stub": "databases/postgres.stub",
-                "compatible_with": ["laravel", "wordpress", "django", "nextjs"],
                 "volumes": ["postgres_data"],
                 "ports": {
                     "internal": 5432,
-                    "external":  null
+                    "external": null
                 },
                 "default_variables": {
                     "POSTGRES_VERSION": "17",
@@ -35,7 +34,6 @@
                 "name": "MySQL",
                 "description": "MySQL relational database",
                 "stub": "databases/mysql.stub",
-                "compatible_with": ["laravel", "wordpress"],
                 "volumes": ["mysql_data"],
                 "ports": {
                     "internal": 3306,
@@ -43,7 +41,7 @@
                 },
                 "default_variables": {
                     "MYSQL_VERSION": "8.4",
-                    "DB_CONNECTION":  "mysql",
+                    "DB_CONNECTION": "mysql",
                     "DB_HOST": "mysql",
                     "DB_PORT": "3306"
                 },
@@ -57,20 +55,19 @@
             "mariadb": {
                 "name": "MariaDB",
                 "description": "MariaDB relational database",
-                "stub":  "databases/mariadb.stub",
-                "compatible_with":  ["laravel", "wordpress"],
+                "stub": "databases/mariadb.stub",
                 "volumes": ["mariadb_data"],
-                "ports":  {
+                "ports": {
                     "internal": 3306,
                     "external": null
                 },
                 "default_variables": {
                     "MARIADB_VERSION": "11.4",
-                    "DB_CONNECTION":  "mysql",
+                    "DB_CONNECTION": "mysql",
                     "DB_HOST": "mariadb",
                     "DB_PORT": "3306"
                 },
-                "required_variables":  [
+                "required_variables": [
                     "DB_DATABASE",
                     "DB_USERNAME",
                     "DB_PASSWORD",
@@ -83,31 +80,25 @@
                 "name": "Redis",
                 "description": "In-memory data structure store",
                 "stub": "cache/redis.stub",
-                "compatible_with": ["laravel", "wordpress", "django", "nextjs"],
                 "volumes": ["redis_data"],
                 "ports": {
                     "internal": 6379,
-                    "external":  null
+                    "external": null
                 },
                 "default_variables": {
                     "REDIS_VERSION": "7",
                     "REDIS_HOST": "redis",
                     "REDIS_PORT": "6379",
-                    "REDIS_MAX_MEMORY": "256mb",
-                    "REDIS_EXTERNAL_PORT": "6379"
+                    "REDIS_MAX_MEMORY": "256mb"
                 },
-                "required_variables": [],
-                "optional_variables": {
-                    "REDIS_PASSWORD":  "null"
-                }
+                "required_variables": []
             }
         },
         "search": {
             "meilisearch": {
-                "name":  "Meilisearch",
+                "name": "Meilisearch",
                 "description": "Lightning-fast search engine",
                 "stub": "search/meilisearch.stub",
-                "compatible_with": ["laravel", "wordpress"],
                 "volumes": ["meilisearch_data"],
                 "ports": {
                     "internal": 7700,
@@ -126,7 +117,6 @@
                 "name": "Typesense",
                 "description": "Fast, typo-tolerant search engine",
                 "stub": "search/typesense.stub",
-                "compatible_with": ["laravel"],
                 "volumes": ["typesense_data"],
                 "ports": {
                     "internal": 8108,
@@ -136,7 +126,6 @@
                     "TYPESENSE_VERSION": "27.1",
                     "TYPESENSE_HOST": "typesense",
                     "TYPESENSE_PORT": "8108",
-                    "TYPESENSE_PROTOCOL": "http",
                     "SCOUT_DRIVER": "typesense"
                 },
                 "required_variables": [
@@ -146,21 +135,17 @@
         },
         "storage": {
             "minio": {
-                "name":  "MinIO",
+                "name": "MinIO",
                 "description": "S3-compatible object storage",
                 "stub": "storage/minio.stub",
-                "compatible_with":  ["laravel", "wordpress", "nextjs"],
                 "volumes": ["minio_data"],
                 "ports": {
-                    "internal":  9000,
+                    "internal": 9000,
                     "console": 9001,
-                    "external":  null
+                    "external": null
                 },
                 "default_variables": {
                     "MINIO_VERSION": "latest",
-                    "MINIO_HOST": "minio",
-                    "MINIO_PORT": "9000",
-                    "MINIO_CONSOLE_PORT": "9001",
                     "AWS_ENDPOINT": "http://minio:9000",
                     "AWS_USE_PATH_STYLE_ENDPOINT": "true",
                     "FILESYSTEM_DISK": "s3"
@@ -176,10 +161,9 @@
         },
         "mail": {
             "mailpit": {
-                "name":  "Mailpit",
+                "name": "Mailpit",
                 "description": "Email testing tool with web UI",
                 "stub": "mail/mailpit.stub",
-                "compatible_with": ["laravel", "wordpress", "django", "nextjs"],
                 "volumes": [],
                 "ports": {
                     "smtp": 1025,
@@ -190,10 +174,7 @@
                     "MAILPIT_VERSION": "latest",
                     "MAIL_MAILER": "smtp",
                     "MAIL_HOST": "mailpit",
-                    "MAIL_PORT": "1025",
-                    "MAIL_USERNAME": "null",
-                    "MAIL_PASSWORD": "null",
-                    "MAIL_ENCRYPTION": "null"
+                    "MAIL_PORT": "1025"
                 },
                 "required_variables": []
             }
@@ -203,7 +184,6 @@
                 "name": "Laravel Scheduler",
                 "description": "Run scheduled tasks in dedicated container",
                 "stub": "workers/scheduler.stub",
-                "compatible_with": ["laravel"],
                 "volumes": [],
                 "ports": {},
                 "default_variables": {},
@@ -220,7 +200,6 @@
                 "name": "Laravel Horizon",
                 "description": "Dashboard and code-driven configuration for Laravel Redis queues",
                 "stub": "workers/horizon.stub",
-                "compatible_with": ["laravel"],
                 "volumes": [],
                 "ports": {},
                 "default_variables": {

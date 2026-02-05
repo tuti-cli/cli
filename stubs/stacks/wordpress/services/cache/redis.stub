@@ -1,0 +1,33 @@
+# @section: base
+redis:
+  image: redis:${REDIS_VERSION:-7}-alpine
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_redis
+  command: redis-server --appendonly yes --maxmemory ${REDIS_MAX_MEMORY:-256mb} --maxmemory-policy allkeys-lru
+  volumes:
+    - redis_data:/data
+  networks:
+    - {{NETWORK_NAME}}
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 10s
+    timeout: 3s
+    retries: 5
+    start_period: 5s
+  restart: unless-stopped
+
+# @section: dev
+redis:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_redis
+  ports:
+    - "${REDIS_EXTERNAL_PORT:-6379}:6379"
+
+# @section: volumes
+redis_data:
+  name: {{PROJECT_NAME}}_${APP_ENV:-dev}_redis_data
+
+# @section: env
+WP_REDIS_HOST=redis
+WP_REDIS_PORT=6379
+REDIS_VERSION=7
+REDIS_MAX_MEMORY=256mb
+REDIS_EXTERNAL_PORT=6379

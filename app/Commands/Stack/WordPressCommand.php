@@ -7,7 +7,7 @@ namespace App\Commands\Stack;
 use App\Concerns\BuildsProjectUrls;
 use App\Concerns\HasBrandedOutput;
 use App\Services\Project\ProjectDirectoryService;
-use App\Services\Stack\Installers\LaravelStackInstaller;
+use App\Services\Stack\Installers\WordPressStackInstaller;
 use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
@@ -20,29 +20,30 @@ use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
 use function Laravel\Prompts\text;
 
-final class LaravelCommand extends Command
+final class WordPressCommand extends Command
 {
     use BuildsProjectUrls;
     use HasBrandedOutput;
 
-    protected $signature = 'stack:laravel
+    protected $signature = 'stack:wordpress
                           {project-name? : Project name for fresh installation}
                           {--mode= : Installation mode (fresh, existing)}
+                          {--type= : Installation type (standard, bedrock)}
                           {--path= : Path for fresh installation (defaults to current directory)}
                           {--services=* : Pre-select services}
-                          {--laravel-version= : Specific Laravel version to install}
+                          {--wp-version= : Specific WordPress version to install}
                           {--force : Force initialization even if .tuti exists}';
 
-    protected $description = 'Initialize a Laravel project with Docker stack';
+    protected $description = 'Initialize a WordPress project with Docker stack';
 
     public function handle(
-        LaravelStackInstaller $installer,
+        WordPressStackInstaller $installer,
         StackRegistryManagerService $registry,
         StackLoaderService $stackLoader,
         ProjectDirectoryService $directoryService,
         StackInitializationService $initService
     ): int {
-        $this->brandedHeader('Laravel Stack Installation');
+        $this->brandedHeader('WordPress Stack Installation');
 
         try {
             $mode = $this->getInstallationMode($installer);
@@ -90,7 +91,7 @@ final class LaravelCommand extends Command
         }
     }
 
-    private function getInstallationMode(LaravelStackInstaller $installer): ?string
+    private function getInstallationMode(WordPressStackInstaller $installer): ?string
     {
         $modeOption = $this->option('mode');
 
@@ -107,12 +108,15 @@ final class LaravelCommand extends Command
         $options = [];
 
         if ($hasExistingProject) {
-            $options['existing'] = '📁 Apply Docker configuration to this existing Laravel project';
-            $options['fresh'] = '✨  Create a new Laravel project in a subdirectory';
-            $this->success('Existing Laravel project detected in current directory');
+            $installationType = $installer->detectInstallationType(getcwd());
+            $typeLabel = $installationType === 'bedrock' ? 'Bedrock' : 'Standard';
+
+            $options['existing'] = "📁 Apply Docker configuration to this existing WordPress ({$typeLabel}) project";
+            $options['fresh'] = '✨  Create a new WordPress project in a subdirectory';
+            $this->success("Existing WordPress ({$typeLabel}) project detected in current directory");
             $this->newLine();
         } else {
-            $options['fresh'] = '✨  Create a new Laravel project with Docker configuration';
+            $options['fresh'] = '✨  Create a new WordPress project with Docker configuration';
             $options['existing'] = '📁 Apply Docker configuration to existing project (specify path)';
         }
 
@@ -143,7 +147,7 @@ final class LaravelCommand extends Command
      * @return array<string, mixed>|null
      */
     private function gatherConfiguration(
-        LaravelStackInstaller $installer,
+        WordPressStackInstaller $installer,
         StackRegistryManagerService $registry,
         StackLoaderService $stackLoader,
         string $mode
@@ -157,10 +161,12 @@ final class LaravelCommand extends Command
         if ($mode === 'fresh') {
             $config['project_name'] = $this->getProjectName();
             $config['project_path'] = $this->getProjectPath($config['project_name']);
-            $config['laravel_version'] = $this->option('laravel-version');
+            $config['wp_version'] = $this->option('wp-version');
+            $config['installation_type'] = $this->getInstallationType($installer);
         } else {
             $config['project_name'] = $this->getProjectName(basename(getcwd()));
             $config['project_path'] = getcwd();
+            $config['installation_type'] = $installer->detectInstallationType(getcwd()) ?? 'standard';
         }
 
         // Load stack-specific service registry
@@ -169,7 +175,7 @@ final class LaravelCommand extends Command
         $manifest = $stackLoader->load($config['stack_path']);
         $stackLoader->validate($manifest);
 
-        $this->displayStackInfo($manifest);
+        $this->displayStackInfo($manifest, $config['installation_type']);
 
         $config['selected_services'] = $this->selectServices($registry, $stackLoader, $manifest);
 
@@ -182,7 +188,31 @@ final class LaravelCommand extends Command
         return $config;
     }
 
-    private function getProjectName(string $default = 'laravel-app'): string
+    private function getInstallationType(WordPressStackInstaller $installer): string
+    {
+        $typeOption = $this->option('type');
+
+        if ($typeOption !== null && in_array($typeOption, ['standard', 'bedrock'], true)) {
+            return $typeOption;
+        }
+
+        if ($this->option('no-interaction')) {
+            return 'standard';
+        }
+
+        $types = $installer->getInstallationTypes();
+
+        return select(
+            label: 'Which WordPress installation type would you like?',
+            options: [
+                'standard' => "📦 {$types['standard']['name']} - {$types['standard']['description']}",
+                'bedrock' => "🌱 {$types['bedrock']['name']} - {$types['bedrock']['description']}",
+            ],
+            default: 'standard'
+        );
+    }
+
+    private function getProjectName(string $default = 'wordpress-app'): string
     {
         $projectName = $this->argument('project-name');
 
@@ -241,12 +271,15 @@ final class LaravelCommand extends Command
     /**
      * @param  array<string, mixed>  $manifest
      */
-    private function displayStackInfo(array $manifest): void
+    private function displayStackInfo(array $manifest, string $installationType): void
     {
+        $typeLabel = $installationType === 'bedrock' ? 'Bedrock (Roots)' : 'Standard';
+
         $this->box('Stack Info', [
             'Name' => $manifest['name'],
             'Type' => $manifest['type'],
             'Framework' => $manifest['framework'],
+            'Installation' => $typeLabel,
             'Description' => $manifest['description'],
         ], 60, true);
     }
@@ -342,7 +375,10 @@ final class LaravelCommand extends Command
         $this->section('Configuration Summary');
 
         $modeLabel = $config['mode'] === 'fresh' ? '✨ Fresh installation' : '📁 Apply to existing';
+        $typeLabel = $config['installation_type'] === 'bedrock' ? 'Bedrock' : 'Standard';
+
         $this->keyValue('Mode', $modeLabel);
+        $this->keyValue('Type', $typeLabel);
         $this->keyValue('Project', $config['project_name']);
         $this->keyValue('Path', $config['project_path']);
         $this->keyValue('Environment', $config['environment']);
@@ -361,23 +397,24 @@ final class LaravelCommand extends Command
      * @param  array<string, mixed>  $config
      */
     private function executeInstallation(
-        LaravelStackInstaller $installer,
+        WordPressStackInstaller $installer,
         StackInitializationService $initService,
         array $config
     ): void {
         if ($config['mode'] === 'fresh') {
-            $this->note('Creating Laravel project via Docker...');
-            $this->hint('This may take a few minutes on first run (downloading PHP image)');
+            $typeLabel = $config['installation_type'] === 'bedrock' ? 'Bedrock' : 'Standard';
+            $this->note("Creating WordPress ({$typeLabel}) project via Docker...");
+            $this->hint('This may take a few minutes on first run (downloading images)');
 
             spin(
                 function () use ($installer, $config): void {
-                    $options = [];
+                    $options = [
+                        'installation_type' => $config['installation_type'],
+                    ];
 
-                    if ($config['laravel_version'] !== null) {
-                        $options['laravel_version'] = $config['laravel_version'];
+                    if ($config['wp_version'] !== null) {
+                        $options['wp_version'] = $config['wp_version'];
                     }
-
-                    $options['prefer_dist'] = true;
 
                     $installer->installFresh(
                         $config['project_path'],
@@ -385,13 +422,10 @@ final class LaravelCommand extends Command
                         $options
                     );
                 },
-                'Creating Laravel project (composer create-project via Docker)...'
+                'Creating WordPress project via Docker...'
             );
 
-            $this->success('Laravel project created');
-
-            // Install additional packages if needed (e.g., Horizon)
-            $this->installRequiredPackages($installer, $config);
+            $this->success('WordPress project created');
 
             chdir($config['project_path']);
         }
@@ -409,77 +443,28 @@ final class LaravelCommand extends Command
 
         $this->success('Stack initialized');
 
-        // Generate APP_KEY if fresh installation
-        if ($config['mode'] === 'fresh') {
-            $this->note('Generating APP_KEY via Docker...');
-            $appKey = $installer->generateAppKey($config['project_path']);
+        // Generate WordPress salts
+        $this->note('Generating WordPress salts...');
+        $salts = $installer->generateSalts();
+        $this->success('WordPress salts generated');
 
-            if ($appKey !== null && str_starts_with($appKey, 'base64:')) {
-                $this->success('APP_KEY generated successfully');
-                $this->line('  ' . substr($appKey, 0, 30) . '...');
-                $this->updateEnvValue($config['project_path'], 'APP_KEY', $appKey);
-            } else {
-                $this->warning('Could not generate APP_KEY automatically');
-                $this->hint('Run manually: php artisan key:generate');
-            }
-        }
+        // Update .env with salts
+        $this->updateEnvWithSalts($config['project_path'], $salts);
 
         // Configure .env for selected services
         $this->configureEnvForServices($config);
     }
 
     /**
-     * Install required packages for selected services.
+     * Update .env file with WordPress salts.
      *
-     * @param  array<string, mixed>  $config
+     * @param  array<string, string>  $salts
      */
-    private function installRequiredPackages(LaravelStackInstaller $installer, array $config): void
+    private function updateEnvWithSalts(string $projectPath, array $salts): void
     {
-        $packages = $this->getRequiredPackages($config['selected_services']);
-
-        if (empty($packages)) {
-            return;
+        foreach ($salts as $key => $value) {
+            $this->updateEnvValue($projectPath, $key, $value);
         }
-
-        foreach ($packages as $package => $artisanCommand) {
-            $this->note("Installing {$package}...");
-
-            spin(
-                fn () => $installer->runComposerRequire($config['project_path'], $package),
-                "Installing {$package}..."
-            );
-
-            $this->success("Installed {$package}");
-
-            if ($artisanCommand !== null) {
-                spin(
-                    fn () => $installer->runArtisan($config['project_path'], $artisanCommand),
-                    "Running php artisan {$artisanCommand}..."
-                );
-            }
-        }
-    }
-
-    /**
-     * Get required packages for selected services.
-     *
-     * @param  array<int, string>  $selectedServices
-     * @return array<string, string|null>
-     */
-    private function getRequiredPackages(array $selectedServices): array
-    {
-        $packages = [];
-
-        foreach ($selectedServices as $serviceKey) {
-            [$category, $serviceName] = explode('.', $serviceKey);
-
-            if ($category === 'workers' && $serviceName === 'horizon') {
-                $packages['laravel/horizon'] = 'horizon:install';
-            }
-            // Add more packages here as needed
-        }
-
-        return $packages;
     }
 
     /**
@@ -499,18 +484,10 @@ final class LaravelCommand extends Command
         foreach ($config['selected_services'] as $serviceKey) {
             [$category, $serviceName] = explode('.', $serviceKey);
 
-            // Configure for Horizon
-            if ($category === 'workers' && $serviceName === 'horizon') {
-                $this->updateEnvValue($projectPath, 'QUEUE_CONNECTION', 'redis');
-                $this->updateEnvValue($projectPath, 'REDIS_HOST', 'redis');
-                $this->updateEnvValue($projectPath, 'REDIS_PORT', '6379');
-            }
-
             // Configure for Redis cache
             if ($category === 'cache' && $serviceName === 'redis') {
-                $this->updateEnvValue($projectPath, 'CACHE_STORE', 'redis');
-                $this->updateEnvValue($projectPath, 'SESSION_DRIVER', 'redis');
-                $this->updateEnvValue($projectPath, 'REDIS_HOST', 'redis');
+                $this->updateEnvValue($projectPath, 'WP_REDIS_HOST', 'redis');
+                $this->updateEnvValue($projectPath, 'WP_REDIS_PORT', '6379');
             }
         }
     }
@@ -528,10 +505,15 @@ final class LaravelCommand extends Command
 
         $content = file_get_contents($envPath);
 
+        // Escape special characters for .env file
+        $escapedValue = str_contains($value, ' ') || str_contains($value, '$')
+            ? '"' . addslashes($value) . '"'
+            : $value;
+
         if (preg_match("/^{$key}=/m", $content)) {
-            $content = preg_replace("/^{$key}=.*$/m", "{$key}={$value}", $content);
+            $content = preg_replace("/^{$key}=.*$/m", "{$key}={$escapedValue}", $content);
         } else {
-            $content = rtrim($content) . "\n{$key}={$value}\n";
+            $content = rtrim($content) . "\n{$key}={$escapedValue}\n";
         }
 
         file_put_contents($envPath, $content);
@@ -546,7 +528,14 @@ final class LaravelCommand extends Command
 
         if ($config['mode'] === 'fresh') {
             $this->bullet("{$config['project_name']}/", 'cyan');
-            $this->subItem('app/ (Laravel application)');
+            if ($config['installation_type'] === 'bedrock') {
+                $this->subItem('config/ (Bedrock configuration)');
+                $this->subItem('web/ (WordPress webroot)');
+                $this->subItem('composer.json');
+            } else {
+                $this->subItem('wp-content/ (themes, plugins, uploads)');
+                $this->subItem('wp-config.php');
+            }
         }
 
         $this->bullet('.tuti/', 'cyan');
@@ -567,9 +556,10 @@ final class LaravelCommand extends Command
             'Add to /etc/hosts: 127.0.0.1 ' . $projectDomain,
             'tuti local:start',
             'Visit: https://' . $projectDomain,
+            'Complete WordPress installation wizard',
         ]);
 
-        $this->completed('Laravel stack installed successfully!', $nextSteps);
+        $this->completed('WordPress stack installed successfully!', $nextSteps);
 
         // Build dynamic URLs based on selected services
         $urls = $this->buildProjectUrlsFromServices($config['selected_services'], $projectDomain);

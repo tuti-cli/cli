@@ -1,0 +1,127 @@
+{
+    "version": "1.0.0",
+    "description": "WordPress Stack Service Registry",
+    "services": {
+        "databases": {
+            "mariadb": {
+                "name": "MariaDB",
+                "description": "MariaDB relational database (recommended for WordPress)",
+                "stub": "databases/mariadb.stub",
+                "volumes": ["database_data"],
+                "ports": {
+                    "internal": 3306,
+                    "external": null
+                },
+                "default_variables": {
+                    "MARIADB_VERSION": "11.4",
+                    "DB_CONNECTION": "mysql",
+                    "DB_HOST": "database",
+                    "DB_PORT": "3306"
+                },
+                "required_variables": [
+                    "DB_DATABASE",
+                    "DB_USERNAME",
+                    "DB_PASSWORD",
+                    "MARIADB_ROOT_PASSWORD"
+                ]
+            },
+            "mysql": {
+                "name": "MySQL",
+                "description": "MySQL relational database",
+                "stub": "databases/mysql.stub",
+                "volumes": ["database_data"],
+                "ports": {
+                    "internal": 3306,
+                    "external": null
+                },
+                "default_variables": {
+                    "MYSQL_VERSION": "8.4",
+                    "DB_CONNECTION": "mysql",
+                    "DB_HOST": "database",
+                    "DB_PORT": "3306"
+                },
+                "required_variables": [
+                    "DB_DATABASE",
+                    "DB_USERNAME",
+                    "DB_PASSWORD",
+                    "MYSQL_ROOT_PASSWORD"
+                ]
+            }
+        },
+        "cache": {
+            "redis": {
+                "name": "Redis",
+                "description": "In-memory data structure store for WordPress object cache",
+                "stub": "cache/redis.stub",
+                "volumes": ["redis_data"],
+                "ports": {
+                    "internal": 6379,
+                    "external": null
+                },
+                "default_variables": {
+                    "REDIS_VERSION": "7",
+                    "WP_REDIS_HOST": "redis",
+                    "WP_REDIS_PORT": "6379",
+                    "REDIS_MAX_MEMORY": "256mb"
+                },
+                "required_variables": []
+            }
+        },
+        "storage": {
+            "minio": {
+                "name": "MinIO",
+                "description": "S3-compatible object storage for WordPress media",
+                "stub": "storage/minio.stub",
+                "volumes": ["minio_data"],
+                "ports": {
+                    "internal": 9000,
+                    "console": 9001,
+                    "external": null
+                },
+                "default_variables": {
+                    "MINIO_VERSION": "latest",
+                    "MINIO_ENDPOINT": "http://minio:9000"
+                },
+                "required_variables": [
+                    "MINIO_ROOT_USER",
+                    "MINIO_ROOT_PASSWORD"
+                ]
+            }
+        },
+        "mail": {
+            "mailpit": {
+                "name": "Mailpit",
+                "description": "Email testing tool with web UI",
+                "stub": "mail/mailpit.stub",
+                "volumes": [],
+                "ports": {
+                    "smtp": 1025,
+                    "http": 8025,
+                    "external": null
+                },
+                "default_variables": {
+                    "MAILPIT_VERSION": "latest",
+                    "MAIL_HOST": "mailpit",
+                    "MAIL_PORT": "1025"
+                },
+                "required_variables": []
+            }
+        },
+        "cli": {
+            "wpcli": {
+                "name": "WP-CLI",
+                "description": "WordPress command-line interface",
+                "stub": "cli/wpcli.stub",
+                "volumes": [],
+                "ports": {},
+                "default_variables": {
+                    "WP_CLI_CACHE_DIR": "/tmp/.wp-cli/cache",
+                    "PHP_MEMORY_LIMIT": "512M"
+                },
+                "required_variables": [],
+                "depends_on": ["database"],
+                "profiles": ["cli"]
+            }
+        }
+    }
+}

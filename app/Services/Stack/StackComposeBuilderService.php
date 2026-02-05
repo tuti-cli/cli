@@ -30,6 +30,9 @@ final readonly class StackComposeBuilderService
         array $projectConfig,
         string $environment = 'dev'
     ): array {
+        // Load stack-specific service registry
+        $this->registry->loadForStack($stackPath);
+
         // Load stack manifest
         $stackManifest = $this->stackLoader->load($stackPath);
 
@@ -40,7 +43,7 @@ final readonly class StackComposeBuilderService
         $resolvedServices = $this->registry->resolveDependencies($selectedServices);
 
         // Build with stack overrides
-        return $this->build($resolvedServices, $projectConfig, $environment, $stackManifest);
+        return $this->build($resolvedServices, $projectConfig, $environment, $stackManifest, $stackPath);
     }
 
     /**
@@ -50,13 +53,15 @@ final readonly class StackComposeBuilderService
      * @param  array<string, string>  $projectConfig  Project configuration
      * @param  string  $environment  Environment (dev, staging, production)
      * @param  array<string, mixed>|null  $stackManifest  Optional stack manifest for overrides
+     * @param  string|null  $stackPath  Optional path to stack directory for stack-specific stubs
      * @return array<string, mixed> Composed docker-compose array
      */
     public function build(
         array $selectedServices,
         array $projectConfig,
         string $environment = 'dev',
-        ?array $stackManifest = null
+        ?array $stackManifest = null,
+        ?string $stackPath = null
     ): array {
         // Start with base structure
         $compose = $this->getBaseStructure($projectConfig);
@@ -68,7 +73,8 @@ final readonly class StackComposeBuilderService
                 $serviceKey,
                 $projectConfig,
                 $environment,
-                $stackManifest
+                $stackManifest,
+                $stackPath
             );
         }
 
@@ -130,6 +136,7 @@ final readonly class StackComposeBuilderService
      * @param  array<string, string>  $projectConfig  Project configuration
      * @param  string  $environment  Environment
      * @param  array<string, mixed>|null  $stackManifest  Stack manifest
+     * @param  string|null  $stackPath  Path to stack directory (unused, kept for compatibility)
      * @return array<string, mixed> Updated compose configuration
      */
     private function addService(
@@ -137,7 +144,8 @@ final readonly class StackComposeBuilderService
         string $serviceKey,
         array $projectConfig,
         string $environment,
-        ?array $stackManifest = null
+        ?array $stackManifest = null,
+        ?string $stackPath = null
     ): array {
         [$category, $serviceName] = $this->parseServiceKey($serviceKey);
 
@@ -153,7 +161,7 @@ final readonly class StackComposeBuilderService
             ? $this->stackLoader->getEnvironmentOverrides($stackManifest, $serviceKey, $environment)
             : [];
 
-        // Load service stub
+        // Load service stub (registry now returns absolute path for current stack)
         $stubPath = $this->registry->getServiceStubPath($category, $serviceName);
 
         // Prepare replacements (base + stack + environment)
