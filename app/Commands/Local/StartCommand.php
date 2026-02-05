@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Commands\Local;
 
+use App\Concerns\BuildsProjectUrls;
 use App\Concerns\HasBrandedOutput;
 use App\Contracts\InfrastructureManagerInterface;
 use App\Domain\Project\Project;
+use App\Domain\Project\ValueObjects\ProjectConfigurationVO;
 use App\Services\Debug\DebugLogService;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
@@ -18,6 +20,7 @@ use function Laravel\Prompts\spin;
 
 final class StartCommand extends Command
 {
+    use BuildsProjectUrls;
     use HasBrandedOutput;
 
     protected $signature = 'local:start
@@ -108,14 +111,12 @@ final class StartCommand extends Command
 
             $this->success('Containers started');
 
-            // 5. Display access URLs
+            // 5. Display access URLs based on selected services
             $projectDomain = $projectName . '.local.test';
+            $urls = $this->buildProjectUrls($config, $projectDomain);
 
             $this->newLine();
-            $this->box('Project URLs', [
-                'Application' => "https://{$projectDomain}",
-                'Mailpit' => "https://mail.{$projectDomain}",
-            ], 60, true);
+            $this->box('Project URLs', $urls, 60, true);
 
             $this->completed('Project is running!', [
                 "Visit: https://{$projectDomain}",

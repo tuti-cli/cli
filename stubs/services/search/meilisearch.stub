@@ -1,5 +1,5 @@
 meilisearch:
-  image:  getmeili/meilisearch:{{MEILISEARCH_VERSION}}
+  image: getmeili/meilisearch:{{MEILISEARCH_VERSION}}
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_meilisearch
   environment:
     MEILI_MASTER_KEY: ${MEILISEARCH_KEY}
@@ -8,7 +8,16 @@ meilisearch:
   volumes:
     - meilisearch_data:/meili_data
   networks:
+    - traefik_proxy
     - {{NETWORK_NAME}}
+  labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=traefik_proxy"
+    - "traefik.http.routers.{{PROJECT_NAME}}-meilisearch.rule=Host(`search.{{PROJECT_NAME}}.local.test`)"
+    - "traefik.http.routers.{{PROJECT_NAME}}-meilisearch.entrypoints=websecure"
+    - "traefik.http.routers.{{PROJECT_NAME}}-meilisearch.tls=true"
+    - "traefik.http.routers.{{PROJECT_NAME}}-meilisearch.service={{PROJECT_NAME}}-meilisearch"
+    - "traefik.http.services.{{PROJECT_NAME}}-meilisearch.loadbalancer.server.port=7700"
   healthcheck:
     test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:7700/health"]
     interval: 10s

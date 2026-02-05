@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands\Local;
 
+use App\Concerns\BuildsProjectUrls;
 use App\Concerns\HasBrandedOutput;
 use App\Contracts\OrchestratorInterface;
 use App\Domain\Project\Project;
@@ -14,6 +15,7 @@ use Throwable;
 
 final class StatusCommand extends Command
 {
+    use BuildsProjectUrls;
     use HasBrandedOutput;
 
     protected $signature = 'local:status';
@@ -65,6 +67,13 @@ final class StatusCommand extends Command
                 ['Container', 'Service', 'State', 'Status', 'Ports'],
                 $rows
             );
+
+            // Display project URLs
+            $projectDomain = $project->getName() . '.local.test';
+            $urls = $this->buildProjectUrls($config, $projectDomain);
+
+            $this->newLine();
+            $this->box('Project URLs', $urls, 60, true);
 
             return self::SUCCESS;
 
