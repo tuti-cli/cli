@@ -10,6 +10,15 @@
             "framework": "laravel",
             "type": "php",
             "min_cli_version": "1.0.0"
+        },
+        "wordpress": {
+            "name": "WordPress Stack",
+            "description": "Production-ready WordPress application stack with Docker (Standard or Bedrock)",
+            "repository": "https://github.com/tuti-cli/wordpress-stack.git",
+            "branch": "main",
+            "framework": "wordpress",
+            "type": "php",
+            "min_cli_version": "1.0.0"
         }
     },
     "defaults": {

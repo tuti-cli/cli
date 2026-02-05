@@ -24,6 +24,10 @@ mailpit:
     start_period: 5s
   restart: unless-stopped
 
+# @section: dev
+mailpit:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mailpit
+
 # @section: env
 MAIL_MAILER=smtp
 MAIL_HOST=mailpit

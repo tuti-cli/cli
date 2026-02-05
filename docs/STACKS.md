@@ -158,19 +158,22 @@ laravel-stack/
 └── docker-compose.prod.yml # Production overrides (optional)
 ```
 
-### Service Stubs (bundled with CLI)
+### Service Stubs
 
-Universal service stubs in `stubs/services/`:
+Each stack has its own service stubs and registry in `stubs/stacks/{stack}/services/`.
 
+**Stack-specific services structure:**
 ```
-stubs/services/
-├── registry.json           # Service definitions
+stubs/stacks/{stack}/services/
+├── registry.json           # Service definitions for this stack
 ├── databases/
-│   ├── postgres.stub
+│   ├── postgres.stub       # Laravel
 │   ├── mysql.stub
-│   └── mariadb.stub
+│   └── mariadb.stub        # WordPress default
 ├── cache/
 │   └── redis.stub
+├── cli/
+│   └── wpcli.stub          # WordPress only
 ├── search/
 │   ├── meilisearch.stub
 │   └── typesense.stub
@@ -180,8 +183,10 @@ stubs/services/
 │   └── mailpit.stub
 └── workers/
     ├── scheduler.stub      # Laravel Scheduler
-    └── horizon.stub        # Laravel Horizon (requires Redis)
+    └── horizon.stub        # Laravel Horizon
 ```
+
+Each stack's `registry.json` defines the available services, their configuration, default variables, and dependencies specific to that stack.
 
 ### Stack Installers
 

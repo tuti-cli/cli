@@ -1,0 +1,37 @@
+# @section: base
+minio:
+  image: minio/minio:${MINIO_VERSION:-latest}
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_minio
+  command: server /data --console-address ":9001"
+  environment:
+    MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+    MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+  volumes:
+    - minio_data:/data
+  networks:
+    - traefik_proxy
+    - {{NETWORK_NAME}}
+  labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=traefik_proxy"
+    - "traefik.http.routers.{{PROJECT_NAME}}-minio.rule=Host(`minio.{{APP_DOMAIN}}`)"
+    - "traefik.http.routers.{{PROJECT_NAME}}-minio.entrypoints=websecure"
+    - "traefik.http.routers.{{PROJECT_NAME}}-minio.tls=true"
+    - "traefik.http.routers.{{PROJECT_NAME}}-minio.service={{PROJECT_NAME}}-minio"
+    - "traefik.http.services.{{PROJECT_NAME}}-minio.loadbalancer.server.port=9001"
+  healthcheck:
+    test: ["CMD", "mc", "ready", "local"]
+    interval: 30s
+    timeout: 20s
+    retries: 3
+  restart: unless-stopped
+
+# @section: volumes
+minio_data:
+  name: {{PROJECT_NAME}}_${APP_ENV:-dev}_minio_data
+
+# @section: env
+# Configure WordPress to use MinIO via plugin (WP Offload Media, etc.)
+MINIO_ENDPOINT=http://minio:9000
+MINIO_ROOT_USER=minio
+MINIO_VERSION=latest

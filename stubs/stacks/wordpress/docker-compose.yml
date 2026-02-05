@@ -1,0 +1,102 @@
+# =============================================================================
+# WordPress Stack - Base Docker Compose Configuration
+# =============================================================================
+# This file contains ONLY stable configurations that are shared across ALL
+# environments (dev, staging, production). Environment-specific overrides
+# should be placed in docker-compose.{env}.yml files.
+#
+# Usage:
+#   Development: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#   Staging:     docker compose -f docker-compose.yml -f docker-compose.stage.yml up
+#   Production:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+#
+# Environment variables are loaded from ../.env (project root)
+# =============================================================================
+
+# =============================================================================
+# YAML Anchors - Reusable Configuration Blocks
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Base Application Environment Variables (shared across all environments)
+# These are the STABLE values that don't change between environments
+# -----------------------------------------------------------------------------
+x-app-env-base: &app-env-base
+  # WordPress Database Configuration
+  WORDPRESS_DB_HOST: ${DB_HOST:-database}
+  WORDPRESS_DB_NAME: ${DB_DATABASE:-wordpress}
+  WORDPRESS_DB_USER: ${DB_USERNAME:-wordpress}
+  WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:-secret}
+  WORDPRESS_TABLE_PREFIX: ${WP_TABLE_PREFIX:-wp_}
+
+  # WordPress Salt Keys (generated during installation)
+  WORDPRESS_AUTH_KEY: ${WP_AUTH_KEY}
+  WORDPRESS_SECURE_AUTH_KEY: ${WP_SECURE_AUTH_KEY}
+  WORDPRESS_LOGGED_IN_KEY: ${WP_LOGGED_IN_KEY}
+  WORDPRESS_NONCE_KEY: ${WP_NONCE_KEY}
+  WORDPRESS_AUTH_SALT: ${WP_AUTH_SALT}
+  WORDPRESS_SECURE_AUTH_SALT: ${WP_SECURE_AUTH_SALT}
+  WORDPRESS_LOGGED_IN_SALT: ${WP_LOGGED_IN_SALT}
+  WORDPRESS_NONCE_SALT: ${WP_NONCE_SALT}
+
+  # PHP Settings (production defaults)
+  PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-512M}
+  PHP_MAX_EXECUTION_TIME: ${PHP_MAX_EXECUTION_TIME:-300}
+  PHP_POST_MAX_SIZE: ${PHP_POST_MAX_SIZE:-100M}
+  PHP_UPLOAD_MAX_FILE_SIZE: ${PHP_UPLOAD_MAX_FILE_SIZE:-100M}
+
+# -----------------------------------------------------------------------------
+# Common Service Configuration
+# -----------------------------------------------------------------------------
+x-common-service: &common-service
+  restart: unless-stopped
+  networks:
+    - app_network
+
+# =============================================================================
+# Services
+# =============================================================================
+services:
+  # ---------------------------------------------------------------------------
+  # App Service - Base Configuration (WordPress with serversideup/php)
+  # ---------------------------------------------------------------------------
+  # Note: This is a minimal base. Environment overlays MUST specify:
+  #   - container_name
+  #   - environment overrides (WP_DEBUG, etc.)
+  #   - volumes (if needed)
+  #   - labels (Traefik configuration)
+  # ---------------------------------------------------------------------------
+  app:
+    image: serversideup/php:${PHP_VERSION:-8.3}-fpm-apache
+    environment:
+      <<: *app-env-base
+    networks:
+      - traefik_proxy
+      - app_network
+    depends_on:
+      database:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Database Service - Base Configuration (MariaDB by default, MySQL optional)
+  # The actual database image is determined by the selected service stub
+  # ---------------------------------------------------------------------------
+  database:
+    <<: *common-service
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  traefik_proxy:
+    external: true
+  app_network:
+    name: ${PROJECT_NAME:-wordpress}_${APP_ENV:-dev}_network
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  database_data:
+    name: ${PROJECT_NAME:-wordpress}_${APP_ENV:-dev}_database_data

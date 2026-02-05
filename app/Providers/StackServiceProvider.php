@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Contracts\StackInstallerInterface;
 use App\Services\Stack\Installers\LaravelStackInstaller;
+use App\Services\Stack\Installers\WordPressStackInstaller;
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackEnvGeneratorService;
 use App\Services\Stack\StackFilesCopierService;
@@ -33,6 +34,7 @@ final class StackServiceProvider extends ServiceProvider
 
         // Stack installers
         $this->app->singleton(LaravelStackInstaller::class);
+        $this->app->singleton(WordPressStackInstaller::class);
 
         // Stack installer registry
         $this->app->singleton(StackInstallerRegistry::class, function ($app) {
@@ -40,10 +42,7 @@ final class StackServiceProvider extends ServiceProvider
 
             // Register all stack installers
             $registry->register($app->make(LaravelStackInstaller::class));
-
-            // Future installers can be registered here:
-            // $registry->register($app->make(WordPressStackInstaller::class));
-            // $registry->register($app->make(NextJsStackInstaller::class));
+            $registry->register($app->make(WordPressStackInstaller::class));
 
             return $registry;
         });

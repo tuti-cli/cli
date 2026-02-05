@@ -169,31 +169,21 @@ final readonly class StackStubLoaderService
      *
      * Supports:
      * - Absolute paths (returned as-is)
+     * - PHAR paths (returned as-is)
      * - Relative paths (resolved via stub_path())
-     * - Paths with 'services/' prefix
      */
     private function resolvePath(string $stubPath): string
     {
-        // If it's an absolute path, return as-is
-        if (str_starts_with($stubPath, '/') || preg_match('/^[a-zA-Z]:/', $stubPath)) {
+        // If it's an absolute path or PHAR path, return as-is
+        if (str_starts_with($stubPath, '/')
+            || str_starts_with($stubPath, 'phar://')
+            || preg_match('/^[a-zA-Z]:/', $stubPath)
+        ) {
             return $stubPath;
         }
 
-        // Build list of paths to try
-        $pathsToTry = [
-            stub_path('services/' . $stubPath),
-            stub_path($stubPath),
-        ];
-
-        // Try each path
-        foreach ($pathsToTry as $path) {
-            if (File::exists($path)) {
-                return $path;
-            }
-        }
-
-        // Return first path for error message
-        return $pathsToTry[0];
+        // Resolve relative path via stub_path helper
+        return stub_path($stubPath);
     }
 
     /**

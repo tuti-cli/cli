@@ -1,0 +1,164 @@
+{
+    "name": "wordpress-stack",
+    "version": "1.0.0",
+    "type": "php",
+    "framework": "wordpress",
+    "description": "Production-ready WordPress application stack with Docker",
+
+    "metadata": {
+        "maintainer": "tuti-cli",
+        "repository": "https://github.com/tuti-cli/wordpress-stack",
+        "php_version": "8.3"
+    },
+
+    "app_service": {
+        "name": "app",
+        "image": "serversideup/php",
+        "variants": {
+            "fpm-apache": "{{PHP_VERSION}}-fpm-apache"
+        },
+        "default_variant": "fpm-apache"
+    },
+
+    "installation_types": {
+        "standard": {
+            "name": "Standard WordPress",
+            "description": "Traditional WordPress installation with classic file structure",
+            "prompt": "Use the standard WordPress installation"
+        },
+        "bedrock": {
+            "name": "Bedrock (Roots)",
+            "description": "Modern WordPress development with Composer, enhanced security, and 12-factor app methodology",
+            "prompt": "Use Bedrock for modern WordPress development"
+        }
+    },
+
+    "required_services": {
+        "database": {
+            "category": "databases",
+            "options": ["mariadb", "mysql"],
+            "default": "mariadb",
+            "prompt": "Which database would you like to use?",
+            "service_name": "database"
+        }
+    },
+
+    "included_services": {
+        "wpcli": {
+            "category": "cli",
+            "service": "wpcli",
+            "description": "WP-CLI for WordPress management (automatically included)"
+        }
+    },
+
+    "optional_services": {
+        "cache": {
+            "category": "cache",
+            "options": ["redis"],
+            "default": null,
+            "prompt": "Would you like to add Redis cache?"
+        },
+        "storage": {
+            "category": "storage",
+            "options": ["minio"],
+            "default": null,
+            "prompt": "Would you like to add S3-compatible storage?"
+        },
+        "mail": {
+            "category": "mail",
+            "options": ["mailpit"],
+            "default": null,
+            "prompt": "Would you like to add mail testing?"
+        }
+    },
+
+    "environments": {
+        "dev": {
+            "app_replicas": 1,
+            "features": {
+                "debug": true,
+                "query_monitor": true,
+                "hot_reload": false
+            }
+        },
+        "staging": {
+            "app_replicas": 2,
+            "features": {
+                "debug": false,
+                "ssl": true,
+                "query_monitor": false
+            }
+        },
+        "production": {
+            "app_replicas": 3,
+            "features": {
+                "debug": false,
+                "ssl": true,
+                "opcache": true,
+                "query_monitor": false
+            }
+        }
+    },
+
+    "required_variables": [
+        "PROJECT_NAME",
+        "APP_DOMAIN",
+        "DB_PASSWORD",
+        "WP_AUTH_KEY",
+        "WP_SECURE_AUTH_KEY",
+        "WP_LOGGED_IN_KEY",
+        "WP_NONCE_KEY",
+        "WP_AUTH_SALT",
+        "WP_SECURE_AUTH_SALT",
+        "WP_LOGGED_IN_SALT",
+        "WP_NONCE_SALT"
+    ],
+
+    "generated_variables": {
+        "DB_PASSWORD": {
+            "generator": "secure_random",
+            "length": 32,
+            "description": "Database password"
+        },
+        "WP_AUTH_KEY": {
+            "generator": "secure_random",
+            "length": 64,
+            "description": "WordPress authentication key"
+        },
+        "WP_SECURE_AUTH_KEY": {
+            "generator": "secure_random",
+            "length": 64,
+            "description": "WordPress secure authentication key"
+        },
+        "WP_LOGGED_IN_KEY": {
+            "generator": "secure_random",
+            "length": 64,
+            "description": "WordPress logged-in key"
+        },
+        "WP_NONCE_KEY": {
+            "generator": "secure_random",
+            "length": 64,
+            "description": "WordPress nonce key"
+        },
+        "WP_AUTH_SALT": {
+            "generator": "secure_random",
+            "length": 64,
+            "description": "WordPress authentication salt"
+        },
+        "WP_SECURE_AUTH_SALT": {
+            "generator": "secure_random",
+            "length": 64,
+            "description": "WordPress secure authentication salt"
+        },
+        "WP_LOGGED_IN_SALT": {
+            "generator": "secure_random",
+            "length": 64,
+            "description": "WordPress logged-in salt"
+        },
+        "WP_NONCE_SALT": {
+            "generator": "secure_random",
+            "length": 64,
+            "description": "WordPress nonce salt"
+        }
+    }
+}

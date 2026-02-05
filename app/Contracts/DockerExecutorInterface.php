@@ -43,6 +43,16 @@ interface DockerExecutorInterface
     public function runNpm(string $command, string $workDir, array $env = []): DockerExecutionResult;
 
     /**
+     * Run a WP-CLI command inside a Docker container.
+     *
+     * @param  string  $command  The WP-CLI command to run (e.g., "core download")
+     * @param  string  $workDir  The working directory to mount
+     * @param  array<string, string>  $env  Environment variables
+     * @return DockerExecutionResult
+     */
+    public function runWpCli(string $command, string $workDir, array $env = []): DockerExecutionResult;
+
+    /**
      * Run a generic command inside a Docker container.
      *
      * @param  string  $image  Docker image to use

@@ -1,5 +1,0 @@
-# Redis development overlay - adds port exposure for local tools
-redis:
-  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_redis
-  ports:
-    - "${REDIS_EXTERNAL_PORT:-6379}:6379"
