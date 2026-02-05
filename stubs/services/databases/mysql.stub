@@ -1,11 +1,12 @@
+# @section: base
 mysql:
-  image: mysql:{{MYSQL_VERSION}}
+  image: mysql:${MYSQL_VERSION:-8.4}
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mysql
   environment:
-    MYSQL_DATABASE: ${DB_DATABASE}
-    MYSQL_USER: ${DB_USERNAME}
-    MYSQL_PASSWORD: ${DB_PASSWORD}
-    MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+    MYSQL_USER: ${DB_USERNAME:-laravel}
+    MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootsecret}
   volumes:
     - mysql_data:/var/lib/mysql
   networks:
@@ -17,3 +18,24 @@ mysql:
     retries: 5
     start_period: 10s
   restart: unless-stopped
+
+# @section: dev
+mysql:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mysql
+  ports:
+    - "${DB_EXTERNAL_PORT:-3306}:3306"
+
+# @section: volumes
+mysql_data:
+  name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mysql_data
+
+# @section: env
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=laravel
+DB_PASSWORD=secret
+MYSQL_VERSION=8.4
+MYSQL_ROOT_PASSWORD=rootsecret
+DB_EXTERNAL_PORT=3306

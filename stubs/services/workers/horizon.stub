@@ -1,3 +1,4 @@
+# @section: base
 horizon:
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_horizon
   build:
@@ -12,7 +13,19 @@ horizon:
   command: ["php", "/var/www/html/artisan", "horizon"]
   stop_signal: SIGTERM
   environment:
-    <<: *app-env
+    APP_NAME: ${APP_NAME:-Laravel}
+    APP_ENV: ${APP_ENV:-local}
+    APP_KEY: ${APP_KEY}
+    DB_CONNECTION: pgsql
+    DB_HOST: postgres
+    DB_PORT: 5432
+    DB_DATABASE: ${DB_DATABASE:-laravel}
+    DB_USERNAME: ${DB_USERNAME:-laravel}
+    DB_PASSWORD: ${DB_PASSWORD:-secret}
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    CACHE_STORE: redis
+    QUEUE_CONNECTION: redis
   volumes:
     - ..:/var/www/html:cached
   networks:
@@ -23,6 +36,16 @@ horizon:
     redis:
       condition: service_healthy
   healthcheck:
-    test: ["CMD", "healthcheck-horizon"]
-    start_period: 10s
+    test: ["CMD", "php", "artisan", "horizon:status"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
   restart: unless-stopped
+
+# @section: dev
+horizon:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_horizon
+  environment:
+    APP_DEBUG: "true"
+    LOG_LEVEL: debug

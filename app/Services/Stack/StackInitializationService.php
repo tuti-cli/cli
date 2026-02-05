@@ -203,14 +203,14 @@ final readonly class StackInitializationService
 
         $content = file_get_contents($composeFile);
 
-        // Find the position to insert services (before 'networks:' section)
-        $networksPos = strpos($content, "\nnetworks:");
-        if ($networksPos === false) {
-            // If no networks section, append at end
-            $networksPos = strlen($content);
+        // Find insertion point: look for "# ====...Networks" or just "networks:" section
+        $insertionPoint = $this->findServicesInsertionPoint($content);
+
+        if ($insertionPoint === false) {
+            return;
         }
 
-        $servicesToAppend = "\n";
+        $servicesToAppend = '';
         $volumesToAdd = [];
 
         foreach ($optionalServices as $serviceKey) {
@@ -218,6 +218,11 @@ final readonly class StackInitializationService
 
             // Check if service exists in registry
             if (! $this->registryManager->hasService($category, $serviceName)) {
+                continue;
+            }
+
+            // Skip if service already exists in compose
+            if (strpos($content, "  {$serviceName}:") !== false) {
                 continue;
             }
 
@@ -231,6 +236,7 @@ final readonly class StackInitializationService
             $replacements = [
                 'PROJECT_NAME' => $projectName,
                 'NETWORK_NAME' => 'app_network',
+                'APP_DOMAIN' => "{$projectName}.local.test",
             ];
 
             // Add default variables from service registry
@@ -249,12 +255,22 @@ final readonly class StackInitializationService
             }
 
             try {
-                $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
-                // Add comment and service YAML (stub is already properly formatted)
-                $servicesToAppend .= "  # Optional: {$serviceName} service\n";
-                // Indent the service definition to match docker-compose structure
-                $servicesToAppend .= $this->indentServiceYaml($serviceYaml);
-                $servicesToAppend .= "\n";
+                // Check if stub has sections
+                if ($this->stubLoader->hasSections($stubPath)) {
+                    // Load base section only
+                    $serviceYaml = $this->stubLoader->loadSection($stubPath, 'base', $replacements);
+                } else {
+                    // Load entire stub (legacy format)
+                    $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
+                }
+
+                if ($serviceYaml === null || trim($serviceYaml) === '') {
+                    continue;
+                }
+
+                // Indent and add service YAML
+                $indentedYaml = $this->indentServiceYaml($serviceYaml);
+                $servicesToAppend .= "\n" . $indentedYaml;
 
                 // Collect volumes from service config
                 if (! empty($serviceConfig['volumes'])) {
@@ -262,14 +278,18 @@ final readonly class StackInitializationService
                         $volumesToAdd[$volume] = $projectName;
                     }
                 }
-            } catch (RuntimeException) {
-                // Skip if stub not found
+            } catch (\Exception $e) {
+                // Skip if stub loading fails
                 continue;
             }
         }
 
+        if ($servicesToAppend === '') {
+            return;
+        }
+
         // Insert services before networks section
-        $newContent = substr($content, 0, $networksPos) . $servicesToAppend . substr($content, $networksPos);
+        $newContent = substr($content, 0, $insertionPoint) . $servicesToAppend . "\n" . substr($content, $insertionPoint);
 
         // Add volumes if any
         if (! empty($volumesToAdd)) {
@@ -277,6 +297,47 @@ final readonly class StackInitializationService
         }
 
         file_put_contents($composeFile, $newContent);
+    }
+
+    /**
+     * Find the correct insertion point for services (before networks section).
+     * Services should be inserted at the end of the services block, before the networks section.
+     */
+    private function findServicesInsertionPoint(string $content): int|false
+    {
+        // Pattern 1: Look for the Networks section header with equals signs
+        // The structure is:
+        // # =============================================================================
+        // # Networks
+        // # =============================================================================
+        // networks:
+        $pattern1 = '/\n# =+\s*\n# Networks/i';
+        if (preg_match($pattern1, $content, $matches, PREG_OFFSET_CAPTURE)) {
+            // Return position of the newline before the header
+            return (int) $matches[0][1];
+        }
+
+        // Pattern 2: Look for standalone "networks:" at column 0 (top-level key)
+        // Must NOT be indented (no spaces before it)
+        $pattern2 = '/\nnetworks:\s*$/m';
+        if (preg_match($pattern2, $content, $matches, PREG_OFFSET_CAPTURE)) {
+            return (int) $matches[0][1];
+        }
+
+        // Pattern 3: Find the volumes section as fallback (insert before volumes if no networks)
+        $pattern3 = '/\n# =+\s*\n# Volumes/i';
+        if (preg_match($pattern3, $content, $matches, PREG_OFFSET_CAPTURE)) {
+            return (int) $matches[0][1];
+        }
+
+        // Pattern 4: Look for volumes: key directly
+        $pattern4 = '/\nvolumes:\s*$/m';
+        if (preg_match($pattern4, $content, $matches, PREG_OFFSET_CAPTURE)) {
+            return (int) $matches[0][1];
+        }
+
+        // Last resort: append at the end of file
+        return strlen($content);
     }
 
     /**
@@ -296,12 +357,10 @@ final readonly class StackInitializationService
                 $volumeSection .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
             }
             return $content . $volumeSection;
+
         }
 
-        // Find end of volumes section (next section or end of file)
-        $endPos = strlen($content);
-
-        // Add new volumes at the end of the volumes section
+        // Find end of file and add new volumes
         $volumesToInsert = "";
         foreach ($volumes as $volumeName => $projectName) {
             // Check if volume already exists
@@ -312,7 +371,6 @@ final readonly class StackInitializationService
         }
 
         if ($volumesToInsert !== "") {
-            // Insert before the last newline of the file
             $content = rtrim($content) . "\n" . $volumesToInsert;
         }
 
@@ -328,19 +386,14 @@ final readonly class StackInitializationService
         $lines = explode("\n", trim($yaml));
         $result = [];
 
-        foreach ($lines as $index => $line) {
+        foreach ($lines as $line) {
             if ($line === '') {
                 $result[] = '';
                 continue;
             }
 
-            if ($index === 0) {
-                // First line (service name) gets 2-space indent
-                $result[] = '  ' . $line;
-            } else {
-                // Other lines get 2 more spaces (4 total for properties)
-                $result[] = '  ' . $line;
-            }
+            // Add 2-space indent for all lines
+            $result[] = '  ' . $line;
         }
 
         return implode("\n", $result);

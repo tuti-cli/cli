@@ -1,19 +1,40 @@
+# @section: base
 postgres:
-  image: postgres:{{POSTGRES_VERSION}}-alpine
+  image: postgres:${POSTGRES_VERSION:-17}-alpine
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_postgres
   environment:
-    POSTGRES_DB: ${DB_DATABASE}
-    POSTGRES_USER: ${DB_USERNAME}
-    POSTGRES_PASSWORD: ${DB_PASSWORD}
+    POSTGRES_DB: ${DB_DATABASE:-laravel}
+    POSTGRES_USER: ${DB_USERNAME:-laravel}
+    POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
     PGDATA: /var/lib/postgresql/data/pgdata
   volumes:
     - postgres_data:/var/lib/postgresql/data
   networks:
     - {{NETWORK_NAME}}
   healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"]
+    test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-laravel} -d ${DB_DATABASE:-laravel}"]
     interval: 10s
     timeout: 5s
     retries: 5
     start_period: 10s
   restart: unless-stopped
+
+# @section: dev
+postgres:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_postgres
+  ports:
+    - "${DB_EXTERNAL_PORT:-5432}:5432"
+
+# @section: volumes
+postgres_data:
+  name: {{PROJECT_NAME}}_${APP_ENV:-dev}_postgres_data
+
+# @section: env
+DB_CONNECTION=pgsql
+DB_HOST=postgres
+DB_PORT=5432
+DB_DATABASE=laravel
+DB_USERNAME=laravel
+DB_PASSWORD=secret
+POSTGRES_VERSION=17
+DB_EXTERNAL_PORT=5432
