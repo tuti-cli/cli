@@ -1,5 +1,6 @@
+# @section: base
 minio:
-  image: minio/minio:{{MINIO_VERSION}}
+  image: minio/minio:${MINIO_VERSION:-latest}
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_minio
   command: server /data --console-address ":9001"
   environment:
@@ -13,7 +14,7 @@ minio:
   labels:
     - "traefik.enable=true"
     - "traefik.docker.network=traefik_proxy"
-    - "traefik.http.routers.{{PROJECT_NAME}}-minio.rule=Host(`minio.{{PROJECT_NAME}}.local.test`)"
+    - "traefik.http.routers.{{PROJECT_NAME}}-minio.rule=Host(`minio.{{APP_DOMAIN}}`)"
     - "traefik.http.routers.{{PROJECT_NAME}}-minio.entrypoints=websecure"
     - "traefik.http.routers.{{PROJECT_NAME}}-minio.tls=true"
     - "traefik.http.routers.{{PROJECT_NAME}}-minio.service={{PROJECT_NAME}}-minio"
@@ -24,3 +25,16 @@ minio:
     timeout: 20s
     retries: 3
   restart: unless-stopped
+
+# @section: volumes
+minio_data:
+  name: {{PROJECT_NAME}}_${APP_ENV:-dev}_minio_data
+
+# @section: env
+AWS_ACCESS_KEY_ID=minio
+AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=local
+AWS_ENDPOINT=http://minio:9000
+AWS_USE_PATH_STYLE_ENDPOINT=true
+MINIO_VERSION=latest

@@ -1,21 +1,34 @@
-# Base Docker Compose Configuration for Laravel
-# This file contains shared services and configurations
+# =============================================================================
+# Laravel Stack - Base Docker Compose Configuration
+# =============================================================================
+# This file contains ONLY stable configurations that are shared across ALL
+# environments (dev, staging, production). Environment-specific overrides
+# should be placed in docker-compose.{env}.yml files.
+#
+# Usage:
+#   Development: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#   Staging:     docker compose -f docker-compose.yml -f docker-compose.stage.yml up
+#   Production:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up
 #
 # Environment variables are loaded from ../.env (project root)
-# This ensures both Laravel and Docker Compose use the same configuration.
+# =============================================================================
 
-# Shared environment variables anchor
-x-app-env: &app-env
-  # Application
+# =============================================================================
+# YAML Anchors - Reusable Configuration Blocks
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Base Application Environment Variables (shared across all environments)
+# These are the STABLE values that don't change between environments
+# -----------------------------------------------------------------------------
+x-app-env-base: &app-env-base
+  # Application Core
   APP_NAME: ${APP_NAME:-Laravel}
-  APP_ENV: ${APP_ENV:-production}
   APP_KEY: ${APP_KEY}
-  APP_DEBUG: ${APP_DEBUG:-false}
-  APP_URL: ${APP_URL:-https://laravel-app}
   APP_TIMEZONE: ${APP_TIMEZONE:-UTC}
   APP_LOCALE: ${APP_LOCALE:-en}
 
-  # Database (PostgreSQL)
+  # Database Connection (PostgreSQL)
   DB_CONNECTION: pgsql
   DB_HOST: postgres
   DB_PORT: 5432
@@ -23,13 +36,13 @@ x-app-env: &app-env
   DB_USERNAME: ${DB_USERNAME:-laravel}
   DB_PASSWORD: ${DB_PASSWORD:-secret}
 
-  # Cache & Session (file-based by default, override if Redis is selected)
+  # Cache & Session (defaults, can be overridden per environment)
   CACHE_STORE: ${CACHE_STORE:-file}
   SESSION_DRIVER: ${SESSION_DRIVER:-file}
   SESSION_LIFETIME: 120
   QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
 
-  # Mail
+  # Mail Configuration
   MAIL_MAILER: ${MAIL_MAILER:-log}
   MAIL_HOST: ${MAIL_HOST:-127.0.0.1}
   MAIL_PORT: ${MAIL_PORT:-2525}
@@ -39,55 +52,66 @@ x-app-env: &app-env
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-hello@example.com}
   MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Laravel}
 
-  # Laravel Features
-  TELESCOPE_ENABLED: ${TELESCOPE_ENABLED:-false}
+  # Logging
   LOG_CHANNEL: ${LOG_CHANNEL:-stack}
   LOG_LEVEL: ${LOG_LEVEL:-info}
 
-  # PHP Settings
-  PHP_OPCACHE_ENABLE: ${PHP_OPCACHE_ENABLE:-1}
+  # PHP Settings (production defaults)
   PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-512M}
   PHP_MAX_EXECUTION_TIME: ${PHP_MAX_EXECUTION_TIME:-300}
   PHP_POST_MAX_SIZE: ${PHP_POST_MAX_SIZE:-100M}
   PHP_UPLOAD_MAX_FILE_SIZE: ${PHP_UPLOAD_MAX_FILE_SIZE:-100M}
 
-  # SSL Settings
-  SSL_MODE: ${SSL_MODE:-off}
+# -----------------------------------------------------------------------------
+# Base Build Arguments (shared across all environments)
+# -----------------------------------------------------------------------------
+x-app-build-base: &app-build-base
+  context: ..
+  dockerfile: .tuti/docker/Dockerfile
+  args:
+    PHP_VERSION: ${PHP_VERSION:-8.4}
+    VARIANT: ${PHP_VARIANT:-fpm-nginx}
 
-  # Autorun Settings
-  AUTORUN_ENABLED: ${AUTORUN_ENABLED:-false}
+# -----------------------------------------------------------------------------
+# Common Service Configuration
+# -----------------------------------------------------------------------------
+x-common-service: &common-service
+  restart: unless-stopped
+  networks:
+    - app_network
 
+# =============================================================================
+# Services
+# =============================================================================
 services:
-  # App service - Base configuration
+  # ---------------------------------------------------------------------------
+  # App Service - Base Configuration
+  # ---------------------------------------------------------------------------
+  # Note: This is a minimal base. Environment overlays MUST specify:
+  #   - build.target (development/production)
+  #   - container_name
+  #   - environment overrides (APP_ENV, APP_DEBUG, etc.)
+  #   - volumes (if needed)
+  #   - labels (Traefik configuration)
+  # ---------------------------------------------------------------------------
   app:
     build:
-      context: ..
-      dockerfile: .tuti/docker/Dockerfile
-      target: ${BUILD_TARGET:-production}
-      args:
-        PHP_VERSION: ${PHP_VERSION:-8.4}
-        VARIANT: ${PHP_VARIANT:-fpm-nginx}
+      <<: *app-build-base
     environment:
-      <<: *app-env
+      <<: *app-env-base
     networks:
       - traefik_proxy
       - app_network
     depends_on:
       postgres:
         condition: service_healthy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik_proxy"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}.rule=Host(`${APP_DOMAIN:-app.local.test}`)"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}.tls=true"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}.service=${PROJECT_NAME:-laravel}"
-      - "traefik.http.services.${PROJECT_NAME:-laravel}.loadbalancer.server.port=8080"
 
-  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database - Base Configuration
+  # ---------------------------------------------------------------------------
   postgres:
-    image: postgres:16-alpine
-    container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_postgres
+    image: postgres:${POSTGRES_VERSION:-17}-alpine
+    <<: *common-service
     environment:
       POSTGRES_DB: ${DB_DATABASE:-laravel}
       POSTGRES_USER: ${DB_USERNAME:-laravel}
@@ -95,8 +119,6 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-laravel} -d ${DB_DATABASE:-laravel}"]
       interval: 10s
@@ -104,6 +126,9 @@ services:
       retries: 5
       start_period: 10s
 
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
   traefik_proxy:
     external: true
@@ -111,6 +136,9 @@ networks:
     name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_network
     driver: bridge
 
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
   postgres_data:
     name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_postgres_data

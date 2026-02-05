@@ -1,42 +1,65 @@
-# Development Environment Override
+# =============================================================================
+# Laravel Stack - Development Environment Override
+# =============================================================================
+# This file contains ONLY development-specific configurations.
+# It extends the base docker-compose.yml with development overrides.
+#
 # Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Environment variables are loaded from ../.env (project root)
+# =============================================================================
 
+# =============================================================================
+# YAML Anchors - Development Environment Variables
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Development Environment Overrides
+# These values override or extend the base x-app-env-base anchor
+# -----------------------------------------------------------------------------
+x-app-env-dev: &app-env-dev
+  # Application - Development Mode
+  APP_ENV: local
+  APP_DEBUG: "true"
+  APP_URL: https://${APP_DOMAIN:-app.local.test}
+
+  # Logging - Verbose for debugging
+  LOG_LEVEL: debug
+
+  # Development Features
+  TELESCOPE_ENABLED: "true"
+
+  # PHP Settings - Development (disable caching, enable errors)
+  PHP_OPCACHE_ENABLE: "0"
+  PHP_ERROR_REPORTING: E_ALL
+  PHP_DISPLAY_ERRORS: "1"
+  PHP_DISPLAY_STARTUP_ERRORS: "1"
+
+  # SSL - Off for local development (Traefik handles TLS termination)
+  SSL_MODE: "off"
+
+  # Autorun - Disabled in development
+  AUTORUN_ENABLED: "false"
+
+# =============================================================================
+# Services
+# =============================================================================
 services:
+  # ---------------------------------------------------------------------------
+  # App Service - Development Configuration
+  # ---------------------------------------------------------------------------
   app:
     build:
+      target: development
       args:
         USER_ID: ${DOCKER_USER_ID:-1000}
         GROUP_ID: ${DOCKER_GROUP_ID:-1000}
-      target: development
     container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_app
     environment:
-      # Override for Development
-      APP_ENV: local
-      APP_DEBUG: "true"
-      APP_URL: https://${APP_DOMAIN:-app.local.test}
-
-      # Development-specific features
-      TELESCOPE_ENABLED: "true"
-      LOG_LEVEL: debug
-
-      # PHP Settings - Development
-      PHP_OPCACHE_ENABLE: "0"
-      PHP_ERROR_REPORTING: "E_ALL"
-      PHP_DISPLAY_ERRORS: "1"
-      PHP_DISPLAY_STARTUP_ERRORS: "1"
-
-      # SSL Settings
-      SSL_MODE: off
-
-      # Autorun - Disabled in dev
-      AUTORUN_ENABLED: "false"
-
+      <<: *app-env-dev
     volumes:
       # Mount entire Laravel app for hot reload (parent directory is project root)
       - ..:/var/www/html:cached
-    networks:
-      - traefik_proxy
-      - app_network
     labels:
       # Enable Traefik
       - "traefik.enable=true"
@@ -53,7 +76,7 @@ services:
       - "traefik.http.routers.${PROJECT_NAME:-laravel}.tls=true"
       - "traefik.http.routers.${PROJECT_NAME:-laravel}.service=${PROJECT_NAME:-laravel}"
 
-      # Service definition
+      # Service Definition
       - "traefik.http.services.${PROJECT_NAME:-laravel}.loadbalancer.server.port=8080"
 
       # Middleware for HTTP to HTTPS redirect
@@ -66,20 +89,22 @@ services:
       - "traefik.http.routers.${PROJECT_NAME:-laravel}-vite.tls=true"
       - "traefik.http.services.${PROJECT_NAME:-laravel}-vite.loadbalancer.server.port=5173"
 
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database - Development Overrides
+  # ---------------------------------------------------------------------------
   postgres:
-    container_name: ${PROJECT_NAME:-laravel}_postgres
+    container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_postgres
+    # Expose port to host for local database tools (DBeaver, TablePlus, etc.)
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_EXTERNAL_PORT:-5432}:5432"
 
-  redis:
-    container_name: ${PROJECT_NAME:-laravel}_redis
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-
-  # Mailpit for local email testing
+  # ---------------------------------------------------------------------------
+  # Mailpit - Development Only (local email testing)
+  # ---------------------------------------------------------------------------
   mailpit:
-    image: axllent/mailpit
-    container_name: ${PROJECT_NAME:-laravel}_mailpit
+    image: axllent/mailpit:latest
+    container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_mailpit
+    restart: unless-stopped
     networks:
       - traefik_proxy
       - app_network

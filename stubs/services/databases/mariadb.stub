@@ -1,11 +1,12 @@
+# @section: base
 mariadb:
-  image: mariadb:{{MARIADB_VERSION}}
+  image: mariadb:${MARIADB_VERSION:-11.4}
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mariadb
   environment:
-    MARIADB_DATABASE: ${DB_DATABASE}
-    MARIADB_USER: ${DB_USERNAME}
-    MARIADB_PASSWORD: ${DB_PASSWORD}
-    MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    MARIADB_DATABASE: ${DB_DATABASE:-laravel}
+    MARIADB_USER: ${DB_USERNAME:-laravel}
+    MARIADB_PASSWORD: ${DB_PASSWORD:-secret}
+    MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootsecret}
   volumes:
     - mariadb_data:/var/lib/mysql
   networks:
@@ -17,3 +18,24 @@ mariadb:
     retries: 5
     start_period: 10s
   restart: unless-stopped
+
+# @section: dev
+mariadb:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mariadb
+  ports:
+    - "${DB_EXTERNAL_PORT:-3306}:3306"
+
+# @section: volumes
+mariadb_data:
+  name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mariadb_data
+
+# @section: env
+DB_CONNECTION=mysql
+DB_HOST=mariadb
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=laravel
+DB_PASSWORD=secret
+MARIADB_VERSION=11.4
+MARIADB_ROOT_PASSWORD=rootsecret
+DB_EXTERNAL_PORT=3306

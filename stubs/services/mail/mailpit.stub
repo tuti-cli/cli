@@ -1,13 +1,17 @@
+# @section: base
 mailpit:
-  image: axllent/mailpit:{{MAILPIT_VERSION}}
+  image: axllent/mailpit:${MAILPIT_VERSION:-latest}
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_mailpit
+  environment:
+    MP_SMTP_AUTH_ACCEPT_ANY: "true"
+    MP_SMTP_AUTH_ALLOW_INSECURE: "true"
   networks:
     - traefik_proxy
     - {{NETWORK_NAME}}
   labels:
     - "traefik.enable=true"
     - "traefik.docker.network=traefik_proxy"
-    - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.rule=Host(`mail.{{PROJECT_NAME}}.local.test`)"
+    - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.rule=Host(`mail.{{APP_DOMAIN}}`)"
     - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.entrypoints=websecure"
     - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.tls=true"
     - "traefik.http.routers.{{PROJECT_NAME}}-mailpit.service={{PROJECT_NAME}}-mailpit"
@@ -19,3 +23,9 @@ mailpit:
     retries: 3
     start_period: 5s
   restart: unless-stopped
+
+# @section: env
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAILPIT_VERSION=latest

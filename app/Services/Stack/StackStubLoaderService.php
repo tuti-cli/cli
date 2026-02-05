@@ -10,6 +10,12 @@ use RuntimeException;
 /**
  * ServiceStubLoader is responsible for loading and processing
  * stub files and replacing placeholders with actual values.
+ *
+ * Supports section-based stubs with format:
+ *   # @section: base
+ *   # @section: dev
+ *   # @section: volumes
+ *   # @section: env
  */
 final readonly class StackStubLoaderService
 {
@@ -30,6 +36,103 @@ final readonly class StackStubLoaderService
         $content = File::get($resolvedPath);
 
         return $this->replacePlaceholders($content, $replacements);
+    }
+
+    /**
+     * Load a specific section from a stub file.
+     *
+     * @param  string  $stubPath  Path to stub file
+     * @param  string  $section  Section name (base, dev, prod, volumes, env)
+     * @param  array<string, string>  $replacements  Placeholder replacements
+     * @return string|null Section content or null if not found
+     */
+    public function loadSection(string $stubPath, string $section, array $replacements = []): ?string
+    {
+        $resolvedPath = $this->resolvePath($stubPath);
+
+        if (! File::exists($resolvedPath)) {
+            throw new RuntimeException("Stub file not found: {$stubPath} (resolved: {$resolvedPath})");
+        }
+
+        $content = File::get($resolvedPath);
+        $sections = $this->parseSections($content);
+
+        if (! isset($sections[$section])) {
+            return null;
+        }
+
+        return $this->replacePlaceholders($sections[$section], $replacements);
+    }
+
+    /**
+     * Parse stub content into sections.
+     *
+     * @return array<string, string> Map of section name => content
+     */
+    public function parseSections(string $content): array
+    {
+        $sections = [];
+        $currentSection = 'base'; // Default section if no marker
+        $currentContent = [];
+
+        $lines = explode("\n", $content);
+
+        foreach ($lines as $line) {
+            // Check for section marker: # @section: name
+            if (preg_match('/^#\s*@section:\s*(\w+)\s*$/i', $line, $matches)) {
+                // Save previous section if it has content
+                if (! empty($currentContent)) {
+                    $sections[$currentSection] = trim(implode("\n", $currentContent));
+                }
+                $currentSection = strtolower($matches[1]);
+                $currentContent = [];
+                continue;
+            }
+
+            $currentContent[] = $line;
+        }
+
+        // Save last section
+        if (! empty($currentContent)) {
+            $sections[$currentSection] = trim(implode("\n", $currentContent));
+        }
+
+        return $sections;
+    }
+
+    /**
+     * Check if a stub has sections.
+     */
+    public function hasSections(string $stubPath): bool
+    {
+        $resolvedPath = $this->resolvePath($stubPath);
+
+        if (! File::exists($resolvedPath)) {
+            return false;
+        }
+
+        $content = File::get($resolvedPath);
+
+        return (bool) preg_match('/^#\s*@section:/m', $content);
+    }
+
+    /**
+     * Get all section names from a stub.
+     *
+     * @return array<int, string>
+     */
+    public function getSectionNames(string $stubPath): array
+    {
+        $resolvedPath = $this->resolvePath($stubPath);
+
+        if (! File::exists($resolvedPath)) {
+            return [];
+        }
+
+        $content = File::get($resolvedPath);
+        $sections = $this->parseSections($content);
+
+        return array_keys($sections);
     }
 
     /**

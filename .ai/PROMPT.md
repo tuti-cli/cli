@@ -46,3 +46,8 @@ Key rules:
 ```
 @workspace Use .ai/RULES.md and .ai/skills/docker-compose-generation/SKILL.md for docker-compose work.
 ```
+
+### Adding new environment overlays (staging, production)
+```
+@workspace Use .ai/RULES.md and .ai/skills/environment-overlays/SKILL.md to create {env} environment overlay.
+```
