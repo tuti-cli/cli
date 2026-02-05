@@ -1,15 +1,15 @@
 redis:
   image: redis:{{REDIS_VERSION}}-alpine
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_redis
-  command: "redis-server {{REDIS_APPEND_ONLY}} {{REDIS_MAX_MEMORY}} {{REDIS_EVICTION_POLICY}} {{REDIS_PASSWORD_CONFIG}}"
+  command: "redis-server --appendonly yes --maxmemory {{REDIS_MAX_MEMORY}} --maxmemory-policy allkeys-lru"
   volumes:
     - redis_data:/data
   networks:
     - {{NETWORK_NAME}}
   healthcheck:
-    test:  ["CMD", "redis-cli", "ping"]
+    test: ["CMD", "redis-cli", "ping"]
     interval: 10s
     timeout: 3s
     retries: 5
     start_period: 5s
-  {{DEPLOY_CONFIG}}
+  restart: unless-stopped

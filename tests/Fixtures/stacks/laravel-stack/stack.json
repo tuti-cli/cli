@@ -23,6 +23,11 @@
             "category": "cache",
             "options": ["redis"],
             "default": "redis"
+        },
+        "workers": {
+            "category": "workers",
+            "options": ["scheduler", "horizon"],
+            "default": null
         }
     },
 

@@ -36,8 +36,11 @@ final readonly class StackComposeBuilderService
         // Validate manifest
         $this->stackLoader->validate($stackManifest);
 
+        // Resolve dependencies (e.g., horizon requires redis)
+        $resolvedServices = $this->registry->resolveDependencies($selectedServices);
+
         // Build with stack overrides
-        return $this->build($selectedServices, $projectConfig, $environment, $stackManifest);
+        return $this->build($resolvedServices, $projectConfig, $environment, $stackManifest);
     }
 
     /**
@@ -276,9 +279,6 @@ final readonly class StackComposeBuilderService
             $replacements = $this->addRedisReplacements($replacements, $environment, $stackOverrides);
         }
 
-        // Add environment-specific deploy config
-        $replacements['DEPLOY_CONFIG'] = $this->getDeployConfig($environment);
-
         return $replacements;
     }
 
@@ -294,33 +294,13 @@ final readonly class StackComposeBuilderService
         string $environment,
         array $stackOverrides = []
     ): array {
-        // Check if stack provides Redis config (Laravel style)
-        if (isset($stackOverrides['variables'])) {
-            // Stack provides its own Redis configuration - already merged
-            // But ensure command parts are set if missing
-            if (! isset($replacements['REDIS_APPEND_ONLY'])) {
-                $replacements['REDIS_APPEND_ONLY'] = '--appendonly yes';
-            }
-            if (! isset($replacements['REDIS_EVICTION_POLICY'])) {
-                $replacements['REDIS_EVICTION_POLICY'] = '--maxmemory-policy allkeys-lru';
-            }
-            if (! isset($replacements['REDIS_PASSWORD_CONFIG'])) {
-                $replacements['REDIS_PASSWORD_CONFIG'] = '${REDIS_PASSWORD: +--requirepass $REDIS_PASSWORD}';
-            }
-        } else {
-            // No stack overrides - use defaults
-            $replacements['REDIS_APPEND_ONLY'] = '--appendonly yes';
-            $replacements['REDIS_EVICTION_POLICY'] = '--maxmemory-policy allkeys-lru';
-            $replacements['REDIS_PASSWORD_CONFIG'] = '${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}';
-        }
-
         // Set memory based on environment (can be overridden by stack)
         if (! isset($replacements['REDIS_MAX_MEMORY'])) {
             $replacements['REDIS_MAX_MEMORY'] = match ($environment) {
-                'dev' => '--maxmemory 256mb',
-                'staging' => '--maxmemory 512mb',
-                'production' => '--maxmemory 1024mb',
-                default => '--maxmemory 256mb',
+                'dev' => '256mb',
+                'staging' => '512mb',
+                'production' => '1024mb',
+                default => '256mb',
             };
         }
 
@@ -405,56 +385,6 @@ final readonly class StackComposeBuilderService
         return $merged;
     }
 
-    /**
-     * Get deploy configuration based on environment
-     */
-    private function getDeployConfig(string $environment): string
-    {
-        return match ($environment) {
-            'dev' => <<<'YAML'
-deploy:
-    replicas: 1
-    restart_policy:
-      condition: on-failure
-      delay: 5s
-      max_attempts: 3
-YAML,
-            'staging' => <<<'YAML'
-deploy:
-    replicas: 2
-    restart_policy:
-      condition: on-failure
-      delay: 5s
-      max_attempts: 3
-    resources:
-      limits:
-        cpus: '1'
-        memory: 1024M
-      reservations:
-        cpus:  '0.5'
-        memory: 512M
-YAML,
-            'production' => <<<'YAML'
-deploy:
-    replicas:  1
-    placement:
-      constraints:
-        - node.role == manager
-    restart_policy:
-      condition:  on-failure
-      delay: 5s
-      max_attempts:  3
-    resources:
-      limits:
-        cpus: '2'
-        memory: 2048M
-      reservations:
-        cpus: '1'
-        memory: 1024M
-YAML,
-            default => '',
-        };
-    }
 
     /**
      * Add volumes to compose configuration

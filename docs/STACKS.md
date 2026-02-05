@@ -176,8 +176,11 @@ stubs/services/
 │   └── typesense.stub
 ├── storage/
 │   └── minio.stub
-└── mail/
-    └── mailpit.stub
+├── mail/
+│   └── mailpit.stub
+└── workers/
+    ├── scheduler.stub      # Laravel Scheduler
+    └── horizon.stub        # Laravel Horizon (requires Redis)
 ```
 
 ### Stack Installers
@@ -264,3 +267,71 @@ Apply overrides from stack.json
     ↓
 Generate docker-compose.yml in .tuti/
 ```
+
+## Laravel Worker Services
+
+### Laravel Scheduler
+
+The Scheduler service runs Laravel's task scheduler in a dedicated container.
+
+**Usage:**
+```bash
+tuti stack:laravel myapp --services=workers.scheduler
+```
+
+**Key Features:**
+- Uses `php artisan schedule:work` command
+- Runs in the same container image as your app
+- Graceful shutdown via `SIGTERM`
+
+### Laravel Horizon
+
+Laravel Horizon provides a dashboard and code-driven configuration for your Laravel Redis queues.
+
+**Prerequisites:**
+- Redis service is required (added automatically as dependency)
+- Laravel Horizon package must be installed in your Laravel app
+
+**Usage:**
+```bash
+# Add Horizon when creating a new project
+tuti stack:laravel myapp --services=cache.redis,workers.horizon
+
+# Horizon depends on Redis - if not specified, Redis will be added automatically
+tuti stack:laravel myapp --services=workers.horizon
+```
+
+**Key Features:**
+- Uses `php artisan horizon` command
+- Graceful shutdown via `SIGTERM`
+- Health check via `healthcheck-horizon` (built into ServersideUp PHP image)
+- Waits for Redis to be healthy before starting
+- Dashboard for monitoring queue workers
+
+**Docker Compose Example:**
+```yaml
+services:
+  horizon:
+    container_name: myapp_dev_horizon
+    build:
+      context: ..
+      dockerfile: .tuti/docker/Dockerfile
+      target: development
+    command: ["php", "/var/www/html/artisan", "horizon"]
+    stop_signal: SIGTERM
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-horizon"]
+      start_period: 10s
+    restart: unless-stopped
+```
+
+**Environment Variables:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `QUEUE_CONNECTION` | `redis` | Queue driver |
+| `HORIZON_PREFIX` | `horizon:` | Redis key prefix for Horizon |

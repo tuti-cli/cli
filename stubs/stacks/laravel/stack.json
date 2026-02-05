@@ -58,9 +58,9 @@
         },
         "workers": {
             "category": "workers",
-            "options": ["scheduler"],
+            "options": ["scheduler", "horizon"],
             "default": null,
-            "prompt": "Would you like to add Laravel Task Scheduler?"
+            "prompt": "Would you like to add background workers?"
         }
     },
 

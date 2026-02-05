@@ -22,6 +22,7 @@ use function Laravel\Prompts\text;
 final class LaravelCommand extends Command
 {
     use HasBrandedOutput;
+
     protected $signature = 'stack:laravel
                           {project-name? : Project name for fresh installation}
                           {--mode= : Installation mode (fresh, existing)}
@@ -42,39 +43,30 @@ final class LaravelCommand extends Command
         $this->brandedHeader('Laravel Stack Installation');
 
         try {
-            // 1. Determine installation mode
             $mode = $this->getInstallationMode($installer);
 
             if ($mode === null) {
                 $this->failure('Installation cancelled.');
-
                 return self::FAILURE;
             }
 
-            // 2. Pre-flight checks
             if (! $this->preFlightChecks($directoryService, $mode)) {
                 return self::FAILURE;
             }
 
-            // 3. Gather configuration
             $config = $this->gatherConfiguration($installer, $registry, $stackLoader, $mode);
 
             if ($config === null) {
                 $this->failure('Configuration cancelled.');
-
                 return self::FAILURE;
             }
 
-            // 4. Confirm before proceeding
             if (! $this->confirmConfiguration($config)) {
                 $this->warning('Installation cancelled.');
-
                 return self::SUCCESS;
             }
 
-            // 5. Execute installation
             $this->executeInstallation($installer, $initService, $config);
-
             $this->displayNextSteps($config);
 
             return self::SUCCESS;
@@ -104,20 +96,17 @@ final class LaravelCommand extends Command
             return $modeOption;
         }
 
-        // Detect if there's an existing Laravel project
         $hasExistingProject = $installer->detectExistingProject(getcwd());
 
         if ($this->option('no-interaction')) {
             return $hasExistingProject ? 'existing' : 'fresh';
         }
 
-        // Build options based on detection
         $options = [];
 
         if ($hasExistingProject) {
             $options['existing'] = '📁 Apply Docker configuration to this existing Laravel project';
             $options['fresh'] = '✨  Create a new Laravel project in a subdirectory';
-
             $this->success('Existing Laravel project detected in current directory');
             $this->newLine();
         } else {
@@ -137,7 +126,6 @@ final class LaravelCommand extends Command
         if ($directoryService->exists() && ! $this->option('force')) {
             $this->failure('Project already initialized. ".tuti/" directory already exists.');
             $this->hint('Use --force to reinitialize (this will remove existing configuration)');
-
             return false;
         }
 
@@ -173,7 +161,6 @@ final class LaravelCommand extends Command
             $config['project_path'] = getcwd();
         }
 
-        // Load stack manifest and select services
         $manifest = $stackLoader->load($config['stack_path']);
         $stackLoader->validate($manifest);
 
@@ -288,7 +275,6 @@ final class LaravelCommand extends Command
 
             if (count($serviceOptions) === 1) {
                 $defaults[] = "{$category}.{$serviceOptions[0]}";
-
                 continue;
             }
 
@@ -375,7 +361,6 @@ final class LaravelCommand extends Command
         array $config
     ): void {
         if ($config['mode'] === 'fresh') {
-            // First, create the Laravel project via Docker
             $this->note('Creating Laravel project via Docker...');
             $this->hint('This may take a few minutes on first run (downloading PHP image)');
 
@@ -400,7 +385,9 @@ final class LaravelCommand extends Command
 
             $this->success('Laravel project created');
 
-            // Change to the new project directory for stack initialization
+            // Install additional packages if needed (e.g., Horizon)
+            $this->installRequiredPackages($installer, $config);
+
             chdir($config['project_path']);
         }
 
@@ -425,20 +412,108 @@ final class LaravelCommand extends Command
             if ($appKey !== null && str_starts_with($appKey, 'base64:')) {
                 $this->success('APP_KEY generated successfully');
                 $this->line('  ' . substr($appKey, 0, 30) . '...');
-
-                // Update .env file with the key
-                $this->updateEnvFile($config['project_path'], 'APP_KEY', $appKey);
+                $this->updateEnvValue($config['project_path'], 'APP_KEY', $appKey);
             } else {
                 $this->warning('Could not generate APP_KEY automatically');
-                $this->hint('Run manually: cd ' . $config['project_name'] . ' && php artisan key:generate');
+                $this->hint('Run manually: php artisan key:generate');
+            }
+        }
+
+        // Configure .env for selected services
+        $this->configureEnvForServices($config);
+    }
+
+    /**
+     * Install required packages for selected services.
+     *
+     * @param  array<string, mixed>  $config
+     */
+    private function installRequiredPackages(LaravelStackInstaller $installer, array $config): void
+    {
+        $packages = $this->getRequiredPackages($config['selected_services']);
+
+        if (empty($packages)) {
+            return;
+        }
+
+        foreach ($packages as $package => $artisanCommand) {
+            $this->note("Installing {$package}...");
+
+            spin(
+                fn () => $installer->runComposerRequire($config['project_path'], $package),
+                "Installing {$package}..."
+            );
+
+            $this->success("Installed {$package}");
+
+            if ($artisanCommand !== null) {
+                spin(
+                    fn () => $installer->runArtisan($config['project_path'], $artisanCommand),
+                    "Running php artisan {$artisanCommand}..."
+                );
             }
         }
     }
 
     /**
-     * Update a value in the .env file.
+     * Get required packages for selected services.
+     *
+     * @param  array<int, string>  $selectedServices
+     * @return array<string, string|null>
      */
-    private function updateEnvFile(string $projectPath, string $key, string $value): void
+    private function getRequiredPackages(array $selectedServices): array
+    {
+        $packages = [];
+
+        foreach ($selectedServices as $serviceKey) {
+            [$category, $serviceName] = explode('.', $serviceKey);
+
+            if ($category === 'workers' && $serviceName === 'horizon') {
+                $packages['laravel/horizon'] = 'horizon:install';
+            }
+            // Add more packages here as needed
+        }
+
+        return $packages;
+    }
+
+    /**
+     * Configure .env for selected services.
+     *
+     * @param  array<string, mixed>  $config
+     */
+    private function configureEnvForServices(array $config): void
+    {
+        $projectPath = $config['project_path'];
+        $envPath = $projectPath . '/.env';
+
+        if (! file_exists($envPath)) {
+            return;
+        }
+
+        foreach ($config['selected_services'] as $serviceKey) {
+            [$category, $serviceName] = explode('.', $serviceKey);
+
+            // Configure for Horizon
+            if ($category === 'workers' && $serviceName === 'horizon') {
+                $this->updateEnvValue($projectPath, 'QUEUE_CONNECTION', 'redis');
+                $this->updateEnvValue($projectPath, 'REDIS_HOST', 'redis');
+                $this->updateEnvValue($projectPath, 'REDIS_PORT', '6379');
+            }
+
+            // Configure for Redis cache
+            if ($category === 'cache' && $serviceName === 'redis') {
+                $this->updateEnvValue($projectPath, 'CACHE_STORE', 'redis');
+                $this->updateEnvValue($projectPath, 'SESSION_DRIVER', 'redis');
+                $this->updateEnvValue($projectPath, 'REDIS_HOST', 'redis');
+            }
+        }
+    }
+
+    /**
+     * Update or add a value in the .env file.
+     */
+    private function updateEnvValue(string $projectPath, string $key, string $value): void
     {
         $envPath = $projectPath . '/.env';
 
@@ -447,11 +522,12 @@ final class LaravelCommand extends Command
         }
 
         $content = file_get_contents($envPath);
-        $content = preg_replace(
-            "/^{$key}=.*$/m",
-            "{$key}={$value}",
-            $content
-        );
+
+        if (preg_match("/^{$key}=/m", $content)) {
+            $content = preg_replace("/^{$key}=.*$/m", "{$key}={$value}", $content);
+        } else {
+            $content = rtrim($content) . "\n{$key}={$value}\n";
+        }
 
         file_put_contents($envPath, $content);
     }
@@ -474,7 +550,6 @@ final class LaravelCommand extends Command
         $this->subItem('docker-compose.yml');
         $this->subItem('environments/');
 
-        // Generate the project URL
         $projectDomain = $config['project_name'] . '.local.test';
 
         $nextSteps = [];
@@ -488,6 +563,7 @@ final class LaravelCommand extends Command
             'tuti local:start',
             'Visit: https://' . $projectDomain,
         ]);
+
 
         $this->completed('Laravel stack installed successfully!', $nextSteps);
 
