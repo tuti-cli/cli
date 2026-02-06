@@ -1,4 +1,4 @@
-.PHONY: help build up down restart shell logs clean test lint install build-phar build-binary build-binary-linux build-binary-mac test-phar test-binary install-local release version-bump check-build
+.PHONY: help build up down restart shell logs clean test lint install build-phar build-binary build-binary-linux build-binary-mac test-phar test-binary install-local uninstall-local release version-bump check-build
 
 .DEFAULT_GOAL := help
 
@@ -49,7 +49,7 @@ help: ## Show this help message
 	@grep -E '^(build|up|down|restart|shell|logs|clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(YELLOW)Build & Release:$(RESET)"
-	@grep -E '^(build-phar|build-binary|test-phar|test-binary|install-local|check-build|release|version-bump):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^(build-phar|build-binary|test-phar|test-binary|install-local|uninstall-local|check-build|release|version-bump):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(YELLOW)Current version: $(GREEN)$(VERSION)$(RESET)"
 	@echo "$(YELLOW)Platform: $(GREEN)$(PLATFORM)$(RESET)"
@@ -181,7 +181,7 @@ test-binary: ## Test self-contained binary (no PHP required!)
 
 install-local: build-binary ## Build and install binary locally to ~/.tuti/bin
 	@echo "$(CYAN)Installing binary to ~/.tuti/bin...$(RESET)"
-	@mkdir -p $(HOME)/.tuti/bin
+	@mkdir -p $(HOME)/.tuti/bin $(HOME)/.tuti/logs $(HOME)/.tuti/cache
 	@if [ "$(PLATFORM_OS)" = "linux" ]; then \
 		ARCH="$(PLATFORM_ARCH)"; \
 		if [ "$$ARCH" = "amd64" ]; then ARCH="x64"; fi; \
@@ -200,6 +200,14 @@ install-local: build-binary ## Build and install binary locally to ~/.tuti/bin
 	@echo ""
 	@echo "$(YELLOW)Test:$(RESET)"
 	@echo "  ~/.tuti/bin/tuti --version"
+
+uninstall-local: ## Remove locally installed binary and optionally ~/.tuti
+	@echo "$(CYAN)Uninstalling tuti from ~/.tuti/bin...$(RESET)"
+	@rm -f $(HOME)/.tuti/bin/tuti
+	@echo "$(GREEN)✓ Binary removed$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)To also remove data directory:$(RESET)"
+	@echo "  rm -rf ~/.tuti"
 
 test-all: test build-phar test-phar ## Run all tests including PHAR
 

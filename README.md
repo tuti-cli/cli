@@ -16,43 +16,45 @@ One command to set up local development. **Zero dependencies required.**
 curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
 ```
 
-**✅ No PHP, no dependencies!** Downloads a truly self-contained binary (~50MB) with embedded PHP runtime.
+No PHP, no dependencies. Downloads a self-contained binary (~60MB) with embedded PHP runtime.
+
+Options:
+
+```bash
+# Install specific version
+curl -fsSL ... | TUTI_VERSION=0.2.0 bash
+
+# Custom install location
+curl -fsSL ... | TUTI_INSTALL_DIR=/usr/local/bin bash
+```
 
 ### Manual Install
 
 **Linux (x64):**
 ```bash
-curl -fsSL https://github.com/tuti-cli/cli/releases/latest/download/tuti-linux-amd64 -o tuti
-chmod +x tuti
-sudo mv tuti /usr/local/bin/
-tuti install
+curl -fsSL https://github.com/tuti-cli/cli/releases/latest/download/tuti-linux-x64 -o tuti
+chmod +x tuti && sudo mv tuti /usr/local/bin/
 ```
 
-**Linux (ARM64):**
+**Linux (ARM):**
 ```bash
-curl -fsSL https://github.com/tuti-cli/cli/releases/latest/download/tuti-linux-arm64 -o tuti
-chmod +x tuti
-sudo mv tuti /usr/local/bin/
-tuti install
+curl -fsSL https://github.com/tuti-cli/cli/releases/latest/download/tuti-linux-arm -o tuti
+chmod +x tuti && sudo mv tuti /usr/local/bin/
 ```
 
 **macOS (Apple Silicon):**
 ```bash
-curl -fsSL https://github.com/tuti-cli/cli/releases/latest/download/tuti-darwin-arm64 -o tuti
-chmod +x tuti
-sudo mv tuti /usr/local/bin/
-tuti install
+curl -fsSL https://github.com/tuti-cli/cli/releases/latest/download/tuti-mac-arm -o tuti
+chmod +x tuti && sudo mv tuti /usr/local/bin/
 ```
 
 **macOS (Intel):**
 ```bash
-curl -fsSL https://github.com/tuti-cli/cli/releases/latest/download/tuti-darwin-amd64 -o tuti
-chmod +x tuti
-sudo mv tuti /usr/local/bin/
-tuti install
+curl -fsSL https://github.com/tuti-cli/cli/releases/latest/download/tuti-mac-x64 -o tuti
+chmod +x tuti && sudo mv tuti /usr/local/bin/
 ```
 
-### Verify Installation
+### Verify
 
 ```bash
 tuti --version
@@ -109,13 +111,18 @@ tuti local:stop        # Stop environment
 ## Uninstall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/uninstall.sh | bash
+```
+
+Remove everything including data:
+```bash
+curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/uninstall.sh | bash -s -- --purge
 ```
 
 Or manually:
 ```bash
-rm /usr/local/bin/tuti        # or ~/.tuti/bin/tuti
-rm -rf ~/.tuti
+rm ~/.tuti/bin/tuti            # or /usr/local/bin/tuti
+rm -rf ~/.tuti                 # config, logs, cache
 ```
 
 ---
