@@ -299,10 +299,14 @@ final class WordPressStackInstaller implements StackInstallerInterface
         // Replace salt placeholders with generated salts
         $salts = $this->generateWordPressSalts();
         foreach ($salts as $key => $value) {
-            // Match the pattern: define( 'KEY', 'put your unique phrase here' );
-            $pattern = "/define\(\s*'" . preg_quote($key, '/') . "',\s*'put your unique phrase here'\s*\);/";
-            $replacement = "define( '{$key}', getenv('WORDPRESS_{$key}') ?: '{$value}' );";
-            $content = preg_replace($pattern, $replacement, $content);
+            // Match define statement with any existing value (more flexible than exact string match)
+            // This handles variations in whitespace and formatting in wp-config-sample.php
+            $pattern = "/define\(\s*'" . preg_quote($key, '/') . "',\s*'[^']*'\s*\);/";
+            // Escape single quotes in salt value to prevent PHP syntax errors
+            $escapedValue = addslashes($value);
+            $replacement = "define( '{$key}', getenv('WORDPRESS_{$key}') ?: '{$escapedValue}' );";
+            // Limit to 1 replacement to prevent issues with duplicate matches
+            $content = preg_replace($pattern, $replacement, $content, 1);
         }
 
         // Replace table prefix to use environment variable

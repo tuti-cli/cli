@@ -77,6 +77,13 @@ services:
   # App Service - Development Configuration
   # ---------------------------------------------------------------------------
   app:
+    build:
+      context: ..
+      dockerfile: .tuti/docker/Dockerfile
+      target: development
+      args:
+        USER_ID: ${DOCKER_USER_ID:-1000}
+        GROUP_ID: ${DOCKER_GROUP_ID:-1000}
     container_name: ${PROJECT_NAME:-wordpress}_${APP_ENV:-dev}_app
     environment:
       <<: *app-env-dev
