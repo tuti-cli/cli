@@ -215,6 +215,7 @@ make build-binary-linux    # Linux only
 make build-binary-mac      # macOS only
 make test-binary           # Test binary without PHP
 make install-local         # Install to ~/.tuti/bin
+make uninstall-local       # Remove from ~/.tuti/bin
 make release-auto V=x.y.z  # Automated release
 ```
 
