@@ -15,7 +15,8 @@ final readonly class StackFilesCopierService
 
     public function copyFromStack(string $stackPath): bool
     {
-        if (! is_dir($stackPath)) {
+        // Use file_exists for PHAR compatibility (is_dir doesn't always work with phar://)
+        if (! file_exists($stackPath) && ! is_dir($stackPath)) {
             throw new RuntimeException("Stack directory not found: {$stackPath}");
         }
 
@@ -104,7 +105,8 @@ PHP;
             $source = $stackPath . '/' . $dir;
             $destination = $this->directoryManager->getTutiPath($dir);
 
-            if (is_dir($source)) {
+            // Use file_exists for PHAR compatibility
+            if (file_exists($source) || is_dir($source)) {
                 $this->copyDirectory($source, $destination);
             }
         }

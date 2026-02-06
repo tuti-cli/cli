@@ -16,8 +16,24 @@
 # -----------------------------------------------------------------------------
 # Development Environment Overrides
 # These values override or extend the base x-app-env-base anchor
+# Note: This anchor is used by the app service and REPLACES the base environment,
+# so we need to include all necessary variables here.
 # -----------------------------------------------------------------------------
 x-app-env-dev: &app-env-dev
+  # Apache Document Root - WordPress uses root, not /public
+  APACHE_DOCUMENT_ROOT: /var/www/html
+
+  # User/Group IDs - Match host user for file permissions
+  PUID: ${DOCKER_USER_ID:-1000}
+  PGID: ${DOCKER_GROUP_ID:-1000}
+
+  # WordPress Database Configuration (from base, required for app to work)
+  WORDPRESS_DB_HOST: ${DB_HOST:-database}
+  WORDPRESS_DB_NAME: ${DB_DATABASE:-wordpress}
+  WORDPRESS_DB_USER: ${DB_USERNAME:-wordpress}
+  WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:-secret}
+  WORDPRESS_TABLE_PREFIX: ${WP_TABLE_PREFIX:-wp_}
+
   # WordPress - Development Mode
   WORDPRESS_DEBUG: "true"
   WORDPRESS_DEBUG_LOG: "true"
@@ -27,7 +43,21 @@ x-app-env-dev: &app-env-dev
   WORDPRESS_HOME: https://${APP_DOMAIN:-wordpress.local.test}
   WORDPRESS_SITEURL: https://${APP_DOMAIN:-wordpress.local.test}
 
+  # WordPress Salt Keys (generated during installation)
+  WORDPRESS_AUTH_KEY: ${WP_AUTH_KEY:-put-your-unique-phrase-here}
+  WORDPRESS_SECURE_AUTH_KEY: ${WP_SECURE_AUTH_KEY:-put-your-unique-phrase-here}
+  WORDPRESS_LOGGED_IN_KEY: ${WP_LOGGED_IN_KEY:-put-your-unique-phrase-here}
+  WORDPRESS_NONCE_KEY: ${WP_NONCE_KEY:-put-your-unique-phrase-here}
+  WORDPRESS_AUTH_SALT: ${WP_AUTH_SALT:-put-your-unique-phrase-here}
+  WORDPRESS_SECURE_AUTH_SALT: ${WP_SECURE_AUTH_SALT:-put-your-unique-phrase-here}
+  WORDPRESS_LOGGED_IN_SALT: ${WP_LOGGED_IN_SALT:-put-your-unique-phrase-here}
+  WORDPRESS_NONCE_SALT: ${WP_NONCE_SALT:-put-your-unique-phrase-here}
+
   # PHP Settings - Development (disable caching, enable errors)
+  PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-512M}
+  PHP_MAX_EXECUTION_TIME: ${PHP_MAX_EXECUTION_TIME:-300}
+  PHP_POST_MAX_SIZE: ${PHP_POST_MAX_SIZE:-100M}
+  PHP_UPLOAD_MAX_FILE_SIZE: ${PHP_UPLOAD_MAX_FILE_SIZE:-100M}
   PHP_OPCACHE_ENABLE: "0"
   PHP_ERROR_REPORTING: E_ALL
   PHP_DISPLAY_ERRORS: "1"
@@ -80,31 +110,9 @@ services:
 
   # ---------------------------------------------------------------------------
   # Database Service - Development Overrides
-  # The database configuration comes from the selected service stub
   # ---------------------------------------------------------------------------
   database:
     container_name: ${PROJECT_NAME:-wordpress}_${APP_ENV:-dev}_database
     # Expose port to host for local database tools (DBeaver, TablePlus, etc.)
     ports:
       - "${DB_EXTERNAL_PORT:-3306}:3306"
-
-  # ---------------------------------------------------------------------------
-  # Mailpit - Development Only (local email testing)
-  # ---------------------------------------------------------------------------
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: ${PROJECT_NAME:-wordpress}_${APP_ENV:-dev}_mailpit
-    restart: unless-stopped
-    networks:
-      - traefik_proxy
-      - app_network
-    environment:
-      MP_SMTP_AUTH_ACCEPT_ANY: "true"
-      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik_proxy"
-      - "traefik.http.routers.${PROJECT_NAME:-wordpress}-mail.rule=Host(`mail.${APP_DOMAIN:-wordpress.local.test}`)"
-      - "traefik.http.routers.${PROJECT_NAME:-wordpress}-mail.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_NAME:-wordpress}-mail.tls=true"
-      - "traefik.http.services.${PROJECT_NAME:-wordpress}-mail.loadbalancer.server.port=8025"

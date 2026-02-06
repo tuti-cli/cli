@@ -443,28 +443,35 @@ final class WordPressCommand extends Command
 
         $this->success('Stack initialized');
 
-        // Generate WordPress salts
-        $this->note('Generating WordPress salts...');
-        $salts = $installer->generateSalts();
-        $this->success('WordPress salts generated');
-
-        // Update .env with salts
-        $this->updateEnvWithSalts($config['project_path'], $salts);
-
         // Configure .env for selected services
         $this->configureEnvForServices($config);
+
+        // Save auto-setup config for dev environment (user runs wp:setup when ready)
+        if ($config['environment'] === 'dev' && $config['mode'] === 'fresh') {
+            $this->saveAutoSetupConfig($config);
+        }
     }
 
     /**
-     * Update .env file with WordPress salts.
+     * Save auto-setup configuration for use after containers start.
      *
-     * @param  array<string, string>  $salts
+     * @param  array<string, mixed>  $config
      */
-    private function updateEnvWithSalts(string $projectPath, array $salts): void
+    private function saveAutoSetupConfig(array $config): void
     {
-        foreach ($salts as $key => $value) {
-            $this->updateEnvValue($projectPath, $key, $value);
-        }
+        $autoSetupPath = $config['project_path'] . '/.tuti/auto-setup.json';
+
+        $autoSetupConfig = [
+            'enabled' => true,
+            'site_url' => "https://{$config['project_name']}.local.test",
+            'site_title' => ucfirst(str_replace(['-', '_'], ' ', $config['project_name'])),
+            'admin_user' => 'admin',
+            'admin_password' => 'admin',
+            'admin_email' => 'admin@localhost.test',
+            'created_at' => date('c'),
+        ];
+
+        file_put_contents($autoSetupPath, json_encode($autoSetupConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 
     /**
@@ -552,14 +559,30 @@ final class WordPressCommand extends Command
             $nextSteps[] = "cd {$config['project_name']}";
         }
 
-        $nextSteps = array_merge($nextSteps, [
-            'Add to /etc/hosts: 127.0.0.1 ' . $projectDomain,
-            'tuti local:start',
-            'Visit: https://' . $projectDomain,
-            'Complete WordPress installation wizard',
-        ]);
+        // Instructions based on environment
+        if ($config['environment'] === 'dev' && $config['mode'] === 'fresh') {
+            $nextSteps = array_merge($nextSteps, [
+                'Add to /etc/hosts: 127.0.0.1 ' . $projectDomain,
+                'tuti local:start',
+                'tuti wp:setup',
+            ]);
+            $this->completed('WordPress stack installed!', $nextSteps);
 
-        $this->completed('WordPress stack installed successfully!', $nextSteps);
+            $this->newLine();
+            $this->box('Dev Admin Credentials (after wp:setup)', [
+                'Admin URL' => 'https://' . $projectDomain . '/wp-admin',
+                'Username' => 'admin',
+                'Password' => 'admin',
+            ], 55, true);
+        } else {
+            $nextSteps = array_merge($nextSteps, [
+                'Add to /etc/hosts: 127.0.0.1 ' . $projectDomain,
+                'tuti local:start',
+                'Visit: https://' . $projectDomain,
+                'Complete WordPress installation wizard',
+            ]);
+            $this->completed('WordPress stack installed successfully!', $nextSteps);
+        }
 
         // Build dynamic URLs based on selected services
         $urls = $this->buildProjectUrlsFromServices($config['selected_services'], $projectDomain);

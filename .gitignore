@@ -8,8 +8,9 @@
 # Global stacks cache (not bundled stacks in stubs/)
 stacks/*
 
-# Test instaletion files
+# TUTI default domains
 laravel-app/*
+wordpress-app/*
 
 # Ideas
 /.idea

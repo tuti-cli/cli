@@ -57,7 +57,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             }
         }
 
-        $process = $this->createProcess($project, ['up', '-d', '--remove-orphans', '--build']);
+        $process = $this->createProcess($project, ['up', '-d', '--remove-orphans']);
 
         $this->debug->command('docker compose up', [
             'command' => $process->getCommandLine(),

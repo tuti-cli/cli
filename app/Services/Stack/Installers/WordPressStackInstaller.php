@@ -257,7 +257,151 @@ final class WordPressStackInstaller implements StackInstallerInterface
             );
         }
 
+        // Create wp-config.php using environment variables
+        $this->createWpConfig($projectPath, $projectName);
+
         return true;
+    }
+
+    /**
+     * Create wp-config.php file for WordPress.
+     * Copies wp-config-sample.php and modifies it for Docker environment.
+     */
+    private function createWpConfig(string $projectPath, string $projectName): void
+    {
+        $samplePath = $projectPath . '/wp-config-sample.php';
+        $configPath = $projectPath . '/wp-config.php';
+
+        if (! file_exists($samplePath)) {
+            throw new RuntimeException('wp-config-sample.php not found. WordPress may not have downloaded correctly.');
+        }
+
+        // Read the sample config
+        $content = file_get_contents($samplePath);
+
+        // Replace database constants with environment variable lookups
+        $replacements = [
+            // Database settings
+            "define( 'DB_NAME', 'database_name_here' );"
+                => "define( 'DB_NAME', getenv('WORDPRESS_DB_NAME') ?: 'wordpress' );",
+            "define( 'DB_USER', 'username_here' );"
+                => "define( 'DB_USER', getenv('WORDPRESS_DB_USER') ?: 'wordpress' );",
+            "define( 'DB_PASSWORD', 'password_here' );"
+                => "define( 'DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: 'secret' );",
+            "define( 'DB_HOST', 'localhost' );"
+                => "define( 'DB_HOST', getenv('WORDPRESS_DB_HOST') ?: 'database' );",
+        ];
+
+        foreach ($replacements as $search => $replace) {
+            $content = str_replace($search, $replace, $content);
+        }
+
+        // Replace salt placeholders with generated salts
+        $salts = $this->generateWordPressSalts();
+        foreach ($salts as $key => $value) {
+            // Match the pattern: define( 'KEY', 'put your unique phrase here' );
+            $pattern = "/define\(\s*'" . preg_quote($key, '/') . "',\s*'put your unique phrase here'\s*\);/";
+            $replacement = "define( '{$key}', getenv('WORDPRESS_{$key}') ?: '{$value}' );";
+            $content = preg_replace($pattern, $replacement, $content);
+        }
+
+        // Replace table prefix to use environment variable
+        $content = str_replace(
+            "\$table_prefix = 'wp_';",
+            "\$table_prefix = getenv('WORDPRESS_TABLE_PREFIX') ?: 'wp_';",
+            $content
+        );
+
+        // Add WP_DEBUG environment variable support (replace the existing define)
+        $content = str_replace(
+            "define( 'WP_DEBUG', false );",
+            "define( 'WP_DEBUG', filter_var(getenv('WORDPRESS_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN) );",
+            $content
+        );
+
+        // Add additional Docker-friendly configurations before "That's all, stop editing!"
+        $additionalConfig = <<<'PHP'
+
+/**
+ * Docker Environment Configurations
+ */
+
+// Reverse Proxy / Load Balancer SSL Support (Traefik)
+// This fixes redirect loops when behind a reverse proxy handling SSL
+if ( isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' ) {
+    $_SERVER['HTTPS'] = 'on';
+}
+
+// WordPress URLs - from environment for Docker flexibility
+if ( getenv('WORDPRESS_HOME') ) {
+    define( 'WP_HOME', getenv('WORDPRESS_HOME') );
+}
+if ( getenv('WORDPRESS_SITEURL') ) {
+    define( 'WP_SITEURL', getenv('WORDPRESS_SITEURL') );
+}
+
+// Debug logging (only when WP_DEBUG is true)
+define( 'WP_DEBUG_LOG', filter_var(getenv('WORDPRESS_DEBUG_LOG') ?: false, FILTER_VALIDATE_BOOLEAN) );
+define( 'WP_DEBUG_DISPLAY', filter_var(getenv('WORDPRESS_DEBUG_DISPLAY') ?: false, FILTER_VALIDATE_BOOLEAN) );
+
+// Filesystem method - use direct for Docker containers
+define( 'FS_METHOD', 'direct' );
+
+// Disable file editing in admin (security best practice for containers)
+define( 'DISALLOW_FILE_EDIT', true );
+
+// Force SSL for admin when behind proxy
+define( 'FORCE_SSL_ADMIN', true );
+
+PHP;
+
+        // Insert before "That's all, stop editing!"
+        $content = str_replace(
+            "/* That's all, stop editing! Happy publishing. */",
+            $additionalConfig . "\n/* That's all, stop editing! Happy publishing. */",
+            $content
+        );
+
+        file_put_contents($configPath, $content);
+    }
+
+    /**
+     * Generate WordPress security salts.
+     *
+     * @return array<string, string>
+     */
+    private function generateWordPressSalts(): array
+    {
+        $keys = [
+            'AUTH_KEY',
+            'SECURE_AUTH_KEY',
+            'LOGGED_IN_KEY',
+            'NONCE_KEY',
+            'AUTH_SALT',
+            'SECURE_AUTH_SALT',
+            'LOGGED_IN_SALT',
+            'NONCE_SALT',
+        ];
+
+        $salts = [];
+        foreach ($keys as $key) {
+            $salts[$key] = $this->generateSalt();
+        }
+
+        return $salts;
+    }
+
+    /**
+     * Generate a random salt string.
+     */
+    private function generateSalt(): string
+    {
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
+        $salt = '';
+        for ($i = 0; $i < 64; $i++) {
+            $salt .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        return $salt;
     }
 
     /**
@@ -350,12 +494,56 @@ final class WordPressStackInstaller implements StackInstallerInterface
 
     /**
      * Run WP-CLI command in the project.
+     * Uses docker run with proper network and volume mounts.
+     *
+     * @param  bool  $useNetwork  Whether to connect to the project's Docker network
      */
-    public function runWpCli(string $projectPath, string $command): bool
+    public function runWpCli(string $projectPath, string $command, bool $useNetwork = true): bool
     {
-        $result = $this->dockerExecutor->runWpCli($command, $projectPath);
+        // Get project name from .tuti/config.json or directory name
+        $projectName = basename($projectPath);
+        $configPath = $projectPath . '/.tuti/config.json';
 
-        return $result->successful;
+        if (file_exists($configPath)) {
+            $config = json_decode(file_get_contents($configPath), true);
+            $projectName = $config['project']['name'] ?? $projectName;
+        }
+
+        // Build docker run command with network access to running containers
+        $networkName = "{$projectName}_dev_network";
+        $image = 'wordpress:cli-2-php8.3';
+
+        $dockerCommand = sprintf(
+            'docker run --rm -v "%s:/var/www/html" -w /var/www/html',
+            $projectPath
+        );
+
+        // Add network if requested (for commands that need database access)
+        if ($useNetwork) {
+            $dockerCommand .= sprintf(' --network %s', $networkName);
+        }
+
+        // Add environment variables for database connection
+        $dockerCommand .= ' -e WORDPRESS_DB_HOST=database';
+        $dockerCommand .= ' -e WORDPRESS_DB_NAME=wordpress';
+        $dockerCommand .= ' -e WORDPRESS_DB_USER=wordpress';
+        $dockerCommand .= ' -e WORDPRESS_DB_PASSWORD=secret';
+
+        // Add user mapping for file permissions
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $uid = getmyuid();
+            $gid = getmygid();
+            if ($uid !== false && $gid !== false) {
+                $dockerCommand .= " --user {$uid}:{$gid}";
+            }
+        }
+
+        // Add image and WP-CLI command
+        $dockerCommand .= sprintf(' %s wp %s 2>&1', $image, $command);
+
+        exec($dockerCommand, $output, $exitCode);
+
+        return $exitCode === 0;
     }
 
     /**
