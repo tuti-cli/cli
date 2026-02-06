@@ -2,28 +2,37 @@
 # =============================================================================
 # WordPress Development Entrypoint Script
 # =============================================================================
-# This script runs before S6 services start in the serversideup/php container.
-# It sets up WordPress development environment.
+# This script runs during S6 init in the serversideup/php container (as root).
+# It ensures WordPress directories exist with correct ownership so the web
+# process (www-data) can install/delete plugins, themes, and upload files.
 # =============================================================================
 
 set -e
 
 echo "🔧 Setting up WordPress development environment..."
 
-# Ensure proper directory permissions for WordPress
-if [ -d "/var/www/html" ]; then
-    # Create wp-content directories if they don't exist
+# Resolve the UID/GID that www-data should own files as
+OWNER_UID="${PUID:-1000}"
+OWNER_GID="${PGID:-1000}"
+
+# Standard WordPress installation
+if [ -d "/var/www/html/wp-content" ] || [ -f "/var/www/html/wp-config.php" ]; then
+    # Create writable directories WordPress needs
     mkdir -p /var/www/html/wp-content/uploads
     mkdir -p /var/www/html/wp-content/plugins
     mkdir -p /var/www/html/wp-content/themes
     mkdir -p /var/www/html/wp-content/upgrade
 
-    echo "✅ WordPress directories ready"
+    # Fix ownership so the web process can write (install/delete plugins, upload files)
+    chown -R "${OWNER_UID}:${OWNER_GID}" /var/www/html/wp-content
+
+    echo "✅ WordPress directories ready (owner ${OWNER_UID}:${OWNER_GID})"
 fi
 
-# For Bedrock installations, check for web directory
+# Bedrock installation
 if [ -d "/var/www/html/web" ]; then
     mkdir -p /var/www/html/web/app/uploads
+    chown -R "${OWNER_UID}:${OWNER_GID}" /var/www/html/web/app/uploads
     echo "✅ Bedrock directories ready"
 fi
 

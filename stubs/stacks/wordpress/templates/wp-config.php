@@ -109,6 +109,14 @@ if ( getenv('AWS_ENDPOINT') ) {
 }
 
 /**
+ * Filesystem Method
+ * Use direct file I/O instead of FTP/SSH fallbacks.
+ * Required for Docker environments where the ownership check
+ * can fail on volume mounts even when permissions are correct.
+ */
+define( 'FS_METHOD', 'direct' );
+
+/**
  * Disable automatic updates in Docker environments
  * Updates should be handled through container rebuilds
  */
