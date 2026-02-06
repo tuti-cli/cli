@@ -79,8 +79,9 @@ final readonly class StackInitializationService
         // 7. Copy environment file template with project-specific values (for docker-compose)
         $this->copyEnvironmentFile($stackPath, $environment, $projectName);
 
-        // 8. Update Laravel project's .env with Docker service settings
-        $this->updateLaravelEnv($projectName, $selectedServices);
+        // 8. Update project's .env with Docker service settings (Laravel-specific)
+        // Only apply for Laravel projects (detected by artisan file)
+        $this->updateProjectEnv($projectName, $selectedServices);
 
         // 9. Validate initialization
         if (! $this->directoryService->validate()) {
@@ -91,25 +92,36 @@ final readonly class StackInitializationService
     }
 
     /**
-     * Update Laravel project's .env file with Docker service connection settings.
+     * Update project's .env file with Docker service connection settings.
+     * Only applies Laravel-specific settings if it's a Laravel project.
      *
      * @param  array<int, string>  $selectedServices
      */
-    private function updateLaravelEnv(string $projectName, array $selectedServices): void
+    private function updateProjectEnv(string $projectName, array $selectedServices): void
     {
         $projectRoot = $this->directoryService->getProjectRoot();
-        $laravelEnv = $projectRoot . '/.env';
+        $envFile = $projectRoot . '/.env';
 
-        if (! file_exists($laravelEnv)) {
+        if (! file_exists($envFile)) {
             return;
         }
 
-        $content = file_get_contents($laravelEnv);
+        // Detect if this is a Laravel project (has artisan file)
+        $isLaravel = file_exists($projectRoot . '/artisan');
+
+        if (! $isLaravel) {
+            // For non-Laravel projects (WordPress), don't override database settings
+            // The .env template already has correct values
+            return;
+        }
+
+        // Laravel-specific .env updates
+        $content = file_get_contents($envFile);
 
         // Check if Redis is selected
         $hasRedis = in_array('cache.redis', $selectedServices, true);
 
-        // Update database settings to use Docker postgres
+        // Update database settings to use Docker postgres (Laravel default)
         $replacements = [
             '/^DB_CONNECTION=.*$/m' => 'DB_CONNECTION=pgsql',
             '/^DB_HOST=.*$/m' => 'DB_HOST=postgres',
@@ -134,7 +146,7 @@ final readonly class StackInitializationService
             $content = preg_replace($pattern, $replacement, $content);
         }
 
-        file_put_contents($laravelEnv, $content);
+        file_put_contents($envFile, $content);
     }
 
     /**
@@ -480,66 +492,108 @@ final readonly class StackInitializationService
     }
 
     /**
-     * Add tuti-specific environment variables to Laravel's .env file.
+     * Copy environment file template to project root as .env
      */
     private function copyEnvironmentFile(string $stackPath, string $environment, string $projectName = ''): void
     {
         $projectRoot = $this->directoryService->getProjectRoot();
-        $laravelEnv = $projectRoot . '/.env';
+        $targetEnv = $projectRoot . '/.env';
 
-        // Check if Laravel .env exists (it should after composer create-project)
-        if (! file_exists($laravelEnv)) {
-            // If not, copy the full template
-            $this->copyFullEnvTemplate($stackPath, $environment, $projectName);
+        // For Laravel, .env already exists after composer create-project
+        // Just update it with Docker-specific variables
+        if (file_exists($targetEnv)) {
+            $this->appendTutiVariablesToEnv($targetEnv, $projectName);
             return;
         }
 
-        // Laravel .env exists, append tuti-specific variables
-        $this->appendTutiVariablesToEnv($laravelEnv, $projectName);
-    }
-
-    /**
-     * Copy full .env template when Laravel .env doesn't exist.
-     */
-    private function copyFullEnvTemplate(string $stackPath, string $environment, string $projectName): void
-    {
-        $envTemplates = [
-            "{$stackPath}/environments/.env.{$environment}.example",
-            "{$stackPath}/environments/.env.dev.example",
-            "{$stackPath}/environments/.env.example",
+        // For WordPress and other stacks, create .env from template
+        // First, check the copied template in .tuti/environments/
+        $tutiEnvPath = $this->directoryService->getTutiPath('environments');
+        $templatePaths = [
+            "{$tutiEnvPath}/.env.{$environment}.example",
+            "{$tutiEnvPath}/.env.dev.example",
+            "{$tutiEnvPath}/.env.example",
         ];
 
-        $projectRoot = $this->directoryService->getProjectRoot();
-        $targetEnv = $projectRoot . '/.env';
-
-        foreach ($envTemplates as $template) {
+        foreach ($templatePaths as $template) {
             if (file_exists($template)) {
-                $content = file_get_contents($template);
-
-                // Substitute project-specific variables
-                if ($projectName !== '') {
-                    $appDomain = $projectName . '.local.test';
-                    $userId = $this->getCurrentUserId();
-                    $groupId = $this->getCurrentGroupId();
-
-                    $replacements = [
-                        'PROJECT_NAME=laravel' => "PROJECT_NAME={$projectName}",
-                        'APP_DOMAIN=app.local.test' => "APP_DOMAIN={$appDomain}",
-                        'APP_URL=https://app.local.test' => "APP_URL=https://{$appDomain}",
-                        'APP_NAME=Laravel' => "APP_NAME={$projectName}",
-                        'DOCKER_USER_ID=1000' => "DOCKER_USER_ID={$userId}",
-                        'DOCKER_GROUP_ID=1000' => "DOCKER_GROUP_ID={$groupId}",
-                    ];
-
-                    foreach ($replacements as $search => $replace) {
-                        $content = str_replace($search, $replace, $content);
-                    }
-                }
-
-                file_put_contents($targetEnv, $content);
+                $this->createEnvFromTemplate($template, $targetEnv, $projectName);
                 return;
             }
         }
+
+        // Fallback: create minimal .env file
+        $this->createMinimalEnvFile($targetEnv, $projectName);
+    }
+
+    /**
+     * Create .env file from template with project-specific replacements.
+     */
+    private function createEnvFromTemplate(string $templatePath, string $targetPath, string $projectName): void
+    {
+        $content = file_get_contents($templatePath);
+
+        if ($content === false) {
+            $this->createMinimalEnvFile($targetPath, $projectName);
+            return;
+        }
+
+        if ($projectName !== '') {
+            $appDomain = $projectName . '.local.test';
+            $userId = $this->getCurrentUserId();
+            $groupId = $this->getCurrentGroupId();
+
+            // Use regex patterns to match any default value
+            $patterns = [
+                '/^PROJECT_NAME=.*$/m' => "PROJECT_NAME={$projectName}",
+                '/^APP_DOMAIN=.*$/m' => "APP_DOMAIN={$appDomain}",
+                '/^APP_URL=.*$/m' => "APP_URL=https://{$appDomain}",
+                '/^APP_NAME=.*$/m' => "APP_NAME={$projectName}",
+                '/^DOCKER_USER_ID=.*$/m' => "DOCKER_USER_ID={$userId}",
+                '/^DOCKER_GROUP_ID=.*$/m' => "DOCKER_GROUP_ID={$groupId}",
+            ];
+
+            foreach ($patterns as $pattern => $replace) {
+                $content = preg_replace($pattern, $replace, $content);
+            }
+        }
+
+        file_put_contents($targetPath, $content);
+    }
+
+    /**
+     * Create a minimal .env file when no template is available.
+     */
+    private function createMinimalEnvFile(string $targetEnv, string $projectName): void
+    {
+        $appDomain = $projectName . '.local.test';
+        $userId = $this->getCurrentUserId();
+        $groupId = $this->getCurrentGroupId();
+
+        $content = <<<ENV
+# ============================================================================
+# TUTI-CLI DEVELOPMENT ENVIRONMENT
+# ============================================================================
+
+# Project Configuration
+PROJECT_NAME={$projectName}
+APP_ENV=dev
+APP_DOMAIN={$appDomain}
+
+# Docker Build Configuration
+DOCKER_USER_ID={$userId}
+DOCKER_GROUP_ID={$groupId}
+
+# Database Configuration
+DB_HOST=database
+DB_PORT=3306
+DB_DATABASE=wordpress
+DB_USERNAME=wordpress
+DB_PASSWORD=secret
+
+ENV;
+
+        file_put_contents($targetEnv, $content);
     }
 
     /**

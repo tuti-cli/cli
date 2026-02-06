@@ -22,6 +22,9 @@
 # These are the STABLE values that don't change between environments
 # -----------------------------------------------------------------------------
 x-app-env-base: &app-env-base
+  # Apache Document Root - WordPress uses root, not /public like Laravel
+  APACHE_DOCUMENT_ROOT: /var/www/html
+
   # WordPress Database Configuration
   WORDPRESS_DB_HOST: ${DB_HOST:-database}
   WORDPRESS_DB_NAME: ${DB_DATABASE:-wordpress}
@@ -78,11 +81,24 @@ services:
         condition: service_healthy
 
   # ---------------------------------------------------------------------------
-  # Database Service - Base Configuration (MariaDB by default, MySQL optional)
-  # The actual database image is determined by the selected service stub
+  # MariaDB Database - Base Configuration
   # ---------------------------------------------------------------------------
   database:
+    image: mariadb:${MARIADB_VERSION:-11.4}
     <<: *common-service
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-wordpress}
+      MARIADB_USER: ${DB_USERNAME:-wordpress}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-secret}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootsecret}
+    volumes:
+      - database_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 # =============================================================================
 # Networks
