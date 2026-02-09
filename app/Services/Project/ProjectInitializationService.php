@@ -49,7 +49,7 @@ final readonly class ProjectInitializationService
         ]);
 
         if (! $process->successful()) {
-            throw new RuntimeException('Failed to clone laravel-stack:' . $process->getErrorOutput());
+            throw new RuntimeException('Failed to clone laravel-stack:' . $process->errorOutput());
         }
     }
 

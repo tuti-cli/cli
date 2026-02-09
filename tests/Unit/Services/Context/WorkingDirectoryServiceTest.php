@@ -231,6 +231,12 @@ describe('reset', function (): void {
         // It should be a valid directory (getcwd()), but NOT our test dir
         // (unless the process happens to be in testDir, which is unlikely)
         expect($afterReset)->toBeString()->toBeDirectory();
+
+        // Verify the cache was actually cleared by confirming it re-resolved
+        // (in most CI/local environments, getcwd() won't equal our temp dir)
+        if (getcwd() !== realpath($this->testDir)) {
+            expect($afterReset)->not->toBe(realpath($this->testDir));
+        }
     });
 
     it('allows setting a new directory after reset', function (): void {
