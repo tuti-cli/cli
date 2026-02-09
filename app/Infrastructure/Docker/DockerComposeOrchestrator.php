@@ -7,7 +7,7 @@ namespace App\Infrastructure\Docker;
 use App\Contracts\OrchestratorInterface;
 use App\Domain\Project\Project;
 use App\Services\Debug\DebugLogService;
-use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Process;
 
 /**
  * Class DockerComposeOrchestrator
@@ -57,32 +57,33 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             }
         }
 
-        $process = $this->createProcess($project, ['up', '-d', '--build', '--remove-orphans']);
+        $command = $this->buildComposeCommand($project, ['up', '-d', '--build', '--remove-orphans']);
+        $tutiPath = $project->path . '/.tuti';
 
         $this->debug->command('docker compose up', [
-            'command' => $process->getCommandLine(),
-            'working_dir' => $process->getWorkingDirectory(),
+            'command' => $command,
+            'working_dir' => $tutiPath,
         ]);
 
-        $process->run();
+        $result = Process::path($tutiPath)->timeout(300)->run($command);
 
         $this->debug->processOutput(
             'docker compose up',
-            $process->getOutput(),
-            $process->getErrorOutput(),
-            $process->getExitCode() ?? -1
+            $result->output(),
+            $result->errorOutput(),
+            $result->exitCode() ?? -1
         );
 
-        if (! $process->isSuccessful()) {
+        if (! $result->successful()) {
             $this->debug->error('Failed to start containers', [
-                'exit_code' => $process->getExitCode(),
-                'error' => $process->getErrorOutput(),
+                'exit_code' => $result->exitCode(),
+                'error' => $result->errorOutput(),
             ]);
         } else {
             $this->debug->info('Containers started successfully');
         }
 
-        return $process->isSuccessful();
+        return $result->successful();
     }
 
     /**
@@ -93,22 +94,23 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
     {
         $this->debug->info('Stopping project containers', ['project' => $project->getName()]);
 
-        $process = $this->createProcess($project, ['down']);
+        $command = $this->buildComposeCommand($project, ['down']);
+        $tutiPath = $project->path . '/.tuti';
 
         $this->debug->command('docker compose down', [
-            'command' => $process->getCommandLine(),
+            'command' => $command,
         ]);
 
-        $process->run();
+        $result = Process::path($tutiPath)->timeout(300)->run($command);
 
         $this->debug->processOutput(
             'docker compose down',
-            $process->getOutput(),
-            $process->getErrorOutput(),
-            $process->getExitCode() ?? -1
+            $result->output(),
+            $result->errorOutput(),
+            $result->exitCode() ?? -1
         );
 
-        return $process->isSuccessful();
+        return $result->successful();
     }
 
     /**
@@ -123,17 +125,19 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             $args[] = $service;
         }
 
-        $process = $this->createProcess($project, $args);
-        $process->run();
+        $command = $this->buildComposeCommand($project, $args);
+        $tutiPath = $project->path . '/.tuti';
+
+        $result = Process::path($tutiPath)->timeout(300)->run($command);
 
         $this->debug->processOutput(
             'docker compose restart',
-            $process->getOutput(),
-            $process->getErrorOutput(),
-            $process->getExitCode() ?? -1
+            $result->output(),
+            $result->errorOutput(),
+            $result->exitCode() ?? -1
         );
 
-        return $process->isSuccessful();
+        return $result->successful();
     }
 
     /**
@@ -142,17 +146,19 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
      */
     public function status(Project $project): array
     {
-        $process = $this->createProcess($project, ['ps', '--format', 'json']);
-        $process->run();
+        $command = $this->buildComposeCommand($project, ['ps', '--format', 'json']);
+        $tutiPath = $project->path . '/.tuti';
 
-        if (! $process->isSuccessful()) {
+        $result = Process::path($tutiPath)->timeout(300)->run($command);
+
+        if (! $result->successful()) {
             $this->debug->warning('Failed to get container status', [
-                'error' => $process->getErrorOutput(),
+                'error' => $result->errorOutput(),
             ]);
             return [];
         }
 
-        $output = $process->getOutput();
+        $output = $result->output();
         $services = [];
 
         // Parse NDJSON (NewLine Delimited JSON) from docker compose v2
@@ -185,10 +191,10 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             $args[] = $service;
         }
 
-        $process = $this->createProcess($project, $args);
-        $process->setTimeout(null);
+        $command = $this->buildComposeCommand($project, $args);
+        $tutiPath = $project->path . '/.tuti';
 
-        $process->run(function ($type, $buffer): void {
+        Process::path($tutiPath)->timeout(0)->run($command, function ($type, $buffer): void {
             echo $buffer;
         });
     }
@@ -208,12 +214,11 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
     }
 
     /**
-     * Helper to create a Symfony Process for docker compose customized for the project.
+     * Build docker compose command string for the project.
      */
-    private function createProcess(Project $project, array $args): Process
+    private function buildComposeCommand(Project $project, array $args): string
     {
-        // Base command
-        $command = ['docker', 'compose'];
+        $parts = ['docker', 'compose'];
 
         // Determine compose file paths
         $tutiPath = $project->path . '/.tuti';
@@ -227,30 +232,30 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
         }
 
         // Add main config file
-        $command[] = '-f';
-        $command[] = $mainCompose;
+        $parts[] = '-f';
+        $parts[] = $mainCompose;
 
         // Add dev override if exists (for local development)
         if (file_exists($devCompose)) {
-            $command[] = '-f';
-            $command[] = $devCompose;
+            $parts[] = '-f';
+            $parts[] = $devCompose;
         }
 
         // Explicitly specify env file from project root
         if (file_exists($projectEnv)) {
-            $command[] = '--env-file';
-            $command[] = $projectEnv;
+            $parts[] = '--env-file';
+            $parts[] = $projectEnv;
         }
 
         // Add project name context
-        $command[] = '-p';
-        $command[] = $project->config->name;
+        $parts[] = '-p';
+        $parts[] = $project->config->name;
 
         // Append actual action arguments (up, down, etc.)
-        $command = array_merge($command, $args);
+        $parts = array_merge($parts, $args);
 
         $this->debug->debug('Creating process', [
-            'command' => implode(' ', $command),
+            'command' => implode(' ', $parts),
             'compose_files' => [
                 'main' => $mainCompose,
                 'dev' => file_exists($devCompose) ? $devCompose : null,
@@ -258,12 +263,6 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             'env_file' => file_exists($projectEnv) ? $projectEnv : 'not found',
         ]);
 
-        $process = new Process($command);
-        $process->setTimeout(300); // 5 minute default timeout
-
-        // Set working directory to .tuti for relative paths in compose files
-        $process->setWorkingDirectory($tutiPath);
-
-        return $process;
+        return implode(' ', $parts);
     }
 }
