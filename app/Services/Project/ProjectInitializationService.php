@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Project;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 use RuntimeException;
-use Symfony\Component\Process\Process;
 
 final readonly class ProjectInitializationService
 {
@@ -41,16 +41,14 @@ final readonly class ProjectInitializationService
             return;
         }
 
-        $process = new Process([
+        $process = Process::run([
             'git',
             'clone',
             'https://github.com/tuti-cli/laravel-stack.git',
             '.',
         ]);
 
-        $process->run();
-
-        if (! $process->isSuccessful()) {
+        if (! $process->successful()) {
             throw new RuntimeException('Failed to clone laravel-stack:' . $process->getErrorOutput());
         }
     }
