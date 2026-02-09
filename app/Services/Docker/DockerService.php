@@ -142,7 +142,9 @@ final readonly class DockerService
         if ($callback) {
             Process::timeout(0)->run($composeCommand, $callback);
         } else {
-            Process::timeout(0)->run($composeCommand, fn ($type, $buffer): string => print_r($buffer, true));
+            Process::timeout(0)->run($composeCommand, function ($type, $buffer): void {
+                echo $buffer;
+            });
         }
     }
 
@@ -171,9 +173,13 @@ final readonly class DockerService
      */
     public function getContainerIp(string $containerName): ?string
     {
-        $process = Process::run(
-            "docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' {$containerName}"
-        );
+        $process = Process::run([
+            'docker',
+            'inspect',
+            '--format',
+            '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
+            $containerName,
+        ]);
 
         if (! $process->successful()) {
             return null;
