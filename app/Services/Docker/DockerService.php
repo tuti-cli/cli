@@ -19,7 +19,7 @@ final readonly class DockerService
      */
     public function isRunning(): bool
     {
-        return Process::run('docker info')->successful();
+        return Process::run(['docker', 'info'])->successful();
     }
 
     /**
@@ -251,7 +251,7 @@ final readonly class DockerService
     /**
      * Build docker compose command string
      */
-    private function buildComposeCommand(array $args): string
+    private function buildComposeCommand(array $args): array
     {
         $parts = ['docker', 'compose'];
 
@@ -274,7 +274,7 @@ final readonly class DockerService
             $parts[] = $arg;
         }
 
-        return implode(' ', $parts);
+        return $parts;
     }
 
     /**
@@ -303,12 +303,12 @@ final readonly class DockerService
         }
 
         // Linux/Mac
-        $process = Process::run("lsof -i :{$port} -t");
+        $process = Process::run(['lsof', '-i', ":{$port}", '-t']);
 
         if ($process->successful()) {
             $pid = mb_trim($process->output());
             if ($pid !== '') {
-                $psProcess = Process::run("ps -p {$pid} -o comm=");
+                $psProcess = Process::run(['ps', '-p', $pid, '-o', 'comm=']);
 
                 $name = mb_trim($psProcess->output());
 

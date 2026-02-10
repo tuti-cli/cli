@@ -42,7 +42,7 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
         }
 
         $process = Process::run(
-            "docker compose -p " . self::COMPOSE_PROJECT_NAME . " ps --format json"
+            ['docker', 'compose', '-p', self::COMPOSE_PROJECT_NAME, 'ps', '--format', 'json']
         );
 
         if (! $process->successful()) {
@@ -118,7 +118,7 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
         $traefikPath = $this->getTraefikPath();
 
         $process = Process::path($traefikPath)->run(
-            "docker compose -p " . self::COMPOSE_PROJECT_NAME . " up -d"
+            ['docker', 'compose', '-p', self::COMPOSE_PROJECT_NAME, 'up', '-d']
         );
 
         if (! $process->successful()) {
@@ -137,7 +137,7 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
         $traefikPath = $this->getTraefikPath();
 
         Process::path($traefikPath)->run(
-            "docker compose -p " . self::COMPOSE_PROJECT_NAME . " down"
+            ['docker', 'compose', '-p', self::COMPOSE_PROJECT_NAME, 'down']
         );
     }
 
@@ -169,14 +169,14 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
     public function ensureNetworkExists(string $networkName = self::NETWORK_NAME): bool
     {
         // Check if network exists
-        $process = Process::run("docker network inspect {$networkName}");
+        $process = Process::run(['docker', 'network', 'inspect', $networkName]);
 
         if ($process->successful()) {
             return true;
         }
 
         // Create network
-        $process = Process::run("docker network create {$networkName}");
+        $process = Process::run(['docker', 'network', 'create', $networkName]);
 
         if (! $process->successful()) {
             throw new RuntimeException(
@@ -238,7 +238,7 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
      */
     private function isDockerAvailable(): bool
     {
-        $process = Process::run('docker info');
+        $process = Process::run(['docker', 'info']);
 
         return $process->successful();
     }
@@ -248,7 +248,7 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
      */
     private function networkExists(): bool
     {
-        $process = Process::run("docker network inspect " . self::NETWORK_NAME);
+        $process = Process::run(['docker', 'network', 'inspect', self::NETWORK_NAME]);
 
         return $process->successful();
     }
@@ -342,12 +342,13 @@ ENV;
         }
 
         // Try mkcert first
-        $mkcertProcess = Process::run('mkcert --version');
+        $mkcertProcess = Process::run(['mkcert', '--version']);
 
         if ($mkcertProcess->successful()) {
-            Process::path($certsPath)->run(
-                'mkcert -cert-file local-cert.pem -key-file local-key.pem "*.local.test" localhost 127.0.0.1 ::1'
-            );
+            Process::path($certsPath)->run([
+                'mkcert', '-cert-file', 'local-cert.pem', '-key-file', 'local-key.pem',
+                '*.local.test', 'localhost', '127.0.0.1', '::1',
+            ]);
         } else {
             // Generate self-signed certificate with OpenSSL
             $this->generateSelfSignedCertificate($certsPath);
@@ -366,15 +367,16 @@ ENV;
         $keyFile = $certsPath . DIRECTORY_SEPARATOR . 'local-key.pem';
 
         // Generate private key
-        Process::run(
-            "openssl genrsa -out \"{$keyFile}\" 2048"
-        );
+        Process::run([
+            'openssl', 'genrsa', '-out', $keyFile, '2048',
+        ]);
 
         // Generate certificate
         $subject = '/CN=*.local.test/O=Tuti CLI/C=US';
-        Process::run(
-            "openssl req -new -x509 -key \"{$keyFile}\" -out \"{$certFile}\" -days 365 -subj \"{$subject}\""
-        );
+        Process::run([
+            'openssl', 'req', '-new', '-x509', '-key', $keyFile,
+            '-out', $certFile, '-days', '365', '-subj', $subject,
+        ]);
     }
 
     /**
@@ -393,7 +395,7 @@ ENV;
         $password = bin2hex(random_bytes(16));
 
         // Try htpasswd first
-        $process = Process::run("htpasswd -nb admin {$password}");
+        $process = Process::run(['htpasswd', '-nb', 'admin', $password]);
 
         if ($process->successful()) {
             file_put_contents($usersFile, trim($process->output()));

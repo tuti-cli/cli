@@ -7,6 +7,7 @@ namespace App\Commands;
 use App\Concerns\HasBrandedOutput;
 use App\Contracts\InfrastructureManagerInterface;
 use Exception;
+use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
 
@@ -65,7 +66,7 @@ final class InstallCommand extends Command
     {
         $this->section('Checking Prerequisites');
 
-        $process = \Illuminate\Support\Facades\Process::run('docker info');
+        $process = Process::run(['docker', 'info']);
 
         if (! $process->successful()) {
             $this->failure('Docker is not available or not running');

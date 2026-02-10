@@ -36,7 +36,7 @@
 ## Quick Validation
 
 ```bash
-composer test:unit   # Run all tests
-composer test:types  # PHPStan check
-composer lint        # Fix code style
+docker compose exec -T app composer test:unit   # Run all tests
+docker compose exec -T app composer test:types  # PHPStan check
+docker compose exec -T app composer lint        # Fix code style
 ```
