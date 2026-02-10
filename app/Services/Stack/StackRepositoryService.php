@@ -103,7 +103,7 @@ final class StackRepositoryService
         }
 
         // Clone the repository
-        $result = Process::run("git clone --depth 1 --branch {$branch} {$repository} {$targetPath}");
+        $result = Process::run(['git', 'clone', '--depth', '1', '--branch', $branch, $repository, $targetPath]);
 
         if (! $result->successful()) {
             throw new RuntimeException(

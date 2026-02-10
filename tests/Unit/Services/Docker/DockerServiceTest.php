@@ -8,15 +8,6 @@ declare(strict_types=1);
  * Tests the general-purpose Docker Compose wrapper that manages
  * a project's containers: start, stop, status, exec, logs, etc.
  *
- * This service was REFACTORED to be testable:
- *   BEFORE: constructor called broken `get_project_name()` and used Symfony Process
- *   AFTER:  constructor injection + Laravel Process facade (Process::fake())
- *
- * The refactoring fixed 3 issues:
- *   1. Removed broken `get_project_name()` import (function didn't exist)
- *   2. Switched from `new Symfony\Process()` to `Illuminate\Process` facade
- *   3. Replaced `tuti_path()` calls with injected constructor params
- *
  * @see \App\Services\Docker\DockerService
  */
 
@@ -34,13 +25,24 @@ beforeEach(function (): void {
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
+/**
+ * Normalize process command to a plain string (strip shell escaping quotes).
+ * When Process::run() receives an array, Laravel escapes each argument.
+ */
+function commandStr(object $process): string
+{
+    $cmd = $process->command;
+
+    return is_array($cmd) ? implode(' ', $cmd) : str_replace("'", '', $cmd);
+}
+
 function fakeComposeRunning(array $extras = []): void
 {
     Process::fake(array_merge([
-        'docker info' => Process::result('ok'),
-        'docker compose*' => Process::result('ok'),
-        'docker inspect*' => Process::result('172.18.0.2'),
-        'lsof*' => Process::result(exitCode: 1),
+        '*docker*info*' => Process::result('ok'),
+        '*docker*compose*' => Process::result('ok'),
+        '*docker*inspect*' => Process::result('172.18.0.2'),
+        '*lsof*' => Process::result(exitCode: 1),
     ], $extras));
 }
 
@@ -49,13 +51,13 @@ function fakeComposeRunning(array $extras = []): void
 describe('isRunning', function (): void {
 
     it('returns true when docker info succeeds', function (): void {
-        Process::fake(['docker info' => Process::result('ok')]);
+        Process::fake(['*docker*info*' => Process::result('ok')]);
 
         expect($this->service->isRunning())->toBeTrue();
     });
 
     it('returns false when docker info fails', function (): void {
-        Process::fake(['docker info' => Process::result(exitCode: 1)]);
+        Process::fake(['*docker*info*' => Process::result(exitCode: 1)]);
 
         expect($this->service->isRunning())->toBeFalse();
     });
@@ -71,8 +73,8 @@ describe('start', function (): void {
         $result = $this->service->start();
 
         expect($result)->toBeTrue();
-        Process::assertRan(fn ($p) => str_contains($p->command, 'docker compose')
-            && str_contains($p->command, 'up -d'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'docker compose')
+            && str_contains(commandStr($p), 'up -d'));
     });
 
     it('includes compose file and project name in command', function (): void {
@@ -80,13 +82,13 @@ describe('start', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn ($p) => str_contains($p->command, '-f /projects/myapp/.tuti/docker-compose.yml')
-            && str_contains($p->command, '-p myapp'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), '-f /projects/myapp/.tuti/docker-compose.yml')
+            && str_contains(commandStr($p), '-p myapp'));
     });
 
     it('returns false when docker compose fails', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(exitCode: 1),
+            '*docker*compose*' => Process::result(exitCode: 1),
         ]);
 
         expect($this->service->start())->toBeFalse();
@@ -101,7 +103,7 @@ describe('stop', function (): void {
         $result = $this->service->stop();
 
         expect($result)->toBeTrue();
-        Process::assertRan(fn ($p) => str_contains($p->command, 'down'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'down'));
     });
 });
 
@@ -112,7 +114,7 @@ describe('restart', function (): void {
 
         $this->service->restart();
 
-        Process::assertRan(fn ($p) => str_contains($p->command, 'restart'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'restart'));
     });
 
     it('restarts a specific service', function (): void {
@@ -120,7 +122,8 @@ describe('restart', function (): void {
 
         $this->service->restart('redis');
 
-        Process::assertRan(fn ($p) => str_contains($p->command, 'restart redis'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'restart')
+            && str_contains(commandStr($p), 'redis'));
     });
 });
 
@@ -134,7 +137,7 @@ describe('pullImages', function (): void {
         $result = $this->service->pullImages();
 
         expect($result)->toBeTrue();
-        Process::assertRan(fn ($p) => str_contains($p->command, 'pull'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'pull'));
     });
 });
 
@@ -148,7 +151,7 @@ describe('getStatus', function (): void {
             . '{"Service":"postgres","State":"running","Health":"healthy","Publishers":[]}';
 
         Process::fake([
-            'docker compose*' => Process::result(output: $ndjson),
+            '*docker*compose*' => Process::result(output: $ndjson),
         ]);
 
         $status = $this->service->getStatus();
@@ -163,7 +166,7 @@ describe('getStatus', function (): void {
 
     it('returns empty array when command fails', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(exitCode: 1),
+            '*docker*compose*' => Process::result(exitCode: 1),
         ]);
 
         expect($this->service->getStatus())->toBeEmpty();
@@ -171,7 +174,7 @@ describe('getStatus', function (): void {
 
     it('uses Name fallback when Service key is missing', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(
+            '*docker*compose*' => Process::result(
                 output: '{"Name":"legacy-app","State":"running","Health":"unknown"}',
             ),
         ]);
@@ -183,7 +186,7 @@ describe('getStatus', function (): void {
 
     it('handles empty output', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(output: ''),
+            '*docker*compose*' => Process::result(output: ''),
         ]);
 
         expect($this->service->getStatus())->toBeEmpty();
@@ -193,7 +196,7 @@ describe('getStatus', function (): void {
         $json = '{"Service":"app","State":"running","Health":"healthy","Publishers":[{"PublishedPort":8080,"TargetPort":80},{"PublishedPort":8443,"TargetPort":443}]}';
 
         Process::fake([
-            'docker compose*' => Process::result(output: $json),
+            '*docker*compose*' => Process::result(output: $json),
         ]);
 
         $status = $this->service->getStatus();
@@ -208,7 +211,7 @@ describe('exec', function (): void {
 
     it('executes command in a container', function (): void {
         fakeComposeRunning([
-            'docker compose*' => Process::result(output: 'command output'),
+            '*docker*compose*' => Process::result(output: 'command output'),
         ]);
 
         $result = $this->service->exec('app', 'php artisan migrate');
@@ -222,12 +225,12 @@ describe('exec', function (): void {
 
         $this->service->exec('app', 'ls');
 
-        Process::assertRan(fn ($p) => str_contains($p->command, 'exec -T app sh -c ls'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'exec -T app sh -c ls'));
     });
 
     it('returns exit code and error output on failure', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(
+            '*docker*compose*' => Process::result(
                 errorOutput: 'command failed',
                 exitCode: 1,
             ),
@@ -247,7 +250,7 @@ describe('getContainerIp', function (): void {
 
     it('returns IP address from docker inspect', function (): void {
         Process::fake([
-            'docker inspect*' => Process::result(output: '172.18.0.5'),
+            '*docker*inspect*' => Process::result(output: '172.18.0.5'),
         ]);
 
         expect($this->service->getContainerIp('myapp_dev_app'))->toBe('172.18.0.5');
@@ -255,7 +258,7 @@ describe('getContainerIp', function (): void {
 
     it('returns null when container does not exist', function (): void {
         Process::fake([
-            'docker inspect*' => Process::result(exitCode: 1),
+            '*docker*inspect*' => Process::result(exitCode: 1),
         ]);
 
         expect($this->service->getContainerIp('nonexistent'))->toBeNull();
@@ -263,7 +266,7 @@ describe('getContainerIp', function (): void {
 
     it('returns null when output is empty', function (): void {
         Process::fake([
-            'docker inspect*' => Process::result(output: ''),
+            '*docker*inspect*' => Process::result(output: ''),
         ]);
 
         expect($this->service->getContainerIp('myapp_dev_app'))->toBeNull();
@@ -276,7 +279,7 @@ describe('isServiceHealthy', function (): void {
 
     it('returns true when service health is healthy', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(
+            '*docker*compose*' => Process::result(
                 output: '{"Service":"app","State":"running","Health":"healthy","Publishers":[]}',
             ),
         ]);
@@ -286,7 +289,7 @@ describe('isServiceHealthy', function (): void {
 
     it('returns true when service is running (even without health)', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(
+            '*docker*compose*' => Process::result(
                 output: '{"Service":"redis","State":"running","Health":"","Publishers":[]}',
             ),
         ]);
@@ -296,7 +299,7 @@ describe('isServiceHealthy', function (): void {
 
     it('returns false when service is not found', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(output: ''),
+            '*docker*compose*' => Process::result(output: ''),
         ]);
 
         expect($this->service->isServiceHealthy('nonexistent'))->toBeFalse();
@@ -310,7 +313,7 @@ describe('getServiceStatus', function (): void {
             . '{"Service":"redis","State":"running","Health":"healthy","Publishers":[]}';
 
         Process::fake([
-            'docker compose*' => Process::result(output: $ndjson),
+            '*docker*compose*' => Process::result(output: $ndjson),
         ]);
 
         $status = $this->service->getServiceStatus('redis');
@@ -321,7 +324,7 @@ describe('getServiceStatus', function (): void {
 
     it('returns not_found for missing service', function (): void {
         Process::fake([
-            'docker compose*' => Process::result(output: ''),
+            '*docker*compose*' => Process::result(output: ''),
         ]);
 
         $status = $this->service->getServiceStatus('nonexistent');
@@ -340,7 +343,7 @@ describe('build', function (): void {
 
         $this->service->build();
 
-        Process::assertRan(fn ($p) => str_contains($p->command, 'build'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'build'));
     });
 
     it('builds a specific service', function (): void {
@@ -348,7 +351,8 @@ describe('build', function (): void {
 
         $this->service->build('app');
 
-        Process::assertRan(fn ($p) => str_contains($p->command, 'build app'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'build')
+            && str_contains(commandStr($p), 'app'));
     });
 });
 
@@ -359,7 +363,7 @@ describe('destroy', function (): void {
 
         $this->service->destroy();
 
-        Process::assertRan(fn ($p) => str_contains($p->command, 'down -v'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'down -v'));
     });
 });
 
@@ -382,8 +386,8 @@ describe('env file', function (): void {
 
         $service->start();
 
-        Process::assertRan(fn ($p) => str_contains($p->command, '--env-file')
-            && str_contains($p->command, $envFile));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), '--env-file')
+            && str_contains(commandStr($p), $envFile));
 
         cleanupTestDirectory($tempDir);
     });
@@ -393,7 +397,7 @@ describe('env file', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn ($p) => ! str_contains($p->command, '--env-file'));
+        Process::assertRan(fn ($p) => ! str_contains(commandStr($p), '--env-file'));
     });
 });
 
@@ -413,7 +417,7 @@ describe('constructor', function (): void {
 
         $service->start();
 
-        Process::assertRan(fn ($p) => str_contains($p->command, '-p custom-project'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), '-p custom-project'));
     });
 
     it('uses injected compose path in commands', function (): void {
@@ -422,6 +426,6 @@ describe('constructor', function (): void {
 
         $service->start();
 
-        Process::assertRan(fn ($p) => str_contains($p->command, '-f /custom/docker-compose.yml'));
+        Process::assertRan(fn ($p) => str_contains(commandStr($p), '-f /custom/docker-compose.yml'));
     });
 });

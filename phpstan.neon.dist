@@ -1,22 +1,15 @@
 includes:
-    - ./vendor/larastan/larastan/extension.neon
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
 
 parameters:
-    level: 6
+
     paths:
-        - app
+        - app/
+
+    # Level 10 is the highest level
+    level: 6
 
     reportUnmatchedIgnoredErrors: true
-
-    # Ignore errors in these paths
     excludePaths:
-        - app/Support/helpers.php
-
-    # Check missing typehints
-    checkMissingIterableValueType: true
-    checkGenericClassInNonGenericObjectType: true
-
-    # Ignore errors
-    ignoreErrors:
-        - '#Unsafe usage of new static#'
-        - '#Access to an undefined property#'
+        - ./app/Support/helpers.php

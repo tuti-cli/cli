@@ -214,14 +214,14 @@ See `.claude/docs/console-display.md` for full method reference.
 - Coverage targets: Commands >80%, Services >90%, Helpers >95%
 
 ```bash
-composer test              # All: rector + pint + phpstan + pest
-composer test:unit         # Pest tests only (parallel)
-composer test:types        # PHPStan static analysis
-composer test:lint         # Pint format check (dry-run)
-composer test:refactor     # Rector check (dry-run)
-composer test:coverage     # Pest with coverage
-composer lint              # Fix formatting with Pint
-composer refactor          # Fix code with Rector
+docker compose exec -T app composer test              # All: rector + pint + phpstan + pest
+docker compose exec -T app composer test:unit         # Pest tests only (parallel)
+docker compose exec -T app composer test:types        # PHPStan static analysis
+docker compose exec -T app composer test:lint         # Pint format check (dry-run)
+docker compose exec -T app composer test:refactor     # Rector check (dry-run)
+docker compose exec -T app composer test:coverage     # Pest with coverage
+docker compose exec -T app composer lint              # Fix formatting with Pint
+docker compose exec -T app composer refactor          # Fix code with Rector
 ```
 
 ## Build Process
@@ -286,6 +286,19 @@ interface InfrastructureManagerInterface {
 - User-friendly messages via `$this->error()` or `$this->failed()`
 - Debug logging via `DebugLogService` (singleton, helper: `tuti_debug()`)
 - Log location: `~/.tuti/logs/tuti.log`
+
+## Security
+
+- **ALWAYS use array syntax** for `Process::run()` — NEVER string interpolation
+  - Safe: `Process::run(['docker', 'info'])`
+  - Unsafe: `Process::run("docker info {$arg}")`
+  - Unsafe: `Process::run(implode(' ', $parts))`
+- **NEVER** use `escapeshellarg()` / `escapeshellcmd()` — array syntax eliminates the need
+- **NEVER** interpolate variables into shell command strings
+- All external process execution MUST go through array syntax for shell injection prevention
+- Docker commands: centralize in `DockerService` / `DockerExecutorService` — no direct `Process::run(['docker', ...])` in commands or other services
+- Validate file paths exist before passing to Process (use `file_exists()`, `is_dir()`)
+- Use `Process::path($dir)` for working directory — never `cd` in command strings
 
 ## Additional Docs
 
