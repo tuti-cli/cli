@@ -8,7 +8,6 @@ use App\Concerns\HasBrandedOutput;
 use App\Contracts\InfrastructureManagerInterface;
 use App\Services\Docker\DockerExecutorService;
 use Exception;
-use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
 
@@ -25,13 +24,16 @@ final class InstallCommand extends Command
 
     protected $description = 'Set up tuti CLI global configuration, directories, and infrastructure';
 
-    public function handle(InfrastructureManagerInterface $infrastructureManager): int
+    public function handle(
+        InfrastructureManagerInterface $infrastructureManager,
+        DockerExecutorService $dockerExecutor
+    ): int
     {
         $this->welcomeBanner();
 
         try {
             // Step 1: Check Docker availability
-            if (! $this->checkDockerAvailable()) {
+            if (! $this->checkDockerAvailable($dockerExecutor)) {
                 return self::FAILURE;
             }
 
@@ -63,13 +65,13 @@ final class InstallCommand extends Command
     /**
      * Check if Docker is available and running.
      */
-    private function checkDockerAvailable(): bool
+    private function checkDockerAvailable(DockerExecutorService $executor): bool
     {
         $this->section('Checking Prerequisites');
 
-        $process = DockerExecutorService::isDockerAvailable();
+        $isAvailable = $executor->isDockerAvailable();
 
-        if (! $process) {
+        if (! $isAvailable) {
             $this->failure('Docker is not available or not running');
             $this->hint('Please install Docker Desktop and ensure it is running');
             $this->hint('Download from: https://www.docker.com/products/docker-desktop');
