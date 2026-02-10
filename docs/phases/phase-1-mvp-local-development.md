@@ -35,7 +35,7 @@ Increase test coverage from ~5 test files to comprehensive coverage across all c
   - [x] `DockerService` - Docker Compose wrapper (33 tests, refactored for testability)
   - [x] `ProjectDirectoryService` - Project directory management (14 tests)
 - [ ] Feature tests for all user-facing commands (target: >80% coverage)
-  - [ ] `install` command
+  - [x] `install` command
   - [ ] `doctor` command
   - [ ] `stack:laravel` command
   - [ ] `stack:wordpress` command
