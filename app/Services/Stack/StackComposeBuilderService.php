@@ -393,7 +393,6 @@ final readonly class StackComposeBuilderService
         return $merged;
     }
 
-
     /**
      * Add volumes to compose configuration
      *

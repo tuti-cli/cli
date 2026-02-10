@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Tests the command finder functionality that helps users discover and execute
  * available Tuti commands interactively.
  *
- * @see \App\Commands\FindCommand
+ * @see App\Commands\FindCommand
  */
 
 use Illuminate\Console\Application as Artisan;
@@ -18,17 +18,17 @@ describe('FindCommand', function (): void {
 
     beforeEach(function (): void {
         // Register some test commands to ensure we have commands to find
-        $this->app->register(\App\Providers\AppServiceProvider::class);
+        $this->app->register(App\Providers\AppServiceProvider::class);
     });
 
     it('is registered in the application', function (): void {
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         expect($command)->toBeInstanceOf(Command::class);
     });
 
     it('has correct signature', function (): void {
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         expect($command->getName())->toBe('find');
     });
@@ -40,17 +40,17 @@ describe('FindCommand', function (): void {
     });
 
     it('uses HasBrandedOutput trait', function (): void {
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has public handle method', function (): void {
-        $command = new \App\Commands\FindCommand();
+        $command = new App\Commands\FindCommand();
 
-        $reflection = new \ReflectionClass($command);
+        $reflection = new ReflectionClass($command);
         $method = $reflection->getMethod('handle');
 
         expect($method->isPublic())->toBeTrue();
@@ -58,7 +58,7 @@ describe('FindCommand', function (): void {
 
     it('can access application commands', function (): void {
         // Verify the command can access commands through Artisan facade
-        $exitCode = \Illuminate\Support\Facades\Artisan::call('list');
+        $exitCode = Illuminate\Support\Facades\Artisan::call('list');
 
         expect($exitCode)->toBe(0);
     });
@@ -71,7 +71,7 @@ describe('FindCommand', function (): void {
 
     it('handles command execution structure correctly', function (): void {
         // Test that the command has the right structure to call other commands
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         expect($command)
             ->toBeInstanceOf(Command::class);
@@ -85,8 +85,8 @@ describe('FindCommand Command Discovery', function (): void {
 
     it('can access core commands', function (): void {
         // Use Artisan facade to get commands
-        \Illuminate\Support\Facades\Artisan::call('list');
-        $output = \Illuminate\Support\Facades\Artisan::output();
+        Illuminate\Support\Facades\Artisan::call('list');
+        $output = Illuminate\Support\Facades\Artisan::output();
 
         expect($output)
             ->toContain('init')
@@ -97,8 +97,8 @@ describe('FindCommand Command Discovery', function (): void {
     });
 
     it('can discover stack commands', function (): void {
-        \Illuminate\Support\Facades\Artisan::call('list');
-        $output = \Illuminate\Support\Facades\Artisan::output();
+        Illuminate\Support\Facades\Artisan::call('list');
+        $output = Illuminate\Support\Facades\Artisan::output();
 
         expect($output)
             ->toContain('stack:init')
@@ -107,8 +107,8 @@ describe('FindCommand Command Discovery', function (): void {
     });
 
     it('can discover local commands', function (): void {
-        \Illuminate\Support\Facades\Artisan::call('list');
-        $output = \Illuminate\Support\Facades\Artisan::output();
+        Illuminate\Support\Facades\Artisan::call('list');
+        $output = Illuminate\Support\Facades\Artisan::output();
 
         expect($output)
             ->toContain('local:start')
@@ -118,8 +118,8 @@ describe('FindCommand Command Discovery', function (): void {
     });
 
     it('discovers all command namespaces', function (): void {
-        \Illuminate\Support\Facades\Artisan::call('list');
-        $output = \Illuminate\Support\Facades\Artisan::output();
+        Illuminate\Support\Facades\Artisan::call('list');
+        $output = Illuminate\Support\Facades\Artisan::output();
 
         expect($output)
             ->toContain('local:')
@@ -127,10 +127,10 @@ describe('FindCommand Command Discovery', function (): void {
     });
 
     it('counts minimum expected commands', function (): void {
-        \Illuminate\Support\Facades\Artisan::call('list');
-        $output = \Illuminate\Support\Facades\Artisan::output();
+        Illuminate\Support\Facades\Artisan::call('list');
+        $output = Illuminate\Support\Facades\Artisan::output();
 
-//        dd($output);
+        //        dd($output);
 
         // Check that we have a reasonable number of commands listed
         expect($output)
@@ -147,7 +147,7 @@ describe('FindCommand Command Discovery', function (): void {
 
         // The command should filter itself when building the suggestion list
         // We can't test the internal logic without running it, but we can verify structure
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
         expect($command)->toBeInstanceOf(Command::class);
     });
 });
@@ -162,11 +162,11 @@ describe('FindCommand Integration', function (): void {
     });
 
     it('is accessible from command line via list', function (): void {
-        $exitCode = \Illuminate\Support\Facades\Artisan::call('list');
+        $exitCode = Illuminate\Support\Facades\Artisan::call('list');
 
         expect($exitCode)->toBe(0);
 
-        $output = \Illuminate\Support\Facades\Artisan::output();
+        $output = Illuminate\Support\Facades\Artisan::output();
         expect($output)->toContain('find');
     });
 });
@@ -174,15 +174,15 @@ describe('FindCommand Integration', function (): void {
 describe('FindCommand Trait Usage', function (): void {
 
     it('uses HasBrandedOutput trait', function (): void {
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has branded output methods available', function (): void {
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         // Check methods exist using reflection
         expect(method_exists($command, 'brandedHeader'))->toBeTrue();
@@ -197,19 +197,19 @@ describe('FindCommand Trait Usage', function (): void {
 describe('FindCommand Structure', function (): void {
 
     it('does not crash when instantiated', function (): void {
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         expect($command)->toBeInstanceOf(Command::class);
     });
 
     it('has correct command name', function (): void {
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         expect($command->getName())->toBe('find');
     });
 
     it('has correct description', function (): void {
-        $command = $this->app->make(\App\Commands\FindCommand::class);
+        $command = $this->app->make(App\Commands\FindCommand::class);
 
         expect($command->getDescription())
             ->toBeString()

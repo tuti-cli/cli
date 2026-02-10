@@ -85,6 +85,7 @@ final class DoctorCommand extends Command
 
         if (empty($issues) && empty($warnings)) {
             $this->success('All checks passed! Your system is ready to use tuti-cli.');
+
             return self::SUCCESS;
         }
 
@@ -110,6 +111,7 @@ final class DoctorCommand extends Command
             $this->newLine();
 
             $this->hint('Fix the issues above and run "tuti doctor" again');
+
             return self::FAILURE;
         }
 
@@ -122,6 +124,7 @@ final class DoctorCommand extends Command
 
         if (! $process->successful()) {
             $this->line('  ❌ Docker not found');
+
             return [
                 'status' => 'error',
                 'message' => 'Docker is not installed',
@@ -129,13 +132,14 @@ final class DoctorCommand extends Command
             ];
         }
 
-        $version = trim($process->output());
+        $version = mb_trim($process->output());
         $this->line("  ✅ {$version}");
 
         // Check if Docker daemon is running
         $infoProcess = Process::run(['docker', 'info']);
         if (! $infoProcess->successful()) {
             $this->line('  ❌ Docker daemon not running');
+
             return [
                 'status' => 'error',
                 'message' => 'Docker daemon is not running',
@@ -154,6 +158,7 @@ final class DoctorCommand extends Command
 
         if (! $process->successful()) {
             $this->line('  ❌ Docker Compose not found');
+
             return [
                 'status' => 'error',
                 'message' => 'Docker Compose is not available',
@@ -161,7 +166,7 @@ final class DoctorCommand extends Command
             ];
         }
 
-        $version = trim($process->output());
+        $version = mb_trim($process->output());
         $this->line("  ✅ {$version}");
 
         return ['status' => 'ok'];
@@ -170,10 +175,11 @@ final class DoctorCommand extends Command
     private function checkGlobalConfig(): array
     {
         $home = getenv('HOME') ?: getenv('USERPROFILE');
-        $globalPath = rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
+        $globalPath = mb_rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
 
         if (! is_dir($globalPath)) {
             $this->line('  ❌ Global directory not found: ' . $globalPath);
+
             return [
                 'status' => 'error',
                 'message' => 'Global tuti directory not found',
@@ -198,6 +204,7 @@ final class DoctorCommand extends Command
     {
         if (! $infraManager->isInstalled()) {
             $this->line('  ❌ Traefik not installed');
+
             return [
                 'status' => 'error',
                 'message' => 'Traefik infrastructure not installed',
@@ -209,6 +216,7 @@ final class DoctorCommand extends Command
 
         if (! $infraManager->isRunning()) {
             $this->line('  ⚠️  Traefik not running');
+
             return [
                 'status' => 'warning',
                 'message' => 'Traefik is installed but not running',
@@ -257,7 +265,7 @@ final class DoctorCommand extends Command
             $validateProcess = Process::path($tutiPath)->run(['docker', 'compose', 'config', '--quiet']);
             if (! $validateProcess->successful()) {
                 $this->line('  ❌ docker-compose.yml has errors');
-                $this->line("     <fg=yellow>" . trim($validateProcess->errorOutput()) . "</>");
+                $this->line('     <fg=yellow>' . mb_trim($validateProcess->errorOutput()) . '</>');
                 $results[] = [
                     'status' => 'error',
                     'message' => 'docker-compose.yml has syntax errors',

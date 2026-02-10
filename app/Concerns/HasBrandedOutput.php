@@ -6,6 +6,7 @@ namespace App\Concerns;
 
 use App\Enums\Theme;
 use Symfony\Component\Console\Output\OutputInterface;
+
 use function Termwind\render;
 
 /**
@@ -114,7 +115,7 @@ trait HasBrandedOutput
     protected function tagline(string $featureName): void
     {
         $tagline = "✦ TUTI :: {$featureName} :: Environments Made Simple ✦ ";
-        $this->output->writeln('  '. $this->badge($tagline));
+        $this->output->writeln('  ' . $this->badge($tagline));
     }
 
     protected function outro(string $text, ?string $linkLabel = null, ?string $linkUrl = null, int $terminalWidth = 80): void
@@ -545,7 +546,7 @@ trait HasBrandedOutput
      */
     protected function keyValue(string $key, string $value, int $keyWidth = 20): void
     {
-        $paddedKey = str_pad($key, $keyWidth);
+        $paddedKey = mb_str_pad($key, $keyWidth);
         $this->output->writeln("  <fg=gray>{$paddedKey}</> {$value}");
     }
 

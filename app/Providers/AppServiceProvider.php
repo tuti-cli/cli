@@ -60,7 +60,7 @@ final class AppServiceProvider extends ServiceProvider
                 : "/home/{$user}";
         }
 
-        return rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
+        return mb_rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
     }
 
     /**

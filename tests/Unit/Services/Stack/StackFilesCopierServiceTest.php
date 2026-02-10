@@ -19,7 +19,7 @@ declare(strict_types=1);
  * Dependency chain: StackFilesCopierService → ProjectDirectoryService
  *                   ProjectDirectoryService → WorkingDirectoryService
  *
- * @see \App\Services\Stack\StackFilesCopierService
+ * @see StackFilesCopierService
  */
 
 use App\Services\Context\WorkingDirectoryService;

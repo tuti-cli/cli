@@ -8,7 +8,6 @@ use App\Concerns\BuildsProjectUrls;
 use App\Concerns\HasBrandedOutput;
 use App\Contracts\InfrastructureManagerInterface;
 use App\Domain\Project\Project;
-use App\Domain\Project\ValueObjects\ProjectConfigurationVO;
 use App\Services\Debug\DebugLogService;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
@@ -46,6 +45,7 @@ final class StartCommand extends Command
                 $debugService->error('No .tuti directory found');
                 $this->failure('No tuti project found in current directory');
                 $this->hint('Run "tuti stack:laravel" to create a new project');
+
                 return self::FAILURE;
             }
 
@@ -94,6 +94,7 @@ final class StartCommand extends Command
                 $debugService->error('docker-compose.yml not found', ['path' => $composeFile]);
                 $this->failure('docker-compose.yml not found at: ' . $composeFile);
                 $this->hint('Run "tuti stack:laravel" to reinitialize the project');
+
                 return self::FAILURE;
             }
 
@@ -153,7 +154,7 @@ final class StartCommand extends Command
                     if (isset($error['data']['error'])) {
                         $errorLines = explode("\n", (string) $error['data']['error']);
                         foreach (array_slice($errorLines, 0, 3) as $line) {
-                            if (! empty(trim($line))) {
+                            if (! empty(mb_trim($line))) {
                                 $this->line("    <fg=yellow>{$line}</>");
                             }
                         }

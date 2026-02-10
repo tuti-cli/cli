@@ -12,6 +12,13 @@ enum Theme: string
     case Vaporwave = 'vaporwave';
     case Sunset = 'sunset';
 
+    public static function random(): self
+    {
+        $cases = self::cases();
+
+        return $cases[array_rand($cases)];
+    }
+
     /**
      * @return array<int, int>
      */
@@ -34,12 +41,5 @@ enum Theme: string
     public function accent(): int
     {
         return $this->gradient()[2];
-    }
-
-    public static function random(): self
-    {
-        $cases = self::cases();
-
-        return $cases[array_rand($cases)];
     }
 }
