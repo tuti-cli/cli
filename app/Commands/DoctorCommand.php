@@ -118,7 +118,7 @@ final class DoctorCommand extends Command
 
     private function checkDocker(): array
     {
-        $process = Process::run('docker --version');
+        $process = Process::run(['docker', '--version']);
 
         if (! $process->successful()) {
             $this->line('  ❌ Docker not found');
@@ -133,7 +133,7 @@ final class DoctorCommand extends Command
         $this->line("  ✅ {$version}");
 
         // Check if Docker daemon is running
-        $infoProcess = Process::run('docker info');
+        $infoProcess = Process::run(['docker', 'info']);
         if (! $infoProcess->successful()) {
             $this->line('  ❌ Docker daemon not running');
             return [
@@ -150,7 +150,7 @@ final class DoctorCommand extends Command
 
     private function checkDockerCompose(): array
     {
-        $process = Process::run('docker compose version');
+        $process = Process::run(['docker', 'compose', 'version']);
 
         if (! $process->successful()) {
             $this->line('  ❌ Docker Compose not found');
@@ -254,7 +254,7 @@ final class DoctorCommand extends Command
             $this->line('  ✅ docker-compose.yml exists');
 
             // Check compose file syntax
-            $validateProcess = Process::path($tutiPath)->run('docker compose config --quiet');
+            $validateProcess = Process::path($tutiPath)->run(['docker', 'compose', 'config', '--quiet']);
             if (! $validateProcess->successful()) {
                 $this->line('  ❌ docker-compose.yml has errors');
                 $this->line("     <fg=yellow>" . trim($validateProcess->errorOutput()) . "</>");

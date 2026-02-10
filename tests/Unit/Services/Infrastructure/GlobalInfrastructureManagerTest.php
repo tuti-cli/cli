@@ -10,13 +10,6 @@ declare(strict_types=1);
  *
  * Installed at: ~/.tuti/infrastructure/traefik/
  *
- * This test combines TWO techniques:
- *   1. Process::fake() — fakes Docker commands (docker info, docker compose, etc.)
- *   2. Temp directories — real filesystem for install/isInstalled checks
- *
- * We test the filesystem side (install creates dirs, copies files) and
- * the Docker side (start calls docker compose up, stop calls down) separately.
- *
  * @see \App\Services\Infrastructure\GlobalInfrastructureManager
  */
 
@@ -36,6 +29,16 @@ afterEach(function (): void {
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
+/**
+ * Normalize process command to a plain string (strip shell escaping quotes).
+ */
+function infraCommandStr(object $process): string
+{
+    $cmd = $process->command;
+
+    return is_array($cmd) ? implode(' ', $cmd) : str_replace("'", '', $cmd);
+}
+
 function installTraefik(string $globalPath): void
 {
     $traefikPath = $globalPath . '/infrastructure/traefik';
@@ -46,12 +49,12 @@ function installTraefik(string $globalPath): void
 function fakeDockerRunning(): void
 {
     Process::fake([
-        'docker info' => Process::result('Docker running'),
-        'docker compose*' => Process::result('ok'),
-        'docker network*' => Process::result('ok'),
-        'mkcert*' => Process::result(errorOutput: 'not found', exitCode: 1),
-        'htpasswd*' => Process::result(errorOutput: 'not found', exitCode: 1),
-        'openssl*' => Process::result('ok'),
+        '*docker*info*' => Process::result('Docker running'),
+        '*docker*compose*' => Process::result('ok'),
+        '*docker*network*' => Process::result('ok'),
+        '*mkcert*' => Process::result(errorOutput: 'not found', exitCode: 1),
+        '*htpasswd*' => Process::result(errorOutput: 'not found', exitCode: 1),
+        '*openssl*' => Process::result('ok'),
     ]);
 }
 
@@ -102,7 +105,7 @@ describe('isRunning', function (): void {
     it('returns false when docker compose ps returns empty', function (): void {
         installTraefik($this->globalTutiPath);
         Process::fake([
-            'docker compose*' => Process::result(output: ''),
+            '*docker*compose*' => Process::result(output: ''),
         ]);
 
         expect($this->service->isRunning())->toBeFalse();
@@ -111,7 +114,7 @@ describe('isRunning', function (): void {
     it('returns true when docker compose ps reports running containers', function (): void {
         installTraefik($this->globalTutiPath);
         Process::fake([
-            'docker compose*' => Process::result(
+            '*docker*compose*' => Process::result(
                 output: '{"Service":"traefik","State":"running"}',
             ),
         ]);
@@ -122,7 +125,7 @@ describe('isRunning', function (): void {
     it('returns false when containers exist but are not running', function (): void {
         installTraefik($this->globalTutiPath);
         Process::fake([
-            'docker compose*' => Process::result(
+            '*docker*compose*' => Process::result(
                 output: '{"Service":"traefik","State":"exited"}',
             ),
         ]);
@@ -148,8 +151,8 @@ describe('start', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose')
-            && str_contains($process->command, 'up -d'));
+        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'docker compose')
+            && str_contains(infraCommandStr($process), 'up -d'));
     });
 
     it('ensures network exists before starting', function (): void {
@@ -158,14 +161,14 @@ describe('start', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn ($process) => str_contains($process->command, 'docker network'));
+        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'docker network'));
     });
 
     it('throws when docker compose up fails', function (): void {
         installTraefik($this->globalTutiPath);
         Process::fake([
-            'docker network*' => Process::result('ok'),
-            'docker compose*' => Process::result(errorOutput: 'port in use', exitCode: 1),
+            '*docker*network*' => Process::result('ok'),
+            '*docker*compose*' => Process::result(errorOutput: 'port in use', exitCode: 1),
         ]);
 
         expect(fn () => $this->service->start())
@@ -183,7 +186,7 @@ describe('stop', function (): void {
         $this->service->stop();
 
         // Should not have run any Docker commands
-        Process::assertNotRan('docker compose*');
+        Process::assertNotRan('*docker*compose*');
     });
 
     it('runs docker compose down when installed', function (): void {
@@ -192,8 +195,8 @@ describe('stop', function (): void {
 
         $this->service->stop();
 
-        Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose')
-            && str_contains($process->command, 'down'));
+        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'docker compose')
+            && str_contains(infraCommandStr($process), 'down'));
     });
 });
 
@@ -207,8 +210,8 @@ describe('restart', function (): void {
 
         $this->service->restart();
 
-        Process::assertRan(fn ($process) => str_contains($process->command, 'down'));
-        Process::assertRan(fn ($process) => str_contains($process->command, 'up -d'));
+        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'down'));
+        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'up -d'));
     });
 });
 
@@ -218,7 +221,7 @@ describe('ensureNetworkExists', function (): void {
 
     it('returns true when network already exists', function (): void {
         Process::fake([
-            'docker network inspect*' => Process::result('ok'),
+            '*docker*network*inspect*' => Process::result('ok'),
         ]);
 
         expect($this->service->ensureNetworkExists())->toBeTrue();
@@ -226,19 +229,19 @@ describe('ensureNetworkExists', function (): void {
 
     it('creates network when it does not exist', function (): void {
         Process::fake([
-            'docker network inspect*' => Process::result(exitCode: 1),
-            'docker network create*' => Process::result('created'),
+            '*docker*network*inspect*' => Process::result(exitCode: 1),
+            '*docker*network*create*' => Process::result('created'),
         ]);
 
         expect($this->service->ensureNetworkExists())->toBeTrue();
 
-        Process::assertRan(fn ($process) => str_contains($process->command, 'docker network create'));
+        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'docker network create'));
     });
 
     it('throws when network creation fails', function (): void {
         Process::fake([
-            'docker network inspect*' => Process::result(exitCode: 1),
-            'docker network create*' => Process::result(errorOutput: 'permission denied', exitCode: 1),
+            '*docker*network*inspect*' => Process::result(exitCode: 1),
+            '*docker*network*create*' => Process::result(errorOutput: 'permission denied', exitCode: 1),
         ]);
 
         expect(fn () => $this->service->ensureNetworkExists())
@@ -252,7 +255,7 @@ describe('getStatus', function (): void {
 
     it('reports not_installed when traefik is not set up', function (): void {
         Process::fake([
-            'docker network*' => Process::result(exitCode: 1),
+            '*docker*network*' => Process::result(exitCode: 1),
         ]);
 
         $status = $this->service->getStatus();
@@ -264,8 +267,8 @@ describe('getStatus', function (): void {
     it('reports stopped when installed but not running', function (): void {
         installTraefik($this->globalTutiPath);
         Process::fake([
-            'docker compose*' => Process::result(output: ''),
-            'docker network*' => Process::result(exitCode: 1),
+            '*docker*compose*' => Process::result(output: ''),
+            '*docker*network*' => Process::result(exitCode: 1),
         ]);
 
         $status = $this->service->getStatus();
@@ -278,10 +281,10 @@ describe('getStatus', function (): void {
     it('reports healthy when installed and running', function (): void {
         installTraefik($this->globalTutiPath);
         Process::fake([
-            'docker compose*' => Process::result(
+            '*docker*compose*' => Process::result(
                 output: '{"Service":"traefik","State":"running"}',
             ),
-            'docker network*' => Process::result('ok'),
+            '*docker*network*' => Process::result('ok'),
         ]);
 
         $status = $this->service->getStatus();
@@ -293,8 +296,8 @@ describe('getStatus', function (): void {
 
     it('reports network status', function (): void {
         Process::fake([
-            'docker network inspect*' => Process::result('ok'),
-            'docker compose*' => Process::result(output: ''),
+            '*docker*network*inspect*' => Process::result('ok'),
+            '*docker*compose*' => Process::result(output: ''),
         ]);
 
         $status = $this->service->getStatus();

@@ -96,8 +96,8 @@ final class DockerExecutorService implements DockerExecutorInterface
 
         $parts = [
             'docker', 'compose',
-            '-f', "\"{$composePath}/docker-compose.yml\"",
-            '-f', "\"{$composePath}/docker-compose.dev.yml\"",
+            '-f', $composePath . '/docker-compose.yml',
+            '-f', $composePath . '/docker-compose.dev.yml',
             '--profile', 'cli',
             'run', '--rm',
             '-w', '/var/www/html',
@@ -106,18 +106,16 @@ final class DockerExecutorService implements DockerExecutorInterface
         // Add environment variables
         foreach ($env as $key => $value) {
             $parts[] = '-e';
-            $parts[] = "\"{$key}={$value}\"";
+            $parts[] = "{$key}={$value}";
         }
 
         $parts[] = 'wpcli';
         $parts[] = 'wp';
         $parts[] = $command;
 
-        $dockerCommand = implode(' ', $parts);
-
         $process = Process::timeout(self::DEFAULT_TIMEOUT)
             ->path($workDir)
-            ->run($dockerCommand);
+            ->run($parts);
 
         return new DockerExecutionResult(
             successful: $process->successful(),
@@ -171,7 +169,7 @@ final class DockerExecutorService implements DockerExecutorInterface
 
     public function isDockerAvailable(): bool
     {
-        $process = Process::run('docker info');
+        $process = Process::run(['docker', 'info']);
 
         return $process->successful();
     }
@@ -193,26 +191,26 @@ final class DockerExecutorService implements DockerExecutorInterface
         string $workDir,
         array $env,
         array $volumes
-    ): string {
+    ): array {
         $parts = [
             'docker',
             'run',
-            '--rm',                          // Remove container after execution
-            '--interactive',                  // Keep STDIN open
-            '-v', "\"{$workDir}:/app\"",     // Mount working directory
-            '-w', '/app',                    // Set working directory
+            '--rm',                      // Remove container after execution
+            '--interactive',             // Keep STDIN open
+            '-v', "{$workDir}:/app",     // Mount working directory
+            '-w', '/app',               // Set working directory
         ];
 
         // Add environment variables
         foreach ($env as $key => $value) {
             $parts[] = '-e';
-            $parts[] = "\"{$key}={$value}\"";
+            $parts[] = "{$key}={$value}";
         }
 
         // Add additional volumes
         foreach ($volumes as $hostPath => $containerPath) {
             $parts[] = '-v';
-            $parts[] = "\"{$hostPath}:{$containerPath}\"";
+            $parts[] = "{$hostPath}:{$containerPath}";
         }
 
         // Run as current user to avoid permission issues
@@ -229,9 +227,9 @@ final class DockerExecutorService implements DockerExecutorInterface
         $parts[] = $image;
         $parts[] = 'sh';
         $parts[] = '-c';
-        $parts[] = "\"{$command}\"";
+        $parts[] = $command;
 
-        return implode(' ', $parts);
+        return $parts;
     }
 
     /**
@@ -265,7 +263,7 @@ final class DockerExecutorService implements DockerExecutorInterface
      */
     public function pullImage(string $image): DockerExecutionResult
     {
-        $process = Process::timeout(300)->run("docker pull {$image}");
+        $process = Process::timeout(300)->run(['docker', 'pull', $image]);
 
         return new DockerExecutionResult(
             successful: $process->successful(),
@@ -280,7 +278,7 @@ final class DockerExecutorService implements DockerExecutorInterface
      */
     public function imageExists(string $image): bool
     {
-        $process = Process::run("docker image inspect {$image}");
+        $process = Process::run(['docker', 'image', 'inspect', $image]);
 
         return $process->successful();
     }
@@ -299,15 +297,15 @@ final class DockerExecutorService implements DockerExecutorInterface
 
         foreach ($env as $key => $value) {
             $parts[] = '-e';
-            $parts[] = "\"{$key}={$value}\"";
+            $parts[] = "{$key}={$value}";
         }
 
         $parts[] = $containerName;
         $parts[] = 'sh';
         $parts[] = '-c';
-        $parts[] = "\"{$command}\"";
+        $parts[] = $command;
 
-        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run(implode(' ', $parts));
+        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
 
         return new DockerExecutionResult(
             successful: $process->successful(),
