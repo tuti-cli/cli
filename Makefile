@@ -1,4 +1,4 @@
-.PHONY: help build up down restart shell logs clean test lint install build-phar build-binary build-binary-linux build-binary-mac test-phar test-binary install-local uninstall-local release version-bump check-build
+.PHONY: help build up down restart shell logs clean test lint install build-phar build-binary build-binary-linux build-binary-mac test-phar test-binary install-local uninstall-local release version-bump check-build c
 
 .DEFAULT_GOAL := help
 
@@ -37,10 +37,25 @@ else
 endif
 PLATFORM := $(PLATFORM_OS)-$(PLATFORM_ARCH)
 
+# =============================================================================
+# Universal Composer Command
+# =============================================================================
+
+# Usage: make c test:unit, make c lint, make c install
+c: ## Run any composer command (e.g., make c test:unit)
+	@$(DOCKER_EXEC) composer $(filter-out $@,$(MAKECMDGOALS))
+
+# Catch-all to prevent "No rule to make target" errors for arguments
+%:
+	@:
+
 help: ## Show this help message
 	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(RESET)"
 	@echo "$(CYAN)              Tuti CLI - Development Commands              $(RESET)"
 	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Composer (universal):$(RESET)"
+	@echo "  $(CYAN)make c <cmd>$(RESET)       Run any composer command (e.g., make c test:unit)"
 	@echo ""
 	@echo "$(YELLOW)Development:$(RESET)"
 	@grep -E '^(install|test|lint):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-18s$(RESET) %s\n", $$1, $$2}'
@@ -99,8 +114,11 @@ check-build: ## Check if app:build command is available
 test: ## Run all tests
 	@$(DOCKER_EXEC) php tuti test:unit
 
-lint: ## Run linter (Pint)
-	@$(DOCKER_EXEC) php tuti lint
+lint: ## Fix code formatting with Pint
+	@$(DOCKER_EXEC) composer lint
+
+refactor: ## Fix code with Rector
+	@$(DOCKER_EXEC) composer refactor
 
 # =============================================================================
 # Build & Release (runs inside Docker)
