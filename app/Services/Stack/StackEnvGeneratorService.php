@@ -64,14 +64,14 @@ final readonly class StackEnvGeneratorService
 
     private function generateSecureValues(string $content): string
     {
-        // Generate random passwords for CHANGE_THIS placeholders
-        $content = preg_replace_callback(
-            '/CHANGE_THIS(? :_IN_PRODUCTION)?/',
-            $this->generateSecurePassword(...),
-            $content
+        // Replace CHANGE_THIS and CHANGE_THIS_IN_PRODUCTION with secure random passwords
+        $result = preg_replace_callback(
+            '/CHANGE_THIS(?:_IN_PRODUCTION)?/',
+            fn (array $matches): string => $this->generateSecurePassword(),
+            $content,
         );
 
-        return $content;
+        return $result ?? $content;
     }
 
     private function generateSecurePassword(int $length = 32): string

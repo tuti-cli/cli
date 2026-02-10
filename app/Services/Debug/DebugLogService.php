@@ -15,8 +15,8 @@ use RuntimeException;
  */
 final class DebugLogService
 {
-    private const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
-    private const MAX_LOG_FILES = 5;
+    private const int MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
+    private const int MAX_LOG_FILES = 5;
 
     private static ?self $instance = null;
 

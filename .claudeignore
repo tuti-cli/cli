@@ -1,0 +1,53 @@
+# Claude Code Ignore File for tuti-cli
+# Files/directories listed here are excluded from Claude's context to save tokens
+
+# ─── Dependencies (largest token consumers) ───────────────────────────────
+vendor/
+node_modules/
+
+# ─── Build artifacts ──────────────────────────────────────────────────────
+builds/
+builds/build/
+*.phar
+
+# ─── IDE/Editor configs ───────────────────────────────────────────────────
+.idea/
+.vscode/
+.editorconfig
+
+# ─── Git internals ────────────────────────────────────────────────────────
+.git/
+.gitattributes
+
+# ─── Cache and temp ───────────────────────────────────────────────────────
+.phpunit.cache/
+.phpunit.result.cache
+.tmp/
+storage/logs/
+*.log
+
+# ─── Database ─────────────────────────────────────────────────────────────
+database/database.sqlite
+*.sqlite
+
+# ─── Lock files (large, frequently changing) ──────────────────────────────
+composer.lock
+package-lock.json
+yarn.lock
+
+# ─── Environment files ────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Docker local data ────────────────────────────────────────────────────
+.tuti/
+
+# ─── GitHub workflows (rarely needed for coding) ─────────────────────────
+.github/
+
+# ─── Docs phases (detailed planning docs, load on demand) ────────────────
+docs/phases/
+
+# ─── Binary outputs ───────────────────────────────────────────────────────
+tuti.phar

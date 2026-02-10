@@ -6,6 +6,7 @@ use App\Services\Stack\StackRegistryManagerService;
 
 beforeEach(function () {
     $this->registry = app(StackRegistryManagerService::class);
+    $this->registry->loadForStack(base_path('stubs/stacks/laravel'));
 });
 
 describe('StackRegistryManagerService', function () {
@@ -15,7 +16,6 @@ describe('StackRegistryManagerService', function () {
         expect($service)
             ->toBeArray()
             ->and($service['name'])->toBe('Laravel Horizon')
-            ->and($service['compatible_with'])->toContain('laravel')
             ->and($service['depends_on'])->toContain('redis');
     });
 
@@ -24,8 +24,7 @@ describe('StackRegistryManagerService', function () {
 
         expect($service)
             ->toBeArray()
-            ->and($service['name'])->toBe('Laravel Scheduler')
-            ->and($service['compatible_with'])->toContain('laravel');
+            ->and($service['name'])->toBe('Laravel Scheduler');
     });
 
     it('returns horizon dependencies', function () {

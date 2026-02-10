@@ -19,19 +19,21 @@ The local development features are functional but lack test coverage, CI validat
 Increase test coverage from ~5 test files to comprehensive coverage across all core commands and services.
 
 **Deliverables:**
-- [ ] Unit tests for all services in `app/Services/` (target: >90% coverage)
-  - [ ] `StackComposeBuilderService` - Compose generation with various service combinations
-  - [ ] `StackEnvGeneratorService` - Env file generation, secure password replacement
-  - [ ] `StackFilesCopierService` - Template file copying and substitution
-  - [ ] `StackLoaderService` - Stack.json parsing and validation
-  - [ ] `StackStubLoaderService` - Section-based stub parsing
-  - [ ] `DockerExecutorService` - Docker command building
-  - [ ] `GlobalRegistryService` - Project registration, listing, cleanup
-  - [ ] `GlobalSettingsService` - Settings read/write, dot-notation access
-  - [ ] `ProjectMetadataService` - Project config CRUD
-  - [ ] `ProjectStateManagerService` - Docker status querying
-  - [ ] `GlobalInfrastructureManager` - Traefik lifecycle
-  - [ ] `WorkingDirectoryService` - Project detection, path resolution
+- [x] Unit tests for all services in `app/Services/` (target: >90% coverage)
+  - [x] `StackComposeBuilderService` - Compose generation with various service combinations (28 tests)
+  - [x] `StackEnvGeneratorService` - Env file generation, secure password replacement
+  - [x] `StackFilesCopierService` - Template file copying and substitution (21 tests)
+  - [x] `StackLoaderService` - Stack.json parsing and validation
+  - [x] `StackStubLoaderService` - Section-based stub parsing
+  - [x] `DockerExecutorService` - Docker command building (26 tests)
+  - [x] `GlobalRegistryService` - Project registration, listing, cleanup (20 tests)
+  - [x] `GlobalSettingsService` - Settings read/write, dot-notation access (16 tests)
+  - [x] `ProjectMetadataService` - Project config CRUD (17 tests)
+  - [x] `ProjectStateManagerService` - Docker status querying (19 tests)
+  - [x] `GlobalInfrastructureManager` - Traefik lifecycle (23 tests)
+  - [x] `WorkingDirectoryService` - Project detection, path resolution
+  - [x] `DockerService` - Docker Compose wrapper (33 tests, refactored for testability)
+  - [x] `ProjectDirectoryService` - Project directory management (14 tests)
 - [ ] Feature tests for all user-facing commands (target: >80% coverage)
   - [ ] `install` command
   - [ ] `doctor` command
@@ -67,7 +69,7 @@ Set up automated testing on every pull request to prevent regressions.
 Fix known issues discovered during codebase analysis.
 
 **Deliverables:**
-- [ ] Fix `StackEnvGeneratorService.generateSecureValues()` regex bug - space in `CHANGE_THIS(? :_IN_PRODUCTION)?` pattern makes non-capturing group invalid
+- [x] Fix `StackEnvGeneratorService.generateSecureValues()` regex bug - space in `CHANGE_THIS(? :_IN_PRODUCTION)?` pattern makes non-capturing group invalid
 - [ ] Fix Redis password `null` string issue - ensure `REDIS_PASSWORD=` (empty) is used, not `REDIS_PASSWORD=null`
 - [ ] Validate Docker Compose YAML output for indentation correctness
 - [ ] Add JSON schema validation for `config.json`, `stack.json`, `registry.json` files
