@@ -13,7 +13,7 @@ declare(strict_types=1);
  * Same putenv('HOME') technique as GlobalSettingsServiceTest — we redirect
  * the home directory to a temp folder so we don't touch real user data.
  *
- * @see GlobalRegistryService
+ * @see \App\Services\Global\GlobalRegistryService
  */
 
 use App\Services\Global\GlobalRegistryService;

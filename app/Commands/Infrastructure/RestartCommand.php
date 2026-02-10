@@ -6,7 +6,6 @@ namespace App\Commands\Infrastructure;
 
 use App\Concerns\HasBrandedOutput;
 use App\Contracts\InfrastructureManagerInterface;
-use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 use function Laravel\Prompts\spin;
@@ -43,7 +42,7 @@ final class RestartCommand extends Command
             $this->success('Dashboard: https://traefik.local.test');
 
             return self::SUCCESS;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->failure('Failed to restart infrastructure: ' . $e->getMessage());
 
             return self::FAILURE;

@@ -49,7 +49,6 @@ final class LaravelCommand extends Command
 
             if ($mode === null) {
                 $this->failure('Installation cancelled.');
-
                 return self::FAILURE;
             }
 
@@ -61,13 +60,11 @@ final class LaravelCommand extends Command
 
             if ($config === null) {
                 $this->failure('Configuration cancelled.');
-
                 return self::FAILURE;
             }
 
             if (! $this->confirmConfiguration($config)) {
                 $this->warning('Installation cancelled.');
-
                 return self::SUCCESS;
             }
 
@@ -131,7 +128,6 @@ final class LaravelCommand extends Command
         if ($directoryService->exists() && ! $this->option('force')) {
             $this->failure('Project already initialized. ".tuti/" directory already exists.');
             $this->hint('Use --force to reinitialize (this will remove existing configuration)');
-
             return false;
         }
 
@@ -284,7 +280,6 @@ final class LaravelCommand extends Command
 
             if (count($serviceOptions) === 1) {
                 $defaults[] = "{$category}.{$serviceOptions[0]}";
-
                 continue;
             }
 
@@ -421,7 +416,7 @@ final class LaravelCommand extends Command
 
             if ($appKey !== null && str_starts_with($appKey, 'base64:')) {
                 $this->success('APP_KEY generated successfully');
-                $this->line('  ' . mb_substr($appKey, 0, 30) . '...');
+                $this->line('  ' . substr($appKey, 0, 30) . '...');
                 $this->updateEnvValue($config['project_path'], 'APP_KEY', $appKey);
             } else {
                 $this->warning('Could not generate APP_KEY automatically');
@@ -536,7 +531,7 @@ final class LaravelCommand extends Command
         if (preg_match("/^{$key}=/m", $content)) {
             $content = preg_replace("/^{$key}=.*$/m", "{$key}={$value}", $content);
         } else {
-            $content = mb_rtrim($content) . "\n{$key}={$value}\n";
+            $content = rtrim($content) . "\n{$key}={$value}\n";
         }
 
         file_put_contents($envPath, $content);

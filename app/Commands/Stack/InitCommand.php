@@ -22,7 +22,6 @@ use function Laravel\Prompts\warning;
 final class InitCommand extends Command
 {
     use HasBrandedOutput;
-
     // already defined in base Command class
     // {--env= :   Environment (dev, staging, production)}
     // {--no-interaction :   Run in non-interactive mode}
@@ -239,6 +238,7 @@ final class InitCommand extends Command
 
         return $stacks;
     }
+
 
     private function getProjectName(): string
     {

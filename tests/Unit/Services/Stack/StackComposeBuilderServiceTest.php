@@ -18,7 +18,7 @@ declare(strict_types=1);
  * with real registry.json, stack.json, and .stub files. This tests the
  * full pipeline end-to-end, which catches integration bugs mocks would miss.
  *
- * @see StackComposeBuilderService
+ * @see \App\Services\Stack\StackComposeBuilderService
  */
 
 use App\Services\Stack\StackComposeBuilderService;

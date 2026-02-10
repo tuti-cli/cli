@@ -82,11 +82,10 @@ final readonly class StackStubLoaderService
             if (preg_match('/^#\s*@section:\s*(\w+)\s*$/i', $line, $matches)) {
                 // Save previous section if it has content
                 if (! empty($currentContent)) {
-                    $sections[$currentSection] = mb_trim(implode("\n", $currentContent));
+                    $sections[$currentSection] = trim(implode("\n", $currentContent));
                 }
-                $currentSection = mb_strtolower($matches[1]);
+                $currentSection = strtolower($matches[1]);
                 $currentContent = [];
-
                 continue;
             }
 
@@ -95,7 +94,7 @@ final readonly class StackStubLoaderService
 
         // Save last section
         if (! empty($currentContent)) {
-            $sections[$currentSection] = mb_trim(implode("\n", $currentContent));
+            $sections[$currentSection] = trim(implode("\n", $currentContent));
         }
 
         return $sections;

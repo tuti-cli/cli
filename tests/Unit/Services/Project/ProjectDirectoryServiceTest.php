@@ -12,7 +12,7 @@ declare(strict_types=1);
  * It wraps WorkingDirectoryService with project-specific logic. We use
  * the real WorkingDirectoryService (not a mock) pointed at a temp dir.
  *
- * @see ProjectDirectoryService
+ * @see \App\Services\Project\ProjectDirectoryService
  */
 
 use App\Services\Context\WorkingDirectoryService;

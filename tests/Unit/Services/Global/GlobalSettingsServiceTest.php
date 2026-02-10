@@ -14,7 +14,7 @@ declare(strict_types=1);
  * instead of the real ~/.tuti/. This is cleaner than mocking because
  * we test real file I/O.
  *
- * @see GlobalSettingsService
+ * @see \App\Services\Global\GlobalSettingsService
  */
 
 use App\Services\Global\GlobalSettingsService;

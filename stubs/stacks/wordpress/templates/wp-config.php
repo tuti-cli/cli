@@ -1,6 +1,4 @@
 <?php
-
-declare(strict_types=1);
 /**
  * WordPress Configuration File
  *
@@ -11,12 +9,12 @@ declare(strict_types=1);
  */
 
 // ** Database settings - Using environment variables ** //
-define('DB_NAME', getenv('WORDPRESS_DB_NAME') ?: getenv('DB_DATABASE') ?: 'wordpress');
-define('DB_USER', getenv('WORDPRESS_DB_USER') ?: getenv('DB_USERNAME') ?: 'wordpress');
-define('DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: getenv('DB_PASSWORD') ?: '');
-define('DB_HOST', getenv('WORDPRESS_DB_HOST') ?: getenv('DB_HOST') ?: 'database');
-define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4');
-define('DB_COLLATE', getenv('DB_COLLATE') ?: '');
+define( 'DB_NAME', getenv('WORDPRESS_DB_NAME') ?: getenv('DB_DATABASE') ?: 'wordpress' );
+define( 'DB_USER', getenv('WORDPRESS_DB_USER') ?: getenv('DB_USERNAME') ?: 'wordpress' );
+define( 'DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: getenv('DB_PASSWORD') ?: '' );
+define( 'DB_HOST', getenv('WORDPRESS_DB_HOST') ?: getenv('DB_HOST') ?: 'database' );
+define( 'DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4' );
+define( 'DB_COLLATE', getenv('DB_COLLATE') ?: '' );
 
 /**
  * Authentication Unique Keys and Salts.
@@ -24,14 +22,14 @@ define('DB_COLLATE', getenv('DB_COLLATE') ?: '');
  *
  * Generate at: https://api.wordpress.org/secret-key/1.1/salt/
  */
-define('AUTH_KEY', getenv('WORDPRESS_AUTH_KEY') ?: getenv('WP_AUTH_KEY') ?: 'put your unique phrase here');
-define('SECURE_AUTH_KEY', getenv('WORDPRESS_SECURE_AUTH_KEY') ?: getenv('WP_SECURE_AUTH_KEY') ?: 'put your unique phrase here');
-define('LOGGED_IN_KEY', getenv('WORDPRESS_LOGGED_IN_KEY') ?: getenv('WP_LOGGED_IN_KEY') ?: 'put your unique phrase here');
-define('NONCE_KEY', getenv('WORDPRESS_NONCE_KEY') ?: getenv('WP_NONCE_KEY') ?: 'put your unique phrase here');
-define('AUTH_SALT', getenv('WORDPRESS_AUTH_SALT') ?: getenv('WP_AUTH_SALT') ?: 'put your unique phrase here');
-define('SECURE_AUTH_SALT', getenv('WORDPRESS_SECURE_AUTH_SALT') ?: getenv('WP_SECURE_AUTH_SALT') ?: 'put your unique phrase here');
-define('LOGGED_IN_SALT', getenv('WORDPRESS_LOGGED_IN_SALT') ?: getenv('WP_LOGGED_IN_SALT') ?: 'put your unique phrase here');
-define('NONCE_SALT', getenv('WORDPRESS_NONCE_SALT') ?: getenv('WP_NONCE_SALT') ?: 'put your unique phrase here');
+define( 'AUTH_KEY',         getenv('WORDPRESS_AUTH_KEY') ?: getenv('WP_AUTH_KEY') ?: 'put your unique phrase here' );
+define( 'SECURE_AUTH_KEY',  getenv('WORDPRESS_SECURE_AUTH_KEY') ?: getenv('WP_SECURE_AUTH_KEY') ?: 'put your unique phrase here' );
+define( 'LOGGED_IN_KEY',    getenv('WORDPRESS_LOGGED_IN_KEY') ?: getenv('WP_LOGGED_IN_KEY') ?: 'put your unique phrase here' );
+define( 'NONCE_KEY',        getenv('WORDPRESS_NONCE_KEY') ?: getenv('WP_NONCE_KEY') ?: 'put your unique phrase here' );
+define( 'AUTH_SALT',        getenv('WORDPRESS_AUTH_SALT') ?: getenv('WP_AUTH_SALT') ?: 'put your unique phrase here' );
+define( 'SECURE_AUTH_SALT', getenv('WORDPRESS_SECURE_AUTH_SALT') ?: getenv('WP_SECURE_AUTH_SALT') ?: 'put your unique phrase here' );
+define( 'LOGGED_IN_SALT',   getenv('WORDPRESS_LOGGED_IN_SALT') ?: getenv('WP_LOGGED_IN_SALT') ?: 'put your unique phrase here' );
+define( 'NONCE_SALT',       getenv('WORDPRESS_NONCE_SALT') ?: getenv('WP_NONCE_SALT') ?: 'put your unique phrase here' );
 
 /**
  * WordPress Database Table prefix.
@@ -42,11 +40,11 @@ $table_prefix = getenv('WORDPRESS_TABLE_PREFIX') ?: getenv('WP_TABLE_PREFIX') ?:
  * WordPress Site URLs
  * If not set, WordPress will auto-detect
  */
-if (getenv('WORDPRESS_HOME')) {
-    define('WP_HOME', getenv('WORDPRESS_HOME'));
+if ( getenv('WORDPRESS_HOME') ) {
+    define( 'WP_HOME', getenv('WORDPRESS_HOME') );
 }
-if (getenv('WORDPRESS_SITEURL')) {
-    define('WP_SITEURL', getenv('WORDPRESS_SITEURL'));
+if ( getenv('WORDPRESS_SITEURL') ) {
+    define( 'WP_SITEURL', getenv('WORDPRESS_SITEURL') );
 }
 
 /**
@@ -54,51 +52,51 @@ if (getenv('WORDPRESS_SITEURL')) {
  * Set via environment variables for security
  */
 $debug = filter_var(getenv('WORDPRESS_DEBUG') ?: getenv('WP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN);
-define('WP_DEBUG', $debug);
+define( 'WP_DEBUG', $debug );
 
-if (WP_DEBUG) {
-    define('WP_DEBUG_LOG', filter_var(getenv('WORDPRESS_DEBUG_LOG') ?: getenv('WP_DEBUG_LOG') ?: true, FILTER_VALIDATE_BOOLEAN));
-    define('WP_DEBUG_DISPLAY', filter_var(getenv('WORDPRESS_DEBUG_DISPLAY') ?: getenv('WP_DEBUG_DISPLAY') ?: true, FILTER_VALIDATE_BOOLEAN));
-    define('SCRIPT_DEBUG', true);
+if ( WP_DEBUG ) {
+    define( 'WP_DEBUG_LOG', filter_var(getenv('WORDPRESS_DEBUG_LOG') ?: getenv('WP_DEBUG_LOG') ?: true, FILTER_VALIDATE_BOOLEAN) );
+    define( 'WP_DEBUG_DISPLAY', filter_var(getenv('WORDPRESS_DEBUG_DISPLAY') ?: getenv('WP_DEBUG_DISPLAY') ?: true, FILTER_VALIDATE_BOOLEAN) );
+    define( 'SCRIPT_DEBUG', true );
 } else {
-    define('WP_DEBUG_LOG', false);
-    define('WP_DEBUG_DISPLAY', false);
+    define( 'WP_DEBUG_LOG', false );
+    define( 'WP_DEBUG_DISPLAY', false );
 }
 
 /**
  * Memory Limits
  */
-if (getenv('WP_MEMORY_LIMIT')) {
-    define('WP_MEMORY_LIMIT', getenv('WP_MEMORY_LIMIT'));
+if ( getenv('WP_MEMORY_LIMIT') ) {
+    define( 'WP_MEMORY_LIMIT', getenv('WP_MEMORY_LIMIT') );
 }
-if (getenv('WP_MAX_MEMORY_LIMIT')) {
-    define('WP_MAX_MEMORY_LIMIT', getenv('WP_MAX_MEMORY_LIMIT'));
+if ( getenv('WP_MAX_MEMORY_LIMIT') ) {
+    define( 'WP_MAX_MEMORY_LIMIT', getenv('WP_MAX_MEMORY_LIMIT') );
 }
 
 /**
  * SSL/HTTPS Settings
  * Trust the proxy headers when behind Traefik
  */
-if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+if ( isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' ) {
     $_SERVER['HTTPS'] = 'on';
 }
 
 /**
  * Redis Object Cache (if using Redis)
  */
-if (getenv('WP_REDIS_HOST')) {
-    define('WP_REDIS_HOST', getenv('WP_REDIS_HOST'));
-    define('WP_REDIS_PORT', getenv('WP_REDIS_PORT') ?: 6379);
-    if (getenv('WP_REDIS_PASSWORD')) {
-        define('WP_REDIS_PASSWORD', getenv('WP_REDIS_PASSWORD'));
+if ( getenv('WP_REDIS_HOST') ) {
+    define( 'WP_REDIS_HOST', getenv('WP_REDIS_HOST') );
+    define( 'WP_REDIS_PORT', getenv('WP_REDIS_PORT') ?: 6379 );
+    if ( getenv('WP_REDIS_PASSWORD') ) {
+        define( 'WP_REDIS_PASSWORD', getenv('WP_REDIS_PASSWORD') );
     }
 }
 
 /**
  * S3/MinIO Object Storage (if using MinIO)
  */
-if (getenv('AWS_ENDPOINT')) {
-    define('AS3CF_SETTINGS', serialize([
+if ( getenv('AWS_ENDPOINT') ) {
+    define( 'AS3CF_SETTINGS', serialize([
         'provider' => 's3',
         'use-server-roles' => false,
         'access-key-id' => getenv('AWS_ACCESS_KEY_ID'),
@@ -116,26 +114,26 @@ if (getenv('AWS_ENDPOINT')) {
  * Required for Docker environments where the ownership check
  * can fail on volume mounts even when permissions are correct.
  */
-define('FS_METHOD', 'direct');
+define( 'FS_METHOD', 'direct' );
 
 /**
  * Disable automatic updates in Docker environments
  * Updates should be handled through container rebuilds
  */
-define('AUTOMATIC_UPDATER_DISABLED', true);
-define('WP_AUTO_UPDATE_CORE', false);
+define( 'AUTOMATIC_UPDATER_DISABLED', true );
+define( 'WP_AUTO_UPDATE_CORE', false );
 
 /**
  * Disable file editing from admin
  * Best practice for security
  */
-define('DISALLOW_FILE_EDIT', true);
+define( 'DISALLOW_FILE_EDIT', true );
 
 /**
  * Absolute path to the WordPress directory.
  */
-if (! defined('ABSPATH')) {
-    define('ABSPATH', __DIR__ . '/');
+if ( ! defined( 'ABSPATH' ) ) {
+    define( 'ABSPATH', __DIR__ . '/' );
 }
 
 /** Sets up WordPress vars and included files. */

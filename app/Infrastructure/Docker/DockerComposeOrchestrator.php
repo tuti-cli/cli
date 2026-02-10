@@ -53,7 +53,6 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
                         $project->path . '/.tuti/docker/docker-compose.yml',
                     ],
                 ]);
-
                 return false;
             }
         }
@@ -156,7 +155,6 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             $this->debug->warning('Failed to get container status', [
                 'error' => $result->errorOutput(),
             ]);
-
             return [];
         }
 
@@ -212,7 +210,6 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
         }
 
         $lastError = end($errors);
-
         return $lastError['message'] . (isset($lastError['data']['error']) ? ': ' . $lastError['data']['error'] : '');
     }
 

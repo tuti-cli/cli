@@ -16,8 +16,8 @@ declare(strict_types=1);
  * We use real instances for all dependencies since they're all lightweight
  * filesystem-only services we've already tested.
  *
- * @see ProjectMetadataService
- * @see ProjectConfigurationVO
+ * @see \App\Services\Project\ProjectMetadataService
+ * @see \App\Domain\Project\ValueObjects\ProjectConfigurationVO
  */
 
 use App\Domain\Project\ValueObjects\ProjectConfigurationVO;

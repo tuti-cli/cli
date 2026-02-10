@@ -7,7 +7,7 @@ namespace App\Commands;
 use App\Concerns\HasBrandedOutput;
 use LaravelZero\Framework\Commands\Command;
 
-final class UIShowcaseCommand extends Command
+class UIShowcaseCommand extends Command
 {
     use HasBrandedOutput;
 
@@ -166,21 +166,21 @@ final class UIShowcaseCommand extends Command
         ]);
 
         // Or for failures:
-        $this->failed('Could not start services', [
-            'Check if Docker is running',
-            'Verify port availability',
-            'Run with --verbose for details',
-        ]);
+         $this->failed('Could not start services', [
+             'Check if Docker is running',
+             'Verify port availability',
+             'Run with --verbose for details',
+         ]);
 
         // ═══════════════════════════════════════════════════════════
         // Outro - Final branded message
         // ═══════════════════════════════════════════════════════════
 
         // With link
-        //        $this->outro('Thank you for using TUTI!', 'Documentation', 'https://tuti.cli');
+//        $this->outro('Thank you for using TUTI!', 'Documentation', 'https://tuti.cli');
 
         // Without link (text only, centered)
-        $this->outro('Thank you for using TUTI!');
+         $this->outro('Thank you for using TUTI!');
 
         return Command::SUCCESS;
     }
