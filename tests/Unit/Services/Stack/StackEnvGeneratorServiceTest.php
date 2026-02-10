@@ -18,7 +18,7 @@ declare(strict_types=1);
  *   - When regex failed, preg_replace_callback returned NULL, destroying
  *     the entire .env content
  *
- * @see StackEnvGeneratorService
+ * @see \App\Services\Stack\StackEnvGeneratorService
  */
 
 use App\Services\Stack\StackEnvGeneratorService;
@@ -98,7 +98,7 @@ ENV);
         expect($content)->not->toContain('CHANGE_THIS');
 
         // Passwords should be 32-char hex strings (bin2hex of 16 random bytes)
-        $lines = explode("\n", mb_trim($content));
+        $lines = explode("\n", trim($content));
         $dbPassword = explode('=', $lines[0], 2)[1];
         $redisPassword = explode('=', $lines[1], 2)[1];
 
@@ -124,7 +124,7 @@ ENV);
             ->not->toContain('CHANGE_THIS_IN_PRODUCTION')
             ->not->toContain('CHANGE_THIS');
 
-        $password = explode('=', mb_trim($content), 2)[1];
+        $password = explode('=', trim($content), 2)[1];
 
         expect($password)
             ->toHaveLength(32)
@@ -141,7 +141,7 @@ ENV);
 
         $this->service->generate($template, [], [], $output);
 
-        $lines = explode("\n", mb_trim(file_get_contents($output)));
+        $lines = explode("\n", trim(file_get_contents($output)));
         $passwords = array_map(
             fn (string $line): string => explode('=', $line, 2)[1],
             $lines,
@@ -271,7 +271,7 @@ describe('password security', function (): void {
 
         $this->service->generate($template, [], [], $output);
 
-        $password = explode('=', mb_trim(file_get_contents($output)), 2)[1];
+        $password = explode('=', trim(file_get_contents($output)), 2)[1];
 
         // 32 hex chars = 16 bytes of entropy = 128 bits
         // This is cryptographically strong enough for service passwords
@@ -289,7 +289,7 @@ describe('password security', function (): void {
 
             $this->service->generate($template, [], [], $output);
 
-            $passwords[] = explode('=', mb_trim(file_get_contents($output)), 2)[1];
+            $passwords[] = explode('=', trim(file_get_contents($output)), 2)[1];
         }
 
         // All 5 passwords should be unique (probability of collision is ~0)

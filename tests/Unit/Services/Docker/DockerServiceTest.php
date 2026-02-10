@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Tests the general-purpose Docker Compose wrapper that manages
  * a project's containers: start, stop, status, exec, logs, etc.
  *
- * @see DockerService
+ * @see \App\Services\Docker\DockerService
  */
 
 use App\Services\Docker\DockerService;

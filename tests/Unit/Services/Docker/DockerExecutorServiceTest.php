@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Tests the service that runs commands inside Docker containers
  * (composer, artisan, npm, wp-cli) without requiring them on the host.
  *
- * @see DockerExecutorService
+ * @see \App\Services\Docker\DockerExecutorService
  */
 
 use App\Contracts\DockerExecutionResult;

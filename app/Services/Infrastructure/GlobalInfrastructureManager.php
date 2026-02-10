@@ -7,10 +7,7 @@ namespace App\Services\Infrastructure;
 use App\Contracts\InfrastructureManagerInterface;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use RuntimeException;
-use SplFileInfo;
 
 /**
  * Global Infrastructure Manager.
@@ -23,11 +20,8 @@ use SplFileInfo;
 final class GlobalInfrastructureManager implements InfrastructureManagerInterface
 {
     private const INFRASTRUCTURE_DIR = 'infrastructure';
-
     private const TRAEFIK_DIR = 'traefik';
-
     private const NETWORK_NAME = 'traefik_proxy';
-
     private const COMPOSE_PROJECT_NAME = 'tuti-traefik';
 
     public function __construct(
@@ -55,7 +49,7 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
             return false;
         }
 
-        $output = mb_trim($process->output());
+        $output = trim($process->output());
         if (empty($output)) {
             return false;
         }
@@ -129,7 +123,7 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
 
         if (! $process->successful()) {
             throw new RuntimeException(
-                'Failed to start infrastructure: ' . $process->errorOutput()
+                "Failed to start infrastructure: " . $process->errorOutput()
             );
         }
     }
@@ -224,23 +218,6 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
     }
 
     /**
-     * Get the Traefik dashboard URL.
-     */
-    public function getDashboardUrl(): string
-    {
-        return 'https://traefik.local.test';
-    }
-
-    /**
-     * Restart the infrastructure.
-     */
-    public function restart(): void
-    {
-        $this->stop();
-        $this->start();
-    }
-
-    /**
      * Get path to Traefik directory.
      */
     private function getTraefikPath(): string
@@ -285,11 +262,11 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
             mkdir($destination, 0755, true);
         }
 
-        $directoryIterator = new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS);
-        $iterator = new RecursiveIteratorIterator($directoryIterator, RecursiveIteratorIterator::SELF_FIRST);
+        $directoryIterator = new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS);
+        $iterator = new \RecursiveIteratorIterator($directoryIterator, \RecursiveIteratorIterator::SELF_FIRST);
 
         foreach ($iterator as $item) {
-            /** @var SplFileInfo $item */
+            /** @var \SplFileInfo $item */
             $subPathname = $iterator->getSubPathname();
             $targetPath = $destination . DIRECTORY_SEPARATOR . $subPathname;
 
@@ -338,7 +315,7 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
         if (file_exists($examplePath)) {
             copy($examplePath, $envPath);
         } else {
-            $content = <<<'ENV'
+            $content = <<<ENV
 # Traefik Configuration
 TZ=UTC
 ACME_EMAIL=admin@local.test
@@ -421,11 +398,11 @@ ENV;
         $process = Process::run(['htpasswd', '-nb', 'admin', $password]);
 
         if ($process->successful()) {
-            file_put_contents($usersFile, mb_trim($process->output()));
+            file_put_contents($usersFile, trim($process->output()));
         } else {
             // Fallback: create a simple auth line (not hashed, for development only)
             // In production, user should run htpasswd manually
-            file_put_contents($usersFile, 'admin:$apr1$placeholder$placeholder');
+            file_put_contents($usersFile, "admin:\$apr1\$placeholder\$placeholder");
         }
 
         // Store password in .env
@@ -439,5 +416,22 @@ ENV;
             );
             file_put_contents($envPath, $envContent);
         }
+    }
+
+    /**
+     * Get the Traefik dashboard URL.
+     */
+    public function getDashboardUrl(): string
+    {
+        return 'https://traefik.local.test';
+    }
+
+    /**
+     * Restart the infrastructure.
+     */
+    public function restart(): void
+    {
+        $this->stop();
+        $this->start();
     }
 }

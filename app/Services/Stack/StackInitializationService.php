@@ -6,7 +6,6 @@ namespace App\Services\Stack;
 
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
-use Exception;
 use RuntimeException;
 
 /**
@@ -211,7 +210,6 @@ final readonly class StackInitializationService
         // Filter to only optional services (cache, mail, workers, search, storage, etc.)
         $optionalServices = array_filter($selectedServices, function (string $serviceKey) use ($baseCategories): bool {
             [$category] = explode('.', $serviceKey);
-
             return ! in_array($category, $baseCategories, true);
         });
 
@@ -240,7 +238,7 @@ final readonly class StackInitializationService
             }
 
             // Skip if service already exists in compose
-            if (mb_strpos($content, "  {$serviceName}:") !== false) {
+            if (strpos($content, "  {$serviceName}:") !== false) {
                 continue;
             }
 
@@ -286,7 +284,7 @@ final readonly class StackInitializationService
                     $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
                 }
 
-                if ($serviceYaml === null || mb_trim($serviceYaml) === '') {
+                if ($serviceYaml === null || trim($serviceYaml) === '') {
                     continue;
                 }
 
@@ -300,7 +298,7 @@ final readonly class StackInitializationService
                         $volumesToAdd[$volume] = $projectName;
                     }
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 // Skip if stub loading fails - service won't be added
                 continue;
             }
@@ -311,7 +309,7 @@ final readonly class StackInitializationService
         }
 
         // Insert services before networks section
-        $newContent = mb_substr($content, 0, $insertionPoint) . $servicesToAppend . "\n" . mb_substr($content, $insertionPoint);
+        $newContent = substr($content, 0, $insertionPoint) . $servicesToAppend . "\n" . substr($content, $insertionPoint);
 
         // Add volumes if any
         if (! empty($volumesToAdd)) {
@@ -349,7 +347,7 @@ final readonly class StackInitializationService
             [$category, $serviceName] = explode('.', $serviceKey);
 
             // Skip if service already exists in dev compose
-            if (mb_strpos($devContent, "  {$serviceName}:") !== false) {
+            if (strpos($devContent, "  {$serviceName}:") !== false) {
                 continue;
             }
 
@@ -365,12 +363,12 @@ final readonly class StackInitializationService
                 if ($this->stubLoader->hasSections($stubPath)) {
                     $devSection = $this->stubLoader->loadSection($stubPath, 'dev', $replacements);
 
-                    if ($devSection !== null && mb_trim($devSection) !== '') {
+                    if ($devSection !== null && trim($devSection) !== '') {
                         $indentedYaml = $this->indentServiceYaml($devSection);
                         $devServicesToAppend .= "\n" . $indentedYaml;
                     }
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 // Skip if dev section loading fails
                 continue;
             }
@@ -385,9 +383,9 @@ final readonly class StackInitializationService
 
         if ($devInsertionPoint === false) {
             // Append at end of file
-            $devContent = mb_rtrim($devContent) . "\n" . $devServicesToAppend . "\n";
+            $devContent = rtrim($devContent) . "\n" . $devServicesToAppend . "\n";
         } else {
-            $devContent = mb_substr($devContent, 0, $devInsertionPoint) . $devServicesToAppend . "\n" . mb_substr($devContent, $devInsertionPoint);
+            $devContent = substr($devContent, 0, $devInsertionPoint) . $devServicesToAppend . "\n" . substr($devContent, $devInsertionPoint);
         }
 
         file_put_contents($devComposeFile, $devContent);
@@ -431,7 +429,7 @@ final readonly class StackInitializationService
         }
 
         // Last resort: append at the end of file
-        return mb_strlen($content);
+        return strlen($content);
     }
 
     /**
@@ -442,7 +440,7 @@ final readonly class StackInitializationService
     private function appendVolumesToCompose(string $content, array $volumes): string
     {
         // Find the volumes section
-        $volumesPos = mb_strpos($content, "\nvolumes:");
+        $volumesPos = strpos($content, "\nvolumes:");
         if ($volumesPos === false) {
             // No volumes section, add it at the end
             $volumeSection = "\nvolumes:\n";
@@ -450,23 +448,22 @@ final readonly class StackInitializationService
                 $volumeSection .= "  {$volumeName}:\n";
                 $volumeSection .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
             }
-
             return $content . $volumeSection;
 
         }
 
         // Find end of file and add new volumes
-        $volumesToInsert = '';
+        $volumesToInsert = "";
         foreach ($volumes as $volumeName => $projectName) {
             // Check if volume already exists
-            if (mb_strpos($content, "  {$volumeName}:") === false) {
+            if (strpos($content, "  {$volumeName}:") === false) {
                 $volumesToInsert .= "  {$volumeName}:\n";
                 $volumesToInsert .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
             }
         }
 
-        if ($volumesToInsert !== '') {
-            $content = mb_rtrim($content) . "\n" . $volumesToInsert;
+        if ($volumesToInsert !== "") {
+            $content = rtrim($content) . "\n" . $volumesToInsert;
         }
 
         return $content;
@@ -478,13 +475,12 @@ final readonly class StackInitializationService
      */
     private function indentServiceYaml(string $yaml): string
     {
-        $lines = explode("\n", mb_trim($yaml));
+        $lines = explode("\n", trim($yaml));
         $result = [];
 
         foreach ($lines as $line) {
             if ($line === '') {
                 $result[] = '';
-
                 continue;
             }
 
@@ -507,7 +503,6 @@ final readonly class StackInitializationService
         // Just update it with Docker-specific variables
         if (file_exists($targetEnv)) {
             $this->appendTutiVariablesToEnv($targetEnv, $projectName);
-
             return;
         }
 
@@ -523,7 +518,6 @@ final readonly class StackInitializationService
         foreach ($templatePaths as $template) {
             if (file_exists($template)) {
                 $this->createEnvFromTemplate($template, $targetEnv, $projectName);
-
                 return;
             }
         }
@@ -541,7 +535,6 @@ final readonly class StackInitializationService
 
         if ($content === false) {
             $this->createMinimalEnvFile($targetPath, $projectName);
-
             return;
         }
 
@@ -617,7 +610,6 @@ ENV;
         // Check if tuti section already exists
         if (str_contains($content, '# TUTI-CLI DOCKER CONFIGURATION')) {
             file_put_contents($envPath, $content);
-
             return; // Already has tuti variables, just save updated content
         }
 
@@ -666,8 +658,8 @@ EOT;
     {
         // First try shell command (most reliable for WSL and Linux)
         $output = $this->executeShellCommand('id -u');
-        if ($output !== null && is_numeric(mb_trim($output))) {
-            return (int) mb_trim($output);
+        if ($output !== null && is_numeric(trim($output))) {
+            return (int) trim($output);
         }
 
         // Fallback to posix_getuid() (available on Unix systems)
@@ -689,8 +681,8 @@ EOT;
     {
         // First try shell command (most reliable for WSL and Linux)
         $output = $this->executeShellCommand('id -g');
-        if ($output !== null && is_numeric(mb_trim($output))) {
-            return (int) mb_trim($output);
+        if ($output !== null && is_numeric(trim($output))) {
+            return (int) trim($output);
         }
 
         // Fallback to posix_getgid() (available on Unix systems)
@@ -729,16 +721,16 @@ EOT;
                 fclose($pipes[2]);
                 proc_close($process);
 
-                if ($output !== false && mb_trim($output) !== '') {
-                    return mb_trim($output);
+                if ($output !== false && trim($output) !== '') {
+                    return trim($output);
                 }
             }
         }
 
         // Method 2: shell_exec
         $output = @shell_exec($command . ' 2>/dev/null');
-        if ($output !== null && mb_trim($output) !== '') {
-            return mb_trim($output);
+        if ($output !== null && trim($output) !== '') {
+            return trim($output);
         }
 
         // Method 3: exec
@@ -746,7 +738,7 @@ EOT;
             $result = [];
             @exec($command . ' 2>/dev/null', $result, $returnCode);
             if ($returnCode === 0 && ! empty($result)) {
-                return mb_trim($result[0]);
+                return trim($result[0]);
             }
         }
 

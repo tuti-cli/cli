@@ -50,7 +50,6 @@ final class WordPressCommand extends Command
 
             if ($mode === null) {
                 $this->failure('Installation cancelled.');
-
                 return self::FAILURE;
             }
 
@@ -62,13 +61,11 @@ final class WordPressCommand extends Command
 
             if ($config === null) {
                 $this->failure('Configuration cancelled.');
-
                 return self::FAILURE;
             }
 
             if (! $this->confirmConfiguration($config)) {
                 $this->warning('Installation cancelled.');
-
                 return self::SUCCESS;
             }
 
@@ -135,7 +132,6 @@ final class WordPressCommand extends Command
         if ($directoryService->exists() && ! $this->option('force')) {
             $this->failure('Project already initialized. ".tuti/" directory already exists.');
             $this->hint('Use --force to reinitialize (this will remove existing configuration)');
-
             return false;
         }
 
@@ -317,7 +313,6 @@ final class WordPressCommand extends Command
 
             if (count($serviceOptions) === 1) {
                 $defaults[] = "{$category}.{$serviceOptions[0]}";
-
                 continue;
             }
 
@@ -525,7 +520,7 @@ final class WordPressCommand extends Command
         if (preg_match("/^{$key}=/m", $content)) {
             $content = preg_replace("/^{$key}=.*$/m", "{$key}={$escapedValue}", $content);
         } else {
-            $content = mb_rtrim($content) . "\n{$key}={$escapedValue}\n";
+            $content = rtrim($content) . "\n{$key}={$escapedValue}\n";
         }
 
         file_put_contents($envPath, $content);

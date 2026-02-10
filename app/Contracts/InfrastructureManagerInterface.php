@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
-use RuntimeException;
-
 /**
  * Interface for managing global tuti-cli infrastructure.
  *
@@ -27,21 +25,21 @@ interface InfrastructureManagerInterface
     /**
      * Install the global infrastructure (Traefik, networks, etc.).
      *
-     * @throws RuntimeException If installation fails
+     * @throws \RuntimeException If installation fails
      */
     public function install(): void;
 
     /**
      * Start the infrastructure containers.
      *
-     * @throws RuntimeException If start fails
+     * @throws \RuntimeException If start fails
      */
     public function start(): void;
 
     /**
      * Stop the infrastructure containers.
      *
-     * @throws RuntimeException If stop fails
+     * @throws \RuntimeException If stop fails
      */
     public function stop(): void;
 

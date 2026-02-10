@@ -6,7 +6,6 @@ namespace App\Commands\Infrastructure;
 
 use App\Concerns\HasBrandedOutput;
 use App\Contracts\InfrastructureManagerInterface;
-use Exception;
 use LaravelZero\Framework\Commands\Command;
 
 use function Laravel\Prompts\confirm;
@@ -59,7 +58,7 @@ final class StopCommand extends Command
             $this->hint('Run "tuti infra:start" to start it again');
 
             return self::SUCCESS;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->failure('Failed to stop infrastructure: ' . $e->getMessage());
 
             return self::FAILURE;

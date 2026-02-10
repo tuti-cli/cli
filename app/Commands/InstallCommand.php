@@ -8,6 +8,7 @@ use App\Concerns\HasBrandedOutput;
 use App\Contracts\InfrastructureManagerInterface;
 use App\Services\Docker\DockerExecutorService;
 use Exception;
+use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
 use RuntimeException;
 
@@ -173,7 +174,6 @@ final class InstallCommand extends Command
         if ($infrastructureManager->isInstalled() && $this->option('force')) {
             if (! confirm('This will reinstall the Traefik infrastructure. Continue?', true)) {
                 $this->skipped('Infrastructure reinstallation cancelled');
-
                 return;
             }
         }
@@ -212,7 +212,7 @@ final class InstallCommand extends Command
         $this->note('To access local projects, add these entries to your hosts file:');
         $this->newLine();
 
-        $hostsContent = <<<'HOSTS'
+        $hostsContent = <<<HOSTS
         127.0.0.1 traefik.local.test
         127.0.0.1 *.local.test
         HOSTS;

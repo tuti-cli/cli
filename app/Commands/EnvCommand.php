@@ -25,7 +25,6 @@ final class EnvCommand extends Command
         if (! $dirService->exists()) {
             $this->failure('Not in a tuti project directory');
             $this->hint('Run this command from a project root or run "tuti stack:laravel" to create a project');
-
             return self::FAILURE;
         }
 
@@ -37,7 +36,6 @@ final class EnvCommand extends Command
             $this->failure('.env file not found in project root');
             $this->hint('Expected location: ' . $envFile);
             $this->hint('Run "tuti stack:laravel --force" to reinitialize');
-
             return self::FAILURE;
         }
 
@@ -101,8 +99,8 @@ final class EnvCommand extends Command
     /**
      * Check if variables exist in .env.
      *
-     * @param  array<int, string>  $lines
-     * @param  array<string, string>  $variables
+     * @param array<int, string> $lines
+     * @param array<string, string> $variables
      */
     private function checkVariables(array $lines, array $variables): void
     {
@@ -111,10 +109,10 @@ final class EnvCommand extends Command
             $value = null;
 
             foreach ($lines as $line) {
-                $line = mb_trim($line);
+                $line = trim($line);
                 if (str_starts_with($line, $var . '=')) {
                     $found = true;
-                    $value = mb_substr($line, mb_strlen($var) + 1);
+                    $value = substr($line, strlen($var) + 1);
                     break;
                 }
             }
@@ -141,7 +139,7 @@ final class EnvCommand extends Command
 
         foreach ($sensitiveKeys as $sensitive) {
             if (str_contains($key, $sensitive)) {
-                return str_repeat('*', min(mb_strlen($value), 20));
+                return str_repeat('*', min(strlen($value), 20));
             }
         }
 
@@ -151,19 +149,18 @@ final class EnvCommand extends Command
     /**
      * Show all environment variables with sensitive values masked.
      *
-     * @param  array<int, string>  $lines
+     * @param array<int, string> $lines
      */
     private function showEnvVariables(array $lines): void
     {
         foreach ($lines as $line) {
-            $line = mb_trim($line);
+            $line = trim($line);
 
             // Skip empty lines and comments
             if ($line === '' || str_starts_with($line, '#')) {
                 if (str_starts_with($line, '#')) {
                     $this->line("<fg=gray>{$line}</>");
                 }
-
                 continue;
             }
 
