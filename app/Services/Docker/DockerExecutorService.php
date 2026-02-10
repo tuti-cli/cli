@@ -110,8 +110,9 @@ final class DockerExecutorService implements DockerExecutorInterface
         }
 
         $parts[] = 'wpcli';
-        $parts[] = 'wp';
-        $parts[] = $command;
+        $parts[] = 'sh';
+        $parts[] = '-c';
+        $parts[] = "wp {$command}";
 
         $process = Process::timeout(self::DEFAULT_TIMEOUT)
             ->path($workDir)

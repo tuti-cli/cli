@@ -6,6 +6,7 @@ namespace App\Commands;
 
 use App\Concerns\HasBrandedOutput;
 use App\Contracts\InfrastructureManagerInterface;
+use App\Services\Docker\DockerExecutorService;
 use Exception;
 use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
@@ -66,9 +67,9 @@ final class InstallCommand extends Command
     {
         $this->section('Checking Prerequisites');
 
-        $process = Process::run(['docker', 'info']);
+        $process = DockerExecutorService::isDockerAvailable();
 
-        if (! $process->successful()) {
+        if (! $process) {
             $this->failure('Docker is not available or not running');
             $this->hint('Please install Docker Desktop and ensure it is running');
             $this->hint('Download from: https://www.docker.com/products/docker-desktop');
