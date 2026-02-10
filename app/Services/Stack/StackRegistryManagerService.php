@@ -24,9 +24,6 @@ final class StackRegistryManagerService
      */
     private ?array $currentRegistry = null;
 
-    /**
-     * @var string|null
-     */
     private ?string $currentStackPath = null;
 
     /**
@@ -40,6 +37,7 @@ final class StackRegistryManagerService
 
         if (isset($this->registryCache[$stackPath])) {
             $this->currentRegistry = $this->registryCache[$stackPath];
+
             return;
         }
 
@@ -71,6 +69,7 @@ final class StackRegistryManagerService
     public function getVersion(): string
     {
         $this->ensureRegistryLoaded();
+
         return $this->currentRegistry['version'] ?? '0.0.0';
     }
 
@@ -82,6 +81,7 @@ final class StackRegistryManagerService
     public function getAllServices(): array
     {
         $this->ensureRegistryLoaded();
+
         return $this->currentRegistry['services'] ?? [];
     }
 
@@ -93,6 +93,7 @@ final class StackRegistryManagerService
     public function getServicesByCategory(string $category): array
     {
         $this->ensureRegistryLoaded();
+
         return $this->currentRegistry['services'][$category] ?? [];
     }
 
@@ -119,6 +120,7 @@ final class StackRegistryManagerService
     public function hasService(string $category, string $serviceName): bool
     {
         $this->ensureRegistryLoaded();
+
         return isset($this->currentRegistry['services'][$category][$serviceName]);
     }
 
@@ -127,7 +129,7 @@ final class StackRegistryManagerService
      *
      * @param  string  $category  Service category (e.g., 'databases')
      * @param  string  $serviceName  Service name (e.g., 'postgres')
-     * @return string  Absolute path to stub file
+     * @return string Absolute path to stub file
      */
     public function getServiceStubPath(string $category, string $serviceName): string
     {
@@ -148,6 +150,7 @@ final class StackRegistryManagerService
     public function getServiceDefaultVariables(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
+
         return $service['default_variables'] ?? [];
     }
 
@@ -159,6 +162,7 @@ final class StackRegistryManagerService
     public function getServiceRequiredVariables(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
+
         return $service['required_variables'] ?? [];
     }
 
@@ -170,6 +174,7 @@ final class StackRegistryManagerService
     public function getCategories(): array
     {
         $this->ensureRegistryLoaded();
+
         return array_keys($this->currentRegistry['services'] ?? []);
     }
 
@@ -181,6 +186,7 @@ final class StackRegistryManagerService
     public function getServiceDependencies(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
+
         return $service['depends_on'] ?? [];
     }
 
@@ -189,7 +195,7 @@ final class StackRegistryManagerService
      * Adds any missing dependencies to the service list
      *
      * @param  array<int, string>  $selectedServices  Array of service keys (e.g., ['workers.horizon'])
-     * @return array<int, string>  Array of service keys including resolved dependencies
+     * @return array<int, string> Array of service keys including resolved dependencies
      */
     public function resolveDependencies(array $selectedServices): array
     {
@@ -274,6 +280,7 @@ final class StackRegistryManagerService
                     $sorted[] = $serviceKey;
                     unset($remaining[$key]);
                     $added = true;
+
                     continue;
                 }
 
@@ -283,6 +290,7 @@ final class StackRegistryManagerService
                     $sorted[] = $serviceKey;
                     unset($remaining[$key]);
                     $added = true;
+
                     continue;
                 }
 

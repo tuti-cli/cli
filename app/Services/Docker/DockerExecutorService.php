@@ -20,8 +20,11 @@ use RuntimeException;
 final class DockerExecutorService implements DockerExecutorInterface
 {
     private const DEFAULT_PHP_IMAGE = 'serversideup/php';
+
     private const DEFAULT_PHP_VERSION = '8.4';
+
     private const DEFAULT_NODE_IMAGE = 'node:20-alpine';
+
     private const DEFAULT_TIMEOUT = 600; // 10 minutes
 
     public function __construct(
@@ -87,6 +90,97 @@ final class DockerExecutorService implements DockerExecutorInterface
         return $this->runWpCliStandalone($command, $workDir, $env);
     }
 
+    public function exec(
+        string $image,
+        string $command,
+        string $workDir,
+        array $env = [],
+        array $volumes = []
+    ): DockerExecutionResult {
+        $this->ensureDockerAvailable();
+
+        // Build docker run command
+        $dockerCommand = $this->buildDockerCommand($image, $command, $workDir, $env, $volumes);
+
+        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($dockerCommand);
+
+        return new DockerExecutionResult(
+            successful: $process->successful(),
+            output: $process->output(),
+            errorOutput: $process->errorOutput(),
+            exitCode: $process->exitCode() ?? 1,
+        );
+    }
+
+    public function isDockerAvailable(): bool
+    {
+        $process = Process::run(['docker', 'info']);
+
+        return $process->successful();
+    }
+
+    public function getPhpImage(string $version = '8.4'): string
+    {
+        return "{$this->phpImage}:{$version}-cli";
+    }
+
+    /**
+     * Pull a Docker image if not available locally.
+     */
+    public function pullImage(string $image): DockerExecutionResult
+    {
+        $process = Process::timeout(300)->run(['docker', 'pull', $image]);
+
+        return new DockerExecutionResult(
+            successful: $process->successful(),
+            output: $process->output(),
+            errorOutput: $process->errorOutput(),
+            exitCode: $process->exitCode() ?? 1,
+        );
+    }
+
+    /**
+     * Check if a Docker image exists locally.
+     */
+    public function imageExists(string $image): bool
+    {
+        $process = Process::run(['docker', 'image', 'inspect', $image]);
+
+        return $process->successful();
+    }
+
+    /**
+     * Execute a command inside a running container.
+     *
+     * @param  array<string, string>  $env
+     */
+    public function execInContainer(
+        string $containerName,
+        string $command,
+        array $env = []
+    ): DockerExecutionResult {
+        $parts = ['docker', 'exec'];
+
+        foreach ($env as $key => $value) {
+            $parts[] = '-e';
+            $parts[] = "{$key}={$value}";
+        }
+
+        $parts[] = $containerName;
+        $parts[] = 'sh';
+        $parts[] = '-c';
+        $parts[] = $command;
+
+        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
+
+        return new DockerExecutionResult(
+            successful: $process->successful(),
+            output: $process->output(),
+            errorOutput: $process->errorOutput(),
+            exitCode: $process->exitCode() ?? 1,
+        );
+    }
+
     /**
      * Run WP-CLI via docker compose (when project is initialized).
      */
@@ -144,40 +238,6 @@ final class DockerExecutorService implements DockerExecutorInterface
         $fullCommand = "php -d memory_limit=512M /usr/local/bin/wp {$command}";
 
         return $this->exec($image, $fullCommand, $workDir, $env);
-    }
-
-    public function exec(
-        string $image,
-        string $command,
-        string $workDir,
-        array $env = [],
-        array $volumes = []
-    ): DockerExecutionResult {
-        $this->ensureDockerAvailable();
-
-        // Build docker run command
-        $dockerCommand = $this->buildDockerCommand($image, $command, $workDir, $env, $volumes);
-
-        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($dockerCommand);
-
-        return new DockerExecutionResult(
-            successful: $process->successful(),
-            output: $process->output(),
-            errorOutput: $process->errorOutput(),
-            exitCode: $process->exitCode() ?? 1,
-        );
-    }
-
-    public function isDockerAvailable(): bool
-    {
-        $process = Process::run(['docker', 'info']);
-
-        return $process->successful();
-    }
-
-    public function getPhpImage(string $version = '8.4'): string
-    {
-        return "{$this->phpImage}:{$version}-cli";
     }
 
     /**
@@ -257,62 +317,5 @@ final class DockerExecutorService implements DockerExecutorInterface
                 throw new RuntimeException("Failed to create directory: {$path}");
             }
         }
-    }
-
-    /**
-     * Pull a Docker image if not available locally.
-     */
-    public function pullImage(string $image): DockerExecutionResult
-    {
-        $process = Process::timeout(300)->run(['docker', 'pull', $image]);
-
-        return new DockerExecutionResult(
-            successful: $process->successful(),
-            output: $process->output(),
-            errorOutput: $process->errorOutput(),
-            exitCode: $process->exitCode() ?? 1,
-        );
-    }
-
-    /**
-     * Check if a Docker image exists locally.
-     */
-    public function imageExists(string $image): bool
-    {
-        $process = Process::run(['docker', 'image', 'inspect', $image]);
-
-        return $process->successful();
-    }
-
-    /**
-     * Execute a command inside a running container.
-     *
-     * @param  array<string, string>  $env
-     */
-    public function execInContainer(
-        string $containerName,
-        string $command,
-        array $env = []
-    ): DockerExecutionResult {
-        $parts = ['docker', 'exec'];
-
-        foreach ($env as $key => $value) {
-            $parts[] = '-e';
-            $parts[] = "{$key}={$value}";
-        }
-
-        $parts[] = $containerName;
-        $parts[] = 'sh';
-        $parts[] = '-c';
-        $parts[] = $command;
-
-        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
-
-        return new DockerExecutionResult(
-            successful: $process->successful(),
-            output: $process->output(),
-            errorOutput: $process->errorOutput(),
-            exitCode: $process->exitCode() ?? 1,
-        );
     }
 }
