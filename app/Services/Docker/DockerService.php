@@ -4,31 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services\Docker;
 
-use Symfony\Component\Process\Process;
-
-use function App\Services\get_project_name;
+use Illuminate\Support\Facades\Process;
 
 final readonly class DockerService
 {
-    private string $composePath;
-
-    private string $projectName;
-
-    public function __construct()
-    {
-        $this->composePath = tuti_path('docker/docker-compose.yml');
-        $this->projectName = get_project_name();
-    }
+    public function __construct(
+        private string $composePath,
+        private string $projectName,
+        private ?string $envFilePath = null,
+    ) {}
 
     /**
      * Check if Docker is running
      */
     public function isRunning(): bool
     {
-        $process = new Process(['docker', 'info']);
-        $process->run();
-
-        return $process->isSuccessful();
+        return Process::run('docker info')->successful();
     }
 
     /**
@@ -74,14 +65,14 @@ final readonly class DockerService
      */
     public function getStatus(): array
     {
-        $process = $this->createDockerComposeProcess(['ps', '--format', 'json']);
-        $process->run();
+        $command = $this->buildComposeCommand(['ps', '--format', 'json']);
+        $process = Process::run($command);
 
-        if (! $process->isSuccessful()) {
+        if (! $process->successful()) {
             return [];
         }
 
-        $output = $process->getOutput();
+        $output = $process->output();
         $services = [];
 
         // Docker Compose v2 returns NDJSON (newline-delimited JSON)
@@ -122,15 +113,14 @@ final readonly class DockerService
         $args[] = '-c';
         $args[] = $command;
 
-        $process = $this->createDockerComposeProcess($args);
-        $process->setTimeout(null);
-        $process->run();
+        $composeCommand = $this->buildComposeCommand($args);
+        $process = Process::timeout(0)->run($composeCommand);
 
         return [
-            'success' => $process->isSuccessful(),
-            'output' => $process->getOutput(),
-            'error' => $process->getErrorOutput(),
-            'exit_code' => $process->getExitCode(),
+            'success' => $process->successful(),
+            'output' => $process->output(),
+            'error' => $process->errorOutput(),
+            'exit_code' => $process->exitCode(),
         ];
     }
 
@@ -147,13 +137,14 @@ final readonly class DockerService
 
         $args[] = $service;
 
-        $process = $this->createDockerComposeProcess($args);
-        $process->setTimeout(null);
+        $composeCommand = $this->buildComposeCommand($args);
 
         if ($callback) {
-            $process->run($callback);
+            Process::timeout(0)->run($composeCommand, $callback);
         } else {
-            $process->run(fn ($type, $buffer): string => print_r($buffer, true));
+            Process::timeout(0)->run($composeCommand, function ($type, $buffer): void {
+                echo $buffer;
+            });
         }
     }
 
@@ -182,19 +173,19 @@ final readonly class DockerService
      */
     public function getContainerIp(string $containerName): ?string
     {
-        $process = new Process([
-            'docker', 'inspect',
-            '--format', '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
+        $process = Process::run([
+            'docker',
+            'inspect',
+            '--format',
+            '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
             $containerName,
         ]);
 
-        $process->run();
-
-        if (! $process->isSuccessful()) {
+        if (! $process->successful()) {
             return null;
         }
 
-        $ip = mb_trim($process->getOutput());
+        $ip = mb_trim($process->output());
 
         return $ip !== '' ? $ip : null;
     }
@@ -252,41 +243,38 @@ final readonly class DockerService
      */
     private function runDockerCompose(array $args): bool
     {
-        $process = $this->createDockerComposeProcess($args);
-        $process->setTimeout(600);
-        $process->run();
+        $command = $this->buildComposeCommand($args);
 
-        return $process->isSuccessful();
+        return Process::timeout(600)->run($command)->successful();
     }
 
     /**
-     * Create docker-compose process
+     * Build docker compose command string
      */
-    private function createDockerComposeProcess(array $args): Process
+    private function buildComposeCommand(array $args): string
     {
-        $command = ['docker', 'compose'];
+        $parts = ['docker', 'compose'];
 
         // Add compose file
-        $command[] = '-f';
-        $command[] = $this->composePath;
+        $parts[] = '-f';
+        $parts[] = $this->composePath;
 
         // Add project name
-        $command[] = '-p';
-        $command[] = $this->projectName;
+        $parts[] = '-p';
+        $parts[] = $this->projectName;
 
         // Add environment file
-        $envFile = tuti_path('environments/local.env');
-        if (file_exists($envFile)) {
-            $command[] = '--env-file';
-            $command[] = $envFile;
+        if ($this->envFilePath !== null && file_exists($this->envFilePath)) {
+            $parts[] = '--env-file';
+            $parts[] = $this->envFilePath;
         }
 
         // Add arguments
         foreach ($args as $arg) {
-            $command[] = $arg;
+            $parts[] = $arg;
         }
 
-        return new Process($command);
+        return implode(' ', $parts);
     }
 
     /**
@@ -315,16 +303,14 @@ final readonly class DockerService
         }
 
         // Linux/Mac
-        $process = new Process(['lsof', '-i', ":{$port}", '-t']);
-        $process->run();
+        $process = Process::run("lsof -i :{$port} -t");
 
-        if ($process->isSuccessful()) {
-            $pid = mb_trim($process->getOutput());
+        if ($process->successful()) {
+            $pid = mb_trim($process->output());
             if ($pid !== '') {
-                $psProcess = new Process(['ps', '-p', $pid, '-o', 'comm=']);
-                $psProcess->run();
+                $psProcess = Process::run("ps -p {$pid} -o comm=");
 
-                $name = mb_trim($psProcess->getOutput());
+                $name = mb_trim($psProcess->output());
 
                 return $name !== '' ? $name : 'unknown';
             }

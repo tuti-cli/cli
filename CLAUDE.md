@@ -3,6 +3,25 @@
 > Multi-framework Docker environment management tool built with Laravel Zero.
 > Builds to a self-contained PHAR/native binary via phpacker.
 
+## Token Optimization Rules
+
+**IMPORTANT: Follow these rules to minimize token usage:**
+
+1. **Never read**: `vendor/`, `builds/`, `.git/`, `composer.lock`, `*.phar`, `*.sqlite`
+2. **Use grep first**: Before reading files, use grep to find exact locations
+3. **Read targeted**: Read only specific line ranges, not entire files
+4. **Skip docs**: Don't read `.claude/docs/*` unless specifically asked
+5. **Trust CLAUDE.md**: This file contains all patterns - don't re-read source for conventions
+6. **Batch edits**: Group multiple changes per file into single edit operations
+7. **No redundant context**: Don't re-read files already in conversation
+
+**Quick Reference Commands:**
+```bash
+composer test:unit          # Run tests (use for validation)
+composer test:types         # PHPStan check
+./vendor/bin/pest --filter "test name"  # Run single test
+```
+
 ## Tech Stack
 
 | Dependency | Version | Purpose |

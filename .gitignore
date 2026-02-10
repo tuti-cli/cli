@@ -45,3 +45,6 @@ phpstan.neon
 *.phar
 /box.json.dist
 /app/Commands/Test/docker-compose.test.yml
+
+# Claude Code (local ignore, settings are tracked)
+# .claude/ is tracked for team settings
