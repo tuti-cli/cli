@@ -216,7 +216,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
     /**
      * Build docker compose command string for the project.
      */
-    private function buildComposeCommand(Project $project, array $args): string
+    private function buildComposeCommand(Project $project, array $args): array
     {
         $parts = ['docker', 'compose'];
 
@@ -263,6 +263,6 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             'env_file' => file_exists($projectEnv) ? $projectEnv : 'not found',
         ]);
 
-        return implode(' ', $parts);
+        return $parts;
     }
 }
