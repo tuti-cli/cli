@@ -230,6 +230,135 @@ describe('all', function (): void {
     });
 });
 
+// ─── remove() ────────────────────────────────────────────────────────────
+// Removes a project from the registry by name.
+
+describe('remove', function (): void {
+
+    it('removes registered project and returns true', function (): void {
+        $this->service->register('my-app', ['path' => '/projects/my-app', 'stack' => 'laravel']);
+
+        $result = $this->service->remove('my-app');
+
+        expect($result)->toBeTrue();
+        expect($this->service->getProject('my-app'))->toBeNull();
+    });
+
+    it('returns false for non-existent project', function (): void {
+        expect($this->service->remove('nonexistent'))->toBeFalse();
+    });
+
+    it('does not affect other registered projects', function (): void {
+        $this->service->register('app-one', ['path' => '/projects/app-one', 'stack' => 'laravel']);
+        $this->service->register('app-two', ['path' => '/projects/app-two', 'stack' => 'wordpress']);
+
+        $this->service->remove('app-one');
+
+        expect($this->service->getProject('app-one'))->toBeNull();
+        expect($this->service->getProject('app-two'))->toBeArray()->toHaveKey('stack');
+    });
+
+    it('persists removal to disk', function (): void {
+        $this->service->register('my-app', ['path' => '/projects/my-app']);
+        $this->service->remove('my-app');
+
+        // Fresh instance should also not find the project
+        $fresh = new GlobalRegistryService(new JsonFileService);
+        expect($fresh->getProject('my-app'))->toBeNull();
+    });
+});
+
+// ─── getStaleProjects() ──────────────────────────────────────────────────
+// Returns projects whose paths no longer exist on disk.
+
+describe('getStaleProjects', function (): void {
+
+    it('returns empty when no stale projects', function (): void {
+        $this->service->register('valid-app', ['path' => $this->testDir, 'stack' => 'laravel']);
+
+        expect($this->service->getStaleProjects())->toBeEmpty();
+    });
+
+    it('detects projects with non-existent paths', function (): void {
+        $this->service->register('stale-app', [
+            'path' => '/nonexistent/path/that/does/not/exist',
+            'stack' => 'laravel',
+        ]);
+
+        $stale = $this->service->getStaleProjects();
+
+        expect($stale)->toHaveCount(1)->toHaveKey('stale-app');
+    });
+
+    it('detects projects with missing path key', function (): void {
+        $this->service->register('no-path-app', ['stack' => 'laravel']);
+
+        $stale = $this->service->getStaleProjects();
+
+        expect($stale)->toHaveCount(1)->toHaveKey('no-path-app');
+    });
+
+    it('returns only stale projects, not valid ones', function (): void {
+        $this->service->register('valid-app', ['path' => $this->testDir, 'stack' => 'laravel']);
+        $this->service->register('stale-app', ['path' => '/nonexistent/path', 'stack' => 'wordpress']);
+
+        $stale = $this->service->getStaleProjects();
+
+        expect($stale)->toHaveCount(1)->toHaveKey('stale-app');
+        expect($stale)->not->toHaveKey('valid-app');
+    });
+
+    it('returns empty when no projects registered', function (): void {
+        expect($this->service->getStaleProjects())->toBeEmpty();
+    });
+});
+
+// ─── pruneStale() ────────────────────────────────────────────────────────
+// Removes all stale projects from the registry.
+
+describe('pruneStale', function (): void {
+
+    it('removes stale projects and returns count', function (): void {
+        $this->service->register('stale-one', ['path' => '/nonexistent/one', 'stack' => 'laravel']);
+        $this->service->register('stale-two', ['path' => '/nonexistent/two', 'stack' => 'wordpress']);
+
+        $count = $this->service->pruneStale();
+
+        expect($count)->toBe(2);
+        expect($this->service->all())->toBeEmpty();
+    });
+
+    it('returns zero when no stale projects', function (): void {
+        $this->service->register('valid-app', ['path' => $this->testDir, 'stack' => 'laravel']);
+
+        expect($this->service->pruneStale())->toBe(0);
+    });
+
+    it('preserves valid projects while removing stale ones', function (): void {
+        $this->service->register('valid-app', ['path' => $this->testDir, 'stack' => 'laravel']);
+        $this->service->register('stale-app', ['path' => '/nonexistent/path', 'stack' => 'wordpress']);
+
+        $count = $this->service->pruneStale();
+
+        expect($count)->toBe(1);
+        expect($this->service->getProject('valid-app'))->toBeArray();
+        expect($this->service->getProject('stale-app'))->toBeNull();
+    });
+
+    it('returns zero when no projects registered', function (): void {
+        expect($this->service->pruneStale())->toBe(0);
+    });
+
+    it('persists pruned state to disk', function (): void {
+        $this->service->register('stale-app', ['path' => '/nonexistent/path', 'stack' => 'laravel']);
+        $this->service->pruneStale();
+
+        // Fresh instance should also not find the pruned project
+        $fresh = new GlobalRegistryService(new JsonFileService);
+        expect($fresh->getProject('stale-app'))->toBeNull();
+    });
+});
+
 // ─── Data persistence ───────────────────────────────────────────────────
 // Verifies the JSON file on disk contains correct structure.
 

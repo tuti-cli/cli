@@ -112,11 +112,6 @@
             "generator": "secure_random",
             "length": 32,
             "description": "Database password"
-        },
-        "REDIS_PASSWORD": {
-            "generator": "secure_random_or_null",
-            "length": 32,
-            "description": "Redis password (optional for dev)"
         }
     }
 }

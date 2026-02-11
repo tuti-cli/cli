@@ -62,6 +62,63 @@ final readonly class GlobalRegistryService
     }
 
     /**
+     * Remove a project from the registry by name.
+     */
+    public function remove(string $name): bool
+    {
+        $registry = $this->load();
+
+        if (! isset($registry['projects'][$name])) {
+            return false;
+        }
+
+        unset($registry['projects'][$name]);
+        $this->save($registry);
+
+        return true;
+    }
+
+    /**
+     * Get projects whose paths no longer exist on disk.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function getStaleProjects(): array
+    {
+        $stale = [];
+
+        foreach ($this->all() as $name => $data) {
+            if (! isset($data['path']) || ! is_dir($data['path'])) {
+                $stale[$name] = $data;
+            }
+        }
+
+        return $stale;
+    }
+
+    /**
+     * Remove all stale projects from the registry.
+     */
+    public function pruneStale(): int
+    {
+        $stale = $this->getStaleProjects();
+
+        if ($stale === []) {
+            return 0;
+        }
+
+        $registry = $this->load();
+
+        foreach (array_keys($stale) as $name) {
+            unset($registry['projects'][$name]);
+        }
+
+        $this->save($registry);
+
+        return count($stale);
+    }
+
+    /**
      * Load registry data.
      */
     private function load(): array

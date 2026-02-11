@@ -127,7 +127,67 @@ final readonly class StackLoaderService
             }
         }
 
+        if (isset($stackManifest['required_services'])) {
+            $this->validateServicesStructure($stackManifest['required_services'], 'required_services');
+        }
+
+        if (isset($stackManifest['optional_services'])) {
+            $this->validateServicesStructure($stackManifest['optional_services'], 'optional_services');
+        }
+
+        if (isset($stackManifest['generated_variables'])) {
+            $this->validateGeneratedVariables($stackManifest['generated_variables']);
+        }
+
         return true;
+    }
+
+    /**
+     * Validate service entries have required structure.
+     *
+     * @param  array<string, mixed>  $services
+     */
+    private function validateServicesStructure(array $services, string $sectionName): void
+    {
+        foreach ($services as $key => $entry) {
+            if (! is_array($entry)) {
+                throw new RuntimeException("{$sectionName}.{$key} must be an array");
+            }
+
+            if (! isset($entry['category']) || ! is_string($entry['category'])) {
+                throw new RuntimeException("{$sectionName}.{$key} must have a string 'category' field");
+            }
+
+            if (! isset($entry['options']) || ! is_array($entry['options'])) {
+                throw new RuntimeException("{$sectionName}.{$key} must have an array 'options' field");
+            }
+        }
+    }
+
+    /**
+     * Validate generated_variables entries have valid generators.
+     *
+     * @param  array<string, mixed>  $variables
+     */
+    private function validateGeneratedVariables(array $variables): void
+    {
+        $allowedGenerators = ['secure_random', 'laravel_key'];
+
+        foreach ($variables as $key => $entry) {
+            if (! is_array($entry)) {
+                throw new RuntimeException("generated_variables.{$key} must be an array");
+            }
+
+            if (! isset($entry['generator'])) {
+                throw new RuntimeException("generated_variables.{$key} must have a 'generator' field");
+            }
+
+            if (! in_array($entry['generator'], $allowedGenerators, true)) {
+                throw new RuntimeException(
+                    "generated_variables.{$key} has invalid generator '{$entry['generator']}'. Allowed: " . implode(', ', $allowedGenerators)
+                );
+            }
+        }
     }
 
     /**

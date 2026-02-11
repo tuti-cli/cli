@@ -7,6 +7,8 @@ namespace App\Services\Stack;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use RuntimeException;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Service StackInitializationService
@@ -316,6 +318,7 @@ final readonly class StackInitializationService
             $newContent = $this->appendVolumesToCompose($newContent, $volumesToAdd);
         }
 
+        $this->validateYaml($newContent, $composeFile);
         file_put_contents($composeFile, $newContent);
 
         // Also append dev sections to docker-compose.dev.yml
@@ -388,6 +391,7 @@ final readonly class StackInitializationService
             $devContent = substr($devContent, 0, $devInsertionPoint) . $devServicesToAppend . "\n" . substr($devContent, $devInsertionPoint);
         }
 
+        $this->validateYaml($devContent, $devComposeFile);
         file_put_contents($devComposeFile, $devContent);
     }
 
@@ -489,6 +493,20 @@ final readonly class StackInitializationService
         }
 
         return implode("\n", $result);
+    }
+
+    /**
+     * Validate that generated YAML content is parseable.
+     */
+    private function validateYaml(string $content, string $filePath): void
+    {
+        try {
+            Yaml::parse($content);
+        } catch (ParseException $e) {
+            throw new RuntimeException(
+                "Generated invalid YAML for {$filePath}: {$e->getMessage()}"
+            );
+        }
     }
 
     /**

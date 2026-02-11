@@ -61,8 +61,42 @@ final class StackRegistryManagerService
             throw new RuntimeException('Failed to parse service registry JSON: ' . json_last_error_msg());
         }
 
+        $this->validateRegistry($decoded, $registryPath);
+
         $this->registryCache[$stackPath] = $decoded;
         $this->currentRegistry = $decoded;
+    }
+
+    /**
+     * Validate registry structure after loading.
+     *
+     * @param  array<string, mixed>  $registry
+     */
+    private function validateRegistry(array $registry, string $path): void
+    {
+        if (! isset($registry['version'])) {
+            throw new RuntimeException("Service registry missing 'version' key: {$path}");
+        }
+
+        if (! isset($registry['services']) || ! is_array($registry['services'])) {
+            throw new RuntimeException("Service registry missing 'services' key: {$path}");
+        }
+
+        foreach ($registry['services'] as $category => $services) {
+            foreach ($services as $serviceName => $entry) {
+                if (! is_array($entry)) {
+                    continue;
+                }
+
+                if (! isset($entry['name'])) {
+                    throw new RuntimeException("Service '{$category}.{$serviceName}' missing 'name' field in: {$path}");
+                }
+
+                if (! isset($entry['stub'])) {
+                    throw new RuntimeException("Service '{$category}.{$serviceName}' missing 'stub' field in: {$path}");
+                }
+            }
+        }
     }
 
     /**

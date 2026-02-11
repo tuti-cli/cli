@@ -70,10 +70,10 @@ Fix known issues discovered during codebase analysis.
 
 **Deliverables:**
 - [x] Fix `StackEnvGeneratorService.generateSecureValues()` regex bug - space in `CHANGE_THIS(? :_IN_PRODUCTION)?` pattern makes non-capturing group invalid
-- [ ] Fix Redis password `null` string issue - ensure `REDIS_PASSWORD=` (empty) is used, not `REDIS_PASSWORD=null`
-- [ ] Validate Docker Compose YAML output for indentation correctness
-- [ ] Add JSON schema validation for `config.json`, `stack.json`, `registry.json` files
-- [ ] Handle stale entries in `GlobalRegistryService.projects.json` (detect moved/deleted directories)
+- [x] Fix Redis password `null` string issue - ensure `REDIS_PASSWORD=` (empty) is used, not `REDIS_PASSWORD=null`
+- [x] Validate Docker Compose YAML output for indentation correctness
+- [x] Add JSON schema validation for `config.json`, `stack.json`, `registry.json` files
+- [x] Handle stale entries in `GlobalRegistryService.projects.json` (detect moved/deleted directories)
 
 ### 1.4 Remove Dev Commands from Production (Priority: High)
 
@@ -117,7 +117,7 @@ Complete the `wp:setup` placeholder command.
 - [ ] Test coverage: Commands >80%, Services >90%
 - [ ] CI pipeline runs on every PR and blocks merging on failure
 - [ ] No dev/test commands in production binary
-- [ ] Known bugs fixed (regex, Redis, YAML validation)
+- [x] Known bugs fixed (regex, Redis, YAML validation)
 - [ ] A new user can install and create a Laravel/WordPress project following the README
 - [ ] `tuti doctor` catches all common configuration issues
 
