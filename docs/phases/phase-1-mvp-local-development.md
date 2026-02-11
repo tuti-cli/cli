@@ -53,14 +53,14 @@ Increase test coverage from ~5 test files to comprehensive coverage across all c
 Set up automated testing on every pull request to prevent regressions.
 
 **Deliverables:**
-- [ ] GitHub Actions workflow: `.github/workflows/tests.yml`
-  - [ ] Triggers on PR open/update/push to main
-  - [ ] Runs: Rector (dry-run) -> Pint (dry-run) -> PHPStan -> Pest
-  - [ ] PHP 8.4 environment
-  - [ ] Caches Composer dependencies
-  - [ ] Reports results as PR checks
+- [x] GitHub Actions workflow: `.github/workflows/tests.yml`
+  - [x] Triggers on PR open/update/push to main
+  - [x] Runs: Rector (dry-run) -> Pint (dry-run) -> PHPStan -> Pest
+  - [x] PHP 8.4 environment
+  - [x] Caches Composer dependencies
+  - [x] Reports results as PR checks
 - [ ] Branch protection rules on `main` requiring passing checks
-- [ ] Badge in README showing CI status
+- [x] Badge in README showing CI status
 
 **User Stories:** US-12.1 (CI Test Pipeline)
 

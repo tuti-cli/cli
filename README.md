@@ -1,5 +1,7 @@
 # Tuti CLI
 
+[![Tests](https://github.com/tuti-cli/cli/actions/workflows/tests.yml/badge.svg)](https://github.com/tuti-cli/cli/actions/workflows/tests.yml)
+
 **Docker-based environment management for Laravel projects.**
 
 One command to set up local development. **Zero dependencies required.**
