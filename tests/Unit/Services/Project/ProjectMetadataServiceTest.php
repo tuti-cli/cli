@@ -251,6 +251,44 @@ describe('isInitialized', function (): void {
     });
 });
 
+// ─── validate() ──────────────────────────────────────────────────────────
+// Validates structure of a project configuration array. Standalone method
+// not called from load() — callers invoke it explicitly when needed.
+
+describe('validate', function (): void {
+
+    it('passes validation for well-formed config', function (): void {
+        $data = validConfig();
+
+        // Should not throw
+        $this->service->validate($data);
+
+        // If we got here, validation passed
+        expect(true)->toBeTrue();
+    });
+
+    it('throws when project key is missing', function (): void {
+        $data = ['environments' => ['dev' => []]];
+
+        expect(fn () => $this->service->validate($data))
+            ->toThrow(RuntimeException::class, "missing 'project'");
+    });
+
+    it('throws when project.name is missing', function (): void {
+        $data = ['project' => ['type' => 'laravel']];
+
+        expect(fn () => $this->service->validate($data))
+            ->toThrow(RuntimeException::class, "missing 'project.name'");
+    });
+
+    it('throws when project.type is missing', function (): void {
+        $data = ['project' => ['name' => 'my-app']];
+
+        expect(fn () => $this->service->validate($data))
+            ->toThrow(RuntimeException::class, "missing 'project.type'");
+    });
+});
+
 // ─── Round-trip: create() → load() ─────────────────────────────────────
 // The most important test: what you create() should be what you load() back.
 

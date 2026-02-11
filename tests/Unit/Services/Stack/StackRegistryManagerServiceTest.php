@@ -5,8 +5,13 @@ declare(strict_types=1);
 use App\Services\Stack\StackRegistryManagerService;
 
 beforeEach(function () {
+    $this->testDir = createTestDirectory();
     $this->registry = app(StackRegistryManagerService::class);
     $this->registry->loadForStack(base_path('stubs/stacks/laravel'));
+});
+
+afterEach(function () {
+    cleanupTestDirectory($this->testDir);
 });
 
 describe('StackRegistryManagerService', function () {
@@ -71,5 +76,87 @@ describe('StackRegistryManagerService', function () {
         expect($resolved)
             ->toContain('workers.scheduler')
             ->toContain('cache.redis');
+    });
+});
+
+// ─── Helper: create a registry.json in a temp directory ─────────────────
+
+function createRegistryFile(string $testDir, array $data): string
+{
+    $stackDir = $testDir . '/test-stack';
+    $servicesDir = $stackDir . '/services';
+
+    if (! is_dir($servicesDir)) {
+        mkdir($servicesDir, 0755, true);
+    }
+
+    file_put_contents(
+        $servicesDir . '/registry.json',
+        json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR),
+    );
+
+    return $stackDir;
+}
+
+// ─── registry validation ────────────────────────────────────────────────
+
+describe('registry validation', function (): void {
+
+    it('throws when registry is missing version', function (): void {
+        $stackDir = createRegistryFile($this->testDir, [
+            'services' => ['databases' => []],
+        ]);
+
+        $fresh = app(StackRegistryManagerService::class);
+
+        expect(fn () => $fresh->loadForStack($stackDir))
+            ->toThrow(RuntimeException::class, "missing 'version'");
+    });
+
+    it('throws when registry is missing services key', function (): void {
+        $stackDir = createRegistryFile($this->testDir, [
+            'version' => '1.0.0',
+        ]);
+
+        $fresh = app(StackRegistryManagerService::class);
+
+        expect(fn () => $fresh->loadForStack($stackDir))
+            ->toThrow(RuntimeException::class, "missing 'services'");
+    });
+
+    it('throws when service entry is missing name', function (): void {
+        $stackDir = createRegistryFile($this->testDir, [
+            'version' => '1.0.0',
+            'services' => [
+                'databases' => [
+                    'postgres' => [
+                        'stub' => 'databases/postgres.stub',
+                    ],
+                ],
+            ],
+        ]);
+
+        $fresh = app(StackRegistryManagerService::class);
+
+        expect(fn () => $fresh->loadForStack($stackDir))
+            ->toThrow(RuntimeException::class, "missing 'name'");
+    });
+
+    it('throws when service entry is missing stub', function (): void {
+        $stackDir = createRegistryFile($this->testDir, [
+            'version' => '1.0.0',
+            'services' => [
+                'databases' => [
+                    'postgres' => [
+                        'name' => 'PostgreSQL',
+                    ],
+                ],
+            ],
+        ]);
+
+        $fresh = app(StackRegistryManagerService::class);
+
+        expect(fn () => $fresh->loadForStack($stackDir))
+            ->toThrow(RuntimeException::class, "missing 'stub'");
     });
 });
