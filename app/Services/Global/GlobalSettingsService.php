@@ -51,6 +51,8 @@ final readonly class GlobalSettingsService
 
     /**
      * Load all settings.
+     *
+     * @return array<string, mixed>
      */
     private function load(): array
     {
@@ -67,6 +69,8 @@ final readonly class GlobalSettingsService
 
     /**
      * Save settings to file.
+     *
+     * @param  array<string, mixed>  $settings
      */
     private function save(array $settings): void
     {

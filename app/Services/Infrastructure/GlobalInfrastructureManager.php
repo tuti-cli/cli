@@ -93,7 +93,7 @@ final readonly class GlobalInfrastructureManager implements InfrastructureManage
         }
 
         // Create infrastructure directory
-        if (!is_dir($traefikPath) && (!mkdir($traefikPath, 0755, true) && ! is_dir($traefikPath))) {
+        if (! is_dir($traefikPath) && (! mkdir($traefikPath, 0755, true) && ! is_dir($traefikPath))) {
             throw new RuntimeException("Failed to create directory: {$traefikPath}");
         }
 

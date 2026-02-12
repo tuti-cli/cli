@@ -343,7 +343,7 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
     private function createStandardWordPressProject(string $projectPath, array $options): bool
     {
         // Ensure project directory exists
-        if (!is_dir($projectPath) && (!mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+        if (! is_dir($projectPath) && (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
             throw new RuntimeException("Failed to create directory: {$projectPath}");
         }
 
@@ -515,7 +515,7 @@ PHP;
     private function createBedrockProject(string $projectPath): bool
     {
         // Ensure project directory exists
-        if (!is_dir($projectPath) && (!mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+        if (! is_dir($projectPath) && (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
             throw new RuntimeException("Failed to create directory: {$projectPath}");
         }
 

@@ -172,7 +172,7 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
         }
 
         // Fallback: if no base64: prefix found, return the last non-empty line
-        $nonEmptyLines = array_filter($lines, fn ($l): bool => !in_array(mb_trim($l), ['', '0'], true));
+        $nonEmptyLines = array_filter($lines, fn ($l): bool => ! in_array(mb_trim($l), ['', '0'], true));
         $lastLine = mb_trim(end($nonEmptyLines));
 
         // Only return if it looks like a base64 key
@@ -233,7 +233,7 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
     private function createLaravelProject(string $projectPath, array $options): bool
     {
         // Ensure project directory exists
-        if (!is_dir($projectPath) && (!mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+        if (! is_dir($projectPath) && (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
             throw new RuntimeException("Failed to create directory: {$projectPath}");
         }
 

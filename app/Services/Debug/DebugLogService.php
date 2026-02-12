@@ -34,7 +34,7 @@ final class DebugLogService
 
     public static function getInstance(): self
     {
-        if (!self::$instance instanceof \App\Services\Debug\DebugLogService) {
+        if (! self::$instance instanceof self) {
             self::$instance = new self();
         }
 
@@ -319,7 +319,7 @@ final class DebugLogService
     {
         $logDir = $this->getGlobalLogPath();
 
-        if (!is_dir($logDir) && (!@mkdir($logDir, 0755, true) && ! is_dir($logDir))) {
+        if (! is_dir($logDir) && (! @mkdir($logDir, 0755, true) && ! is_dir($logDir))) {
             return;
             // Silently fail if can't create log dir
         }

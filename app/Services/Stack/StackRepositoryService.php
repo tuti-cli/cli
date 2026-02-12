@@ -52,7 +52,7 @@ final class StackRepositoryService
 
         // Check global cache
         $cachedPath = $this->getCachedStackPath($stackName);
-        if (!is_dir($cachedPath)) {
+        if (! is_dir($cachedPath)) {
             // Need to download
             return $this->downloadStack($stackName);
         }
@@ -94,7 +94,7 @@ final class StackRepositoryService
 
         // Ensure parent directory exists
         $parentDir = dirname($targetPath);
-        if (!is_dir($parentDir) && (!@mkdir($parentDir, 0755, true) && ! is_dir($parentDir))) {
+        if (! is_dir($parentDir) && (! @mkdir($parentDir, 0755, true) && ! is_dir($parentDir))) {
             throw new RuntimeException(
                 "Failed to create directory: {$parentDir}. Check permissions for: " . global_tuti_path()
             );

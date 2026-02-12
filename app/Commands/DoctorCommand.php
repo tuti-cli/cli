@@ -118,6 +118,9 @@ final class DoctorCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function checkDocker(): array
     {
         $process = Process::run(['docker', '--version']);
@@ -152,6 +155,9 @@ final class DoctorCommand extends Command
         return ['status' => 'ok'];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function checkDockerCompose(): array
     {
         $process = Process::run(['docker', 'compose', 'version']);
@@ -172,6 +178,9 @@ final class DoctorCommand extends Command
         return ['status' => 'ok'];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function checkGlobalConfig(): array
     {
         $home = getenv('HOME') ?: getenv('USERPROFILE');
@@ -200,6 +209,9 @@ final class DoctorCommand extends Command
         return ['status' => 'ok'];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function checkInfrastructure(InfrastructureManagerInterface $infraManager): array
     {
         if (! $infraManager->isInstalled()) {
@@ -229,6 +241,9 @@ final class DoctorCommand extends Command
         return ['status' => 'ok'];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function checkCurrentProject(ProjectDirectoryService $dirService): array
     {
         $results = [];

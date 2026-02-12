@@ -174,6 +174,7 @@ final class InstallCommand extends Command
         // Ask for confirmation if reinstalling
         if ($infrastructureManager->isInstalled() && $this->option('force') && ! confirm('This will reinstall the Traefik infrastructure. Continue?', true)) {
             $this->skipped('Infrastructure reinstallation cancelled');
+
             return;
         }
 

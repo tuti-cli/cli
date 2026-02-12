@@ -145,7 +145,7 @@ final readonly class StackStubLoaderService
     {
         preg_match_all('/\{\{([A-Z_]+)\}\}/', $content, $matches);
 
-        return $matches[1] ?? [];
+        return $matches[1];
     }
 
     /**

@@ -48,12 +48,6 @@ final class WordPressCommand extends Command
         try {
             $mode = $this->getInstallationMode($installer);
 
-            if ($mode === null) {
-                $this->failure('Installation cancelled.');
-
-                return self::FAILURE;
-            }
-
             if (! $this->preFlightChecks($directoryService)) {
                 return self::FAILURE;
             }

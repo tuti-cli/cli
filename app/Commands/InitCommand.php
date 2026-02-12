@@ -157,11 +157,10 @@ final class InitCommand extends Command
 
         // 2. Gather user input
         $projectName = $this->getProjectName();
-        $environment = $this->getEnvironment();
 
         // 3. Delegate to business logic service
         spin(
-            fn (): bool => $initService->initialize($projectName, $environment),
+            fn (): bool => $initService->initialize($projectName),
             'Initializing project...'
         );
 
@@ -208,29 +207,6 @@ final class InitCommand extends Command
             validate: fn (string $value): ?string => preg_match('/^[a-z0-9_-]+$/', $value)
                 ? null
                 : 'Project name must contain only lowercase letters, numbers, hyphens, and underscores'
-        );
-    }
-
-    private function getEnvironment(): string
-    {
-        $envOption = $this->option('env');
-
-        if (in_array($envOption, ['dev', 'staging', 'production'], true)) {
-            return $envOption;
-        }
-
-        if ($this->option('no-interaction')) {
-            return 'dev';
-        }
-
-        return select(
-            label: 'Select environment:',
-            options: [
-                'dev' => 'Development',
-                'staging' => 'Staging',
-                'production' => 'Production',
-            ],
-            default: 'dev'
         );
     }
 }

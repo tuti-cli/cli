@@ -62,6 +62,8 @@ final readonly class DockerService
 
     /**
      * Get status of all services
+     *
+     * @return array<int, array{name: string, status: string, ports: array<int, string>, health: string}>
      */
     public function getStatus(): array
     {
@@ -99,6 +101,8 @@ final readonly class DockerService
 
     /**
      * Execute command in container
+     *
+     * @return array{success: bool, output: string, exit_code: int}
      */
     public function exec(string $service, string $command, bool $tty = false): array
     {
@@ -150,6 +154,9 @@ final readonly class DockerService
 
     /**
      * Check port conflicts
+     *
+     * @param  array<string, int|string>  $ports
+     * @return array<int|string, array{service: string, used_by: string|null}>
      */
     public function checkPortConflicts(array $ports): array
     {
@@ -202,6 +209,8 @@ final readonly class DockerService
 
     /**
      * Get specific service status
+     *
+     * @return array{name?: string, status?: string, ports?: array<int, string>, health?: string}
      */
     public function getServiceStatus(string $service): array
     {
@@ -240,6 +249,8 @@ final readonly class DockerService
 
     /**
      * Run docker-compose command
+     *
+     * @param  array<int, string>  $args
      */
     private function runDockerCompose(array $args): bool
     {
@@ -250,6 +261,9 @@ final readonly class DockerService
 
     /**
      * Build docker compose command string
+     *
+     * @param  array<int, string>  $args
+     * @return array<int, string>
      */
     private function buildComposeCommand(array $args): array
     {
@@ -321,6 +335,9 @@ final readonly class DockerService
 
     /**
      * Parse port mappings
+     *
+     * @param  array<int, array{PublishedPort?: int, TargetPort?: int}>  $publishers
+     * @return array<int, string>
      */
     private function parsePorts(array $publishers): array
     {
