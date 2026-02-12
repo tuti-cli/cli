@@ -1,0 +1,15 @@
+services:
+  app:
+    image: nginx:alpine
+    container_name: ${PROJECT_NAME}_${APP_ENV:-dev}_app
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    name: ${PROJECT_NAME}_${APP_ENV:-dev}_network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ${PROJECT_NAME}_${APP_ENV:-dev}_postgres_data

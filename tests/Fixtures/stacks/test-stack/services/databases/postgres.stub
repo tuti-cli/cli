@@ -1,0 +1,21 @@
+# @section: base
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${PROJECT_NAME}_${APP_ENV:-dev}_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+# @section: volumes
+  postgres_data:
+    name: ${PROJECT_NAME}_${APP_ENV:-dev}_postgres_data
