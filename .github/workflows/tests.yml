@@ -39,14 +39,14 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
 
-#      - name: Rector (dry-run)
-#        run: composer test:refactor
-#
-#      - name: Pint (dry-run)
-#        run: composer test:lint
-#
-#      - name: PHPStan
-#        run: composer test:types
+      - name: Rector (dry-run)
+        run: composer test:refactor
+
+      - name: Pint (dry-run)
+        run: composer test:lint
+
+      - name: PHPStan
+        run: composer test:types
 
       - name: Pest
         run: composer test:unit

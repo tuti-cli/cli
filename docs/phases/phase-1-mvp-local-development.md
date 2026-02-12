@@ -39,7 +39,7 @@ Increase test coverage from ~5 test files to comprehensive coverage across all c
   - [x] `doctor` command
   - [ ] `stack:laravel` command
   - [ ] `stack:wordpress` command
-  - [ ] `local:start`, `local:stop`, `local:status`, `local:logs`, `local:rebuild`
+  - [x] `local:start`, `local:stop`, `local:status`, `local:logs`, `local:rebuild`
   - [x] `infra:start`, `infra:stop`, `infra:restart`, `infra:status`
   - [x] `env:check` command
   - [x] `init` command
@@ -59,7 +59,7 @@ Set up automated testing on every pull request to prevent regressions.
   - [x] PHP 8.4 environment
   - [x] Caches Composer dependencies
   - [x] Reports results as PR checks
-- [ ] Branch protection rules on `main` requiring passing checks
+- [x] Branch protection rules on `main` requiring passing checks
 - [x] Badge in README showing CI status
 
 **User Stories:** US-12.1 (CI Test Pipeline)
