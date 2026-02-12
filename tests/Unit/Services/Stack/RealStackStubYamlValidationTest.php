@@ -9,8 +9,8 @@ declare(strict_types=1);
  * when loaded, processed, and combined. Uses real stubs instead of synthetic
  * test fixtures to catch issues with actual production files.
  *
- * @see \App\Services\Stack\StackComposeBuilderService
- * @see \App\Services\Stack\StackStubLoaderService
+ * @see StackComposeBuilderService
+ * @see StackStubLoaderService
  */
 
 use App\Services\Stack\StackComposeBuilderService;

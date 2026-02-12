@@ -113,6 +113,7 @@ final class DebugCommand extends Command
             if (empty($logLines)) {
                 $this->warning('No logs found');
                 $this->hint('Run "tuti debug enable" to start logging');
+
                 return self::SUCCESS;
             }
 
@@ -120,7 +121,7 @@ final class DebugCommand extends Command
             $this->newLine();
 
             foreach ($logLines as $line) {
-                if (empty(trim($line))) {
+                if (empty(mb_trim($line))) {
                     continue;
                 }
 
@@ -148,6 +149,7 @@ final class DebugCommand extends Command
 
         if (empty($logs)) {
             $this->warning('No logs found for this session');
+
             return self::SUCCESS;
         }
 
@@ -164,6 +166,7 @@ final class DebugCommand extends Command
 
         if (empty($errors)) {
             $this->success('No errors found in current session');
+
             return self::SUCCESS;
         }
 
@@ -180,12 +183,12 @@ final class DebugCommand extends Command
                         $this->line("<fg=yellow>  {$key}:</>");
                         // Show error output line by line
                         foreach (explode("\n", (string) $value) as $errorLine) {
-                            if (! empty(trim($errorLine))) {
+                            if (! empty(mb_trim($errorLine))) {
                                 $this->line("<fg=yellow>    {$errorLine}</>");
                             }
                         }
                     } else {
-                        $this->line("<fg=gray>  {$key}: " . (is_string($value) ? $value : json_encode($value)) . "</>");
+                        $this->line("<fg=gray>  {$key}: " . (is_string($value) ? $value : json_encode($value)) . '</>');
                     }
                 }
             }

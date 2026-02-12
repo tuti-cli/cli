@@ -63,11 +63,11 @@ expect()->extend('toBeExecutable', function () {
 function createTestDirectory(): string
 {
     $dir = sys_get_temp_dir() . '/tuti-test-' . bin2hex(random_bytes(8));
-    
+
     if (! is_dir($dir)) {
         mkdir($dir, 0755, true);
     }
-    
+
     return $dir;
 }
 

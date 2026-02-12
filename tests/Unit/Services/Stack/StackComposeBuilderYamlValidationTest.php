@@ -10,7 +10,7 @@ declare(strict_types=1);
  * These tests verify that the YAML output from StackComposeBuilderService
  * is always valid and parseable, regardless of input combinations.
  *
- * @see \App\Services\Stack\StackComposeBuilderService
+ * @see StackComposeBuilderService
  */
 
 use App\Services\Stack\StackComposeBuilderService;
@@ -18,7 +18,6 @@ use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
 use App\Services\Stack\StackStubLoaderService;
 use App\Services\Storage\JsonFileService;
-use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 // ─── Setup & Cleanup ────────────────────────────────────────────────────

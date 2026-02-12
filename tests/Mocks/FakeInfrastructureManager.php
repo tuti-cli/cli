@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Mocks;
 
 use App\Contracts\InfrastructureManagerInterface;
+use RuntimeException;
 
 /**
  * Class FakeInfrastructureManager
@@ -65,7 +66,7 @@ final class FakeInfrastructureManager implements InfrastructureManagerInterface
         $this->installCallCount++;
 
         if (! $this->installResult) {
-            throw new \RuntimeException('Failed to install infrastructure');
+            throw new RuntimeException('Failed to install infrastructure');
         }
 
         $this->isInstalledResult = true;
@@ -79,11 +80,11 @@ final class FakeInfrastructureManager implements InfrastructureManagerInterface
         $this->startCallCount++;
 
         if (! $this->startResult) {
-            throw new \RuntimeException('Failed to start infrastructure');
+            throw new RuntimeException('Failed to start infrastructure');
         }
 
         if (! $this->isInstalledResult) {
-            throw new \RuntimeException('Infrastructure is not installed');
+            throw new RuntimeException('Infrastructure is not installed');
         }
 
         $this->isRunningResult = true;
@@ -96,7 +97,7 @@ final class FakeInfrastructureManager implements InfrastructureManagerInterface
         $this->stopCalled = true;
 
         if (! $this->stopResult) {
-            throw new \RuntimeException('Failed to stop infrastructure');
+            throw new RuntimeException('Failed to stop infrastructure');
         }
 
         $this->isRunningResult = false;
@@ -109,7 +110,7 @@ final class FakeInfrastructureManager implements InfrastructureManagerInterface
         $this->ensureReadyCalled = true;
 
         if (! $this->ensureReadyResult) {
-            throw new \RuntimeException('Failed to ensure infrastructure is ready');
+            throw new RuntimeException('Failed to ensure infrastructure is ready');
         }
 
         return $this->ensureReadyResult;

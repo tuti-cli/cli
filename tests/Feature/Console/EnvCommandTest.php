@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `tuti env:check` command which checks environment configuration.
  *
- * @see \App\Commands\EnvCommand
+ * @see EnvCommand
  */
 
 use App\Commands\EnvCommand;
@@ -34,7 +34,7 @@ describe('EnvCommand Registration', function (): void {
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has --show option', function (): void {

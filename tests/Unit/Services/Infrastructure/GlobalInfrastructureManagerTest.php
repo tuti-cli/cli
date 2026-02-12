@@ -10,7 +10,7 @@ declare(strict_types=1);
  *
  * Installed at: ~/.tuti/infrastructure/traefik/
  *
- * @see \App\Services\Infrastructure\GlobalInfrastructureManager
+ * @see GlobalInfrastructureManager
  */
 
 use App\Services\Infrastructure\GlobalInfrastructureManager;

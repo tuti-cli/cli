@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `local:rebuild` command which rebuilds containers to apply configuration changes.
  *
- * @see \App\Commands\Local\RebuildCommand
+ * @see RebuildCommand
  */
 
 use App\Commands\Local\RebuildCommand;
@@ -92,7 +92,7 @@ describe('LocalRebuildCommand', function (): void {
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has correct description', function (): void {

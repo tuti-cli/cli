@@ -12,7 +12,7 @@ declare(strict_types=1);
  * Think of stack.json as a "recipe" — it tells tuti-cli what ingredients
  * (services) a stack needs and how to configure them.
  *
- * @see \App\Services\Stack\StackLoaderService
+ * @see StackLoaderService
  */
 
 use App\Services\Stack\StackLoaderService;
@@ -425,7 +425,9 @@ describe('getEnvironmentOverrides', function (): void {
 
     it('returns environment-specific overrides for a service', function (): void {
         $devOverrides = $this->service->getEnvironmentOverrides(
-            laravelManifest(), 'cache.redis', 'dev',
+            laravelManifest(),
+            'cache.redis',
+            'dev',
         );
 
         expect($devOverrides)
@@ -447,7 +449,9 @@ describe('getEnvironmentOverrides', function (): void {
 
     it('returns empty array for unknown environment', function (): void {
         $overrides = $this->service->getEnvironmentOverrides(
-            laravelManifest(), 'cache.redis', 'nonexistent',
+            laravelManifest(),
+            'cache.redis',
+            'nonexistent',
         );
 
         expect($overrides)
@@ -457,7 +461,9 @@ describe('getEnvironmentOverrides', function (): void {
 
     it('returns empty array for service without overrides', function (): void {
         $overrides = $this->service->getEnvironmentOverrides(
-            laravelManifest(), 'databases.postgres', 'dev',
+            laravelManifest(),
+            'databases.postgres',
+            'dev',
         );
 
         expect($overrides)

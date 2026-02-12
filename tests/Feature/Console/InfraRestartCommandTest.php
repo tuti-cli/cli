@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `infra:restart` command which restarts the global infrastructure.
  *
- * @see \App\Commands\Infrastructure\RestartCommand
+ * @see RestartCommand
  */
 
 use App\Commands\Infrastructure\RestartCommand;
@@ -46,7 +46,7 @@ describe('InfraRestartCommand', function (): void {
         $command = $this->app->make(RestartCommand::class);
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     // ─── Not Installed ────────────────────────────────────────────────────

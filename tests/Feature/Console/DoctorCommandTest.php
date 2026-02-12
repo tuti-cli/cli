@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `tuti doctor` command which performs system health checks.
  *
- * @see \App\Commands\DoctorCommand
+ * @see App\Commands\DoctorCommand
  */
 
 use App\Contracts\InfrastructureManagerInterface;
@@ -21,34 +21,34 @@ use LaravelZero\Framework\Commands\Command;
 describe('DoctorCommand', function (): void {
 
     it('is registered in the application', function (): void {
-        $command = $this->app->make(\App\Commands\DoctorCommand::class);
+        $command = $this->app->make(App\Commands\DoctorCommand::class);
 
         expect($command)->toBeInstanceOf(Command::class);
     });
 
     it('has correct signature', function (): void {
-        $command = $this->app->make(\App\Commands\DoctorCommand::class);
+        $command = $this->app->make(App\Commands\DoctorCommand::class);
 
         expect($command->getName())->toBe('doctor');
     });
 
     it('uses HasBrandedOutput trait', function (): void {
-        $command = $this->app->make(\App\Commands\DoctorCommand::class);
+        $command = $this->app->make(App\Commands\DoctorCommand::class);
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has --fix option', function (): void {
-        $command = $this->app->make(\App\Commands\DoctorCommand::class);
+        $command = $this->app->make(App\Commands\DoctorCommand::class);
         $definition = $command->getDefinition();
 
         expect($definition->hasOption('fix'))->toBeTrue();
     });
 
     it('has correct description', function (): void {
-        $command = $this->app->make(\App\Commands\DoctorCommand::class);
+        $command = $this->app->make(App\Commands\DoctorCommand::class);
 
         expect($command->getDescription())->toBe('Check system requirements and diagnose issues');
     });
@@ -81,7 +81,7 @@ describe('DoctorCommand Docker Check', function (): void {
         mkdir($workDir, 0755, true);
         chdir($workDir);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -175,7 +175,7 @@ describe('DoctorCommand Docker Compose Check', function (): void {
         mkdir($workDir, 0755, true);
         chdir($workDir);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -255,7 +255,7 @@ describe('DoctorCommand Global Configuration Check', function (): void {
         mkdir($workDir, 0755, true);
         chdir($workDir);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -357,7 +357,7 @@ describe('DoctorCommand Infrastructure Check', function (): void {
     });
 
     it('fails when Traefik is not installed', function (): void {
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(false);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -369,7 +369,7 @@ describe('DoctorCommand Infrastructure Check', function (): void {
     });
 
     it('displays hint when Traefik is not installed', function (): void {
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(false);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -380,7 +380,7 @@ describe('DoctorCommand Infrastructure Check', function (): void {
     });
 
     it('warns when Traefik is installed but not running', function (): void {
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -392,7 +392,7 @@ describe('DoctorCommand Infrastructure Check', function (): void {
     });
 
     it('displays hint when Traefik is not running', function (): void {
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -403,7 +403,7 @@ describe('DoctorCommand Infrastructure Check', function (): void {
     });
 
     it('passes when Traefik is installed and running', function (): void {
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -441,7 +441,7 @@ describe('DoctorCommand Summary Display', function (): void {
         mkdir($workDir, 0755, true);
         chdir($workDir);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -460,7 +460,7 @@ describe('DoctorCommand Summary Display', function (): void {
     });
 
     it('displays warning count when warnings exist', function (): void {
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -475,7 +475,7 @@ describe('DoctorCommand Summary Display', function (): void {
             '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
         ]);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(false);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -490,7 +490,7 @@ describe('DoctorCommand Summary Display', function (): void {
             '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
         ]);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(false);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -500,7 +500,7 @@ describe('DoctorCommand Summary Display', function (): void {
     });
 
     it('returns success when only warnings exist', function (): void {
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -514,7 +514,7 @@ describe('DoctorCommand Summary Display', function (): void {
             '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
         ]);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(false);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -548,7 +548,7 @@ describe('DoctorCommand Current Project Check', function (): void {
 
         // NOTE: Do NOT mock ProjectDirectoryService here - these tests need real project checking
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -708,7 +708,7 @@ describe('DoctorCommand Section Headers', function (): void {
         mkdir($workDir, 0755, true);
         chdir($workDir);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -789,7 +789,7 @@ describe('DoctorCommand Edge Cases', function (): void {
         mkdir($workDir, 0755, true);
         chdir($workDir);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
@@ -806,7 +806,7 @@ describe('DoctorCommand Edge Cases', function (): void {
             '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
         ]);
 
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(true);
         $fakeInfra->setRunning(false);
         $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);

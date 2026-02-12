@@ -54,7 +54,7 @@ trait UsesStackFixtures
      */
     protected function getFixturePath(string $stackName, string $relativePath): string
     {
-        return $this->getFixtureStackPath($stackName) . '/' . ltrim($relativePath, '/');
+        return $this->getFixtureStackPath($stackName) . '/' . mb_ltrim($relativePath, '/');
     }
 
     /**

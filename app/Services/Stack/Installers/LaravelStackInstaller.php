@@ -147,6 +147,73 @@ final class LaravelStackInstaller implements StackInstallerInterface
     }
 
     /**
+     * Generate Laravel APP_KEY using Docker.
+     */
+    public function generateAppKey(string $projectPath): ?string
+    {
+        $result = $this->dockerExecutor->runArtisan('key:generate --show', $projectPath);
+
+        if (! $result->successful) {
+            return null;
+        }
+
+        // The output may contain Docker/PHP banner text before the actual key
+        // We need to extract only the base64 key (format: base64:xxx...)
+        $output = $result->output;
+
+        // Look for a line that starts with "base64:"
+        $lines = explode("\n", $output);
+
+        foreach ($lines as $line) {
+            $line = mb_trim($line);
+            if (str_starts_with($line, 'base64:')) {
+                return $line;
+            }
+        }
+
+        // Fallback: if no base64: prefix found, return the last non-empty line
+        $nonEmptyLines = array_filter($lines, fn ($l) => ! empty(mb_trim($l)));
+        $lastLine = mb_trim(end($nonEmptyLines));
+
+        // Only return if it looks like a base64 key
+        if (str_starts_with($lastLine, 'base64:') || mb_strlen($lastLine) > 40) {
+            return $lastLine;
+        }
+
+        return null;
+    }
+
+    /**
+     * Run artisan command in the project.
+     */
+    public function runArtisan(string $projectPath, string $command): bool
+    {
+        $result = $this->dockerExecutor->runArtisan($command, $projectPath);
+
+        return $result->successful;
+    }
+
+    /**
+     * Run composer require to install a package.
+     */
+    public function runComposerRequire(string $projectPath, string $package): bool
+    {
+        $result = $this->dockerExecutor->runComposer("require {$package} --no-interaction", $projectPath);
+
+        return $result->successful;
+    }
+
+    /**
+     * Install npm dependencies using Docker.
+     */
+    public function installNpmDependencies(string $projectPath): bool
+    {
+        $result = $this->dockerExecutor->runNpm('install', $projectPath);
+
+        return $result->successful;
+    }
+
+    /**
      * Ensure the global infrastructure (Traefik) is ready.
      */
     private function ensureInfrastructureReady(): void
@@ -204,7 +271,7 @@ final class LaravelStackInstaller implements StackInstallerInterface
         }
 
         // Install in current directory (which is mounted as /app in container)
-        $command .= " .";
+        $command .= ' .';
 
         // Add options
         $command .= ' --prefer-dist';
@@ -234,72 +301,5 @@ final class LaravelStackInstaller implements StackInstallerInterface
                 'Docker is not available. Please install Docker to create Laravel projects.'
             );
         }
-    }
-
-    /**
-     * Generate Laravel APP_KEY using Docker.
-     */
-    public function generateAppKey(string $projectPath): ?string
-    {
-        $result = $this->dockerExecutor->runArtisan('key:generate --show', $projectPath);
-
-        if (! $result->successful) {
-            return null;
-        }
-
-        // The output may contain Docker/PHP banner text before the actual key
-        // We need to extract only the base64 key (format: base64:xxx...)
-        $output = $result->output;
-
-        // Look for a line that starts with "base64:"
-        $lines = explode("\n", $output);
-
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (str_starts_with($line, 'base64:')) {
-                return $line;
-            }
-        }
-
-        // Fallback: if no base64: prefix found, return the last non-empty line
-        $nonEmptyLines = array_filter($lines, fn($l) => !empty(trim($l)));
-        $lastLine = trim(end($nonEmptyLines));
-
-        // Only return if it looks like a base64 key
-        if (str_starts_with($lastLine, 'base64:') || strlen($lastLine) > 40) {
-            return $lastLine;
-        }
-
-        return null;
-    }
-
-    /**
-     * Run artisan command in the project.
-     */
-    public function runArtisan(string $projectPath, string $command): bool
-    {
-        $result = $this->dockerExecutor->runArtisan($command, $projectPath);
-
-        return $result->successful;
-    }
-
-    /**
-     * Run composer require to install a package.
-     */
-    public function runComposerRequire(string $projectPath, string $package): bool
-    {
-        $result = $this->dockerExecutor->runComposer("require {$package} --no-interaction", $projectPath);
-
-        return $result->successful;
-    }
-
-    /**
-     * Install npm dependencies using Docker.
-     */
-    public function installNpmDependencies(string $projectPath): bool
-    {
-        $result = $this->dockerExecutor->runNpm('install', $projectPath);
-
-        return $result->successful;
     }
 }

@@ -10,7 +10,7 @@ declare(strict_types=1);
  * appendVolumesToCompose() methods assemble YAML via string concatenation,
  * which could produce broken YAML if stubs have wrong formatting.
  *
- * @see \App\Services\Stack\StackInitializationService
+ * @see App\Services\Stack\StackInitializationService
  */
 
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -113,7 +113,7 @@ redis:
 STUB;
 
         // Apply 2-space indent (same logic as indentServiceYaml)
-        $lines = explode("\n", trim($serviceStub));
+        $lines = explode("\n", mb_trim($serviceStub));
         $indented = array_map(fn (string $line) => $line === '' ? '' : '  ' . $line, $lines);
         $indentedYaml = implode("\n", $indented);
 
@@ -156,7 +156,7 @@ STUB,
 
         $allIndented = '';
         foreach ($services as $stub) {
-            $lines = explode("\n", trim($stub));
+            $lines = explode("\n", mb_trim($stub));
             $indented = array_map(fn (string $line) => $line === '' ? '' : '  ' . $line, $lines);
             $allIndented .= "\n" . implode("\n", $indented);
         }
@@ -193,7 +193,7 @@ YAML;
 
         // Simulate appendVolumesToCompose adding a new volume
         $newVolume = "  redis_data:\n    name: myapp_dev_redis_data\n";
-        $result = rtrim($compose) . "\n" . $newVolume;
+        $result = mb_rtrim($compose) . "\n" . $newVolume;
 
         $parsed = Yaml::parse($result);
 
