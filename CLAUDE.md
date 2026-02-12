@@ -17,9 +17,9 @@
 
 **Quick Reference Commands:**
 ```bash
-composer test:unit          # Run tests (use for validation)
-composer test:types         # PHPStan check
-./vendor/bin/pest --filter "test name"  # Run single test
+docker compose exec -T app composer test:unit          # Run tests (use for validation)
+docker compose exec -T app composer test:types         # PHPStan check
+docker compose exec -T app ./vendor/bin/pest --filter "test name"  # Run single test
 ```
 
 ## Tech Stack
