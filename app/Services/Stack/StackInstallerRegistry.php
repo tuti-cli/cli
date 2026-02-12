@@ -58,7 +58,8 @@ final class StackInstallerRegistry
         if (isset($this->installers[$identifier])) {
             return true;
         }
-        return array_any($this->installers, fn($installer) => $installer->supports($identifier));
+
+        return array_any($this->installers, fn ($installer) => $installer->supports($identifier));
     }
 
     /**

@@ -226,10 +226,6 @@ final readonly class StackInitializationService
         // Find insertion point: look for "# ====...Networks" or just "networks:" section
         $insertionPoint = $this->findServicesInsertionPoint($content);
 
-        if ($insertionPoint === false) {
-            return;
-        }
-
         $servicesToAppend = '';
         $volumesToAdd = [];
 
@@ -388,12 +384,7 @@ final readonly class StackInitializationService
         // Find insertion point in dev compose (before networks or at end of services)
         $devInsertionPoint = $this->findServicesInsertionPoint($devContent);
 
-        if ($devInsertionPoint === false) {
-            // Append at end of file
-            $devContent = mb_rtrim($devContent) . "\n" . $devServicesToAppend . "\n";
-        } else {
-            $devContent = mb_substr($devContent, 0, $devInsertionPoint) . $devServicesToAppend . "\n" . mb_substr($devContent, $devInsertionPoint);
-        }
+        $devContent = mb_substr($devContent, 0, $devInsertionPoint) . $devServicesToAppend . "\n" . mb_substr($devContent, $devInsertionPoint);
 
         $this->validateYaml($devContent, $devComposeFile);
         file_put_contents($devComposeFile, $devContent);
@@ -403,7 +394,7 @@ final readonly class StackInitializationService
      * Find the correct insertion point for services (before networks section).
      * Services should be inserted at the end of the services block, before the networks section.
      */
-    private function findServicesInsertionPoint(string $content): int|false
+    private function findServicesInsertionPoint(string $content): int
     {
         // Pattern 1: Look for the Networks section header with equals signs
         // The structure is:

@@ -182,7 +182,7 @@ final class DebugCommand extends Command
                     $this->line("<fg=yellow>  {$key}:</>");
                     // Show error output line by line
                     foreach (explode("\n", (string) $value) as $errorLine) {
-                        if (!in_array(mb_trim($errorLine), ['', '0'], true)) {
+                        if (! in_array(mb_trim($errorLine), ['', '0'], true)) {
                             $this->line("<fg=yellow>    {$errorLine}</>");
                         }
                     }

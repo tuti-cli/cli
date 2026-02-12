@@ -60,6 +60,9 @@ PHP;
         file_put_contents($healthFile, $content);
     }
 
+    /**
+     * @return array<string, array<int, string>>
+     */
     public function getFileList(string $stackPath): array
     {
         $files = [];
@@ -189,6 +192,9 @@ PHP;
         }
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function getDirectoryFiles(string $directory): array
     {
         $files = [];

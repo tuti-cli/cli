@@ -183,6 +183,8 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
     /**
      * Run WP-CLI via docker compose (when project is initialized).
+     *
+     * @param  array<string, string>  $env
      */
     private function runWpCliViaCompose(string $command, string $workDir, array $env): DockerExecutionResult
     {
@@ -222,6 +224,8 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
     /**
      * Run WP-CLI via standalone container (for initial installation).
+     *
+     * @param  array<string, string>  $env
      */
     private function runWpCliStandalone(string $command, string $workDir, array $env): DockerExecutionResult
     {
@@ -245,6 +249,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
      *
      * @param  array<string, string>  $env
      * @param  array<string, string>  $volumes
+     * @return array<int, string>
      */
     private function buildDockerCommand(
         string $image,
@@ -312,7 +317,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
      */
     private function ensureDirectoryExists(string $path): void
     {
-        if (!is_dir($path) && (!mkdir($path, 0755, true) && ! is_dir($path))) {
+        if (! is_dir($path) && (! mkdir($path, 0755, true) && ! is_dir($path))) {
             throw new RuntimeException("Failed to create directory: {$path}");
         }
     }

@@ -37,7 +37,7 @@ final class StackServiceProvider extends ServiceProvider
         $this->app->singleton(WordPressStackInstaller::class);
 
         // Stack installer registry
-        $this->app->singleton(StackInstallerRegistry::class, function ($app): \App\Services\Stack\StackInstallerRegistry {
+        $this->app->singleton(StackInstallerRegistry::class, function ($app): StackInstallerRegistry {
             $registry = new StackInstallerRegistry();
 
             // Register all stack installers

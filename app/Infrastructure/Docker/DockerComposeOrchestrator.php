@@ -221,6 +221,9 @@ final readonly class DockerComposeOrchestrator implements OrchestratorInterface
 
     /**
      * Build docker compose command string for the project.
+     *
+     * @param  array<int, string>  $args
+     * @return array<int, string>
      */
     private function buildComposeCommand(Project $project, array $args): array
     {

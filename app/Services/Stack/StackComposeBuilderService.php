@@ -43,7 +43,7 @@ final readonly class StackComposeBuilderService
         $resolvedServices = $this->registry->resolveDependencies($selectedServices);
 
         // Build with stack overrides
-        return $this->build($resolvedServices, $projectConfig, $environment, $stackManifest, $stackPath);
+        return $this->build($resolvedServices, $projectConfig, $environment, $stackManifest);
     }
 
     /**

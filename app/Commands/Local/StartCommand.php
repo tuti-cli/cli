@@ -154,7 +154,7 @@ final class StartCommand extends Command
                     if (isset($error['data']['error'])) {
                         $errorLines = explode("\n", (string) $error['data']['error']);
                         foreach (array_slice($errorLines, 0, 3) as $line) {
-                            if (!in_array(mb_trim($line), ['', '0'], true)) {
+                            if (! in_array(mb_trim($line), ['', '0'], true)) {
                                 $this->line("    <fg=yellow>{$line}</>");
                             }
                         }

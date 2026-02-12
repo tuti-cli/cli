@@ -405,6 +405,8 @@ trait HasBrandedOutput
 
     /**
      * Display a success callout box.
+     *
+     * @param  array<string>  $lines
      */
     protected function successBox(string $title, array $lines = []): void
     {
@@ -413,6 +415,8 @@ trait HasBrandedOutput
 
     /**
      * Display an error callout box.
+     *
+     * @param  array<string>  $lines
      */
     protected function errorBox(string $title, array $lines = []): void
     {
@@ -421,6 +425,8 @@ trait HasBrandedOutput
 
     /**
      * Display a warning callout box.
+     *
+     * @param  array<string>  $lines
      */
     protected function warningBox(string $title, array $lines = []): void
     {
@@ -429,6 +435,8 @@ trait HasBrandedOutput
 
     /**
      * Display an info callout box.
+     *
+     * @param  array<string, string>  $items
      */
     protected function infoBox(array $items, int $width = 60): void
     {
@@ -437,6 +445,8 @@ trait HasBrandedOutput
 
     /**
      * Display a tip/hint callout box.
+     *
+     * @param  array<string>  $lines
      */
     protected function tipBox(string $title, array $lines = []): void
     {
@@ -445,6 +455,8 @@ trait HasBrandedOutput
 
     /**
      * Generic callout box with icon and color.
+     *
+     * @param  array<string>  $lines
      */
     protected function calloutBox(string $title, array $lines, string $color, string $icon): void
     {
@@ -463,6 +475,8 @@ trait HasBrandedOutput
     /**
      * Display a bordered box with title and content.
      * Can handle both plain text lines and key-value pairs.
+     *
+     * @param  array<int|string, string>  $lines
      */
     protected function box(string $title, array $lines, int $width = 60, bool $isKeyValue = false): void
     {
@@ -509,6 +523,8 @@ trait HasBrandedOutput
 
     /**
      * Display a simple bordered panel.
+     *
+     * @param  array<string>  $lines
      */
     protected function panel(array $lines, int $width = 60): void
     {
@@ -550,6 +566,8 @@ trait HasBrandedOutput
 
     /**
      * Display multiple key-value pairs.
+     *
+     * @param  array<string, string|int>  $items
      */
     protected function keyValueList(array $items, int $keyWidth = 20): void
     {
@@ -636,6 +654,8 @@ trait HasBrandedOutput
     /**
      * Display a final success summary.
      * Use at the end of successful operations.
+     *
+     * @param  array<string>  $nextSteps
      */
     protected function completed(string $message, array $nextSteps = []): void
     {
@@ -656,6 +676,8 @@ trait HasBrandedOutput
     /**
      * Display a final failure summary.
      * Use at the end of failed operations.
+     *
+     * @param  array<string>  $suggestions
      */
     protected function failed(string $message, array $suggestions = []): void
     {

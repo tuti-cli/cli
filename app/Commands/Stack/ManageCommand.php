@@ -34,7 +34,11 @@ final class ManageCommand extends Command
             'download' => $this->downloadStack($repositoryService),
             'update' => $this->updateStack($repositoryService),
             'clear' => $this->clearCache($repositoryService),
-            default => $this->failure("Unknown action: {$action}") ?? self::FAILURE,
+            default => (function () use ($action): int {
+                $this->failure("Unknown action: {$action}");
+
+                return self::FAILURE;
+            })(),
         };
     }
 
