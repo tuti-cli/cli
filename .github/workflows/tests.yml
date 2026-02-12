@@ -1,0 +1,52 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: '8.4'
+
+jobs:
+  tests:
+    name: Rector, Pint, PHPStan, Pest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, zip, phar, sodium
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+#      - name: Rector (dry-run)
+#        run: composer test:refactor
+#
+#      - name: Pint (dry-run)
+#        run: composer test:lint
+#
+#      - name: PHPStan
+#        run: composer test:types
+
+      - name: Pest
+        run: composer test:unit
