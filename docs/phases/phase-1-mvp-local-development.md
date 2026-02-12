@@ -36,13 +36,13 @@ Increase test coverage from ~5 test files to comprehensive coverage across all c
   - [x] `ProjectDirectoryService` - Project directory management (14 tests)
 - [ ] Feature tests for all user-facing commands (target: >80% coverage)
   - [x] `install` command
-  - [ ] `doctor` command
+  - [x] `doctor` command
   - [ ] `stack:laravel` command
   - [ ] `stack:wordpress` command
   - [ ] `local:start`, `local:stop`, `local:status`, `local:logs`, `local:rebuild`
-  - [ ] `infra:start`, `infra:stop`, `infra:restart`, `infra:status`
-  - [ ] `env:check` command
-  - [ ] `init` command
+  - [x] `infra:start`, `infra:stop`, `infra:restart`, `infra:status`
+  - [x] `env:check` command
+  - [x] `init` command
 - [ ] Validate generated Docker Compose files are syntactically valid YAML
 - [ ] Test all service stub combinations produce valid compose output
 
