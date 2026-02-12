@@ -16,7 +16,7 @@ use RuntimeException;
  */
 final class StackRepositoryService
 {
-    private const REGISTRY_PATH = 'stacks/registry.json';
+    private const string REGISTRY_PATH = 'stacks/registry.json';
 
     /**
      * @var array<string, mixed>|null
@@ -52,12 +52,17 @@ final class StackRepositoryService
 
         // Check global cache
         $cachedPath = $this->getCachedStackPath($stackName);
-
-        if (is_dir($cachedPath) && ! $forceUpdate) {
-            // Verify it's valid
-            if (file_exists($cachedPath . '/stack.json')) {
-                return $cachedPath;
-            }
+        if (!is_dir($cachedPath)) {
+            // Need to download
+            return $this->downloadStack($stackName);
+        }
+        if ($forceUpdate) {
+            // Need to download
+            return $this->downloadStack($stackName);
+        }
+        // Verify it's valid
+        if (file_exists($cachedPath . '/stack.json')) {
+            return $cachedPath;
         }
 
         // Need to download
@@ -89,12 +94,10 @@ final class StackRepositoryService
 
         // Ensure parent directory exists
         $parentDir = dirname($targetPath);
-        if (! is_dir($parentDir)) {
-            if (! @mkdir($parentDir, 0755, true) && ! is_dir($parentDir)) {
-                throw new RuntimeException(
-                    "Failed to create directory: {$parentDir}. Check permissions for: " . global_tuti_path()
-                );
-            }
+        if (!is_dir($parentDir) && (!@mkdir($parentDir, 0755, true) && ! is_dir($parentDir))) {
+            throw new RuntimeException(
+                "Failed to create directory: {$parentDir}. Check permissions for: " . global_tuti_path()
+            );
         }
 
         // Remove existing if present
@@ -298,10 +301,12 @@ final class StackRepositoryService
         $items = scandir($path);
 
         foreach ($items ?: [] as $item) {
-            if ($item === '.' || $item === '..') {
+            if ($item === '.') {
                 continue;
             }
-
+            if ($item === '..') {
+                continue;
+            }
             $itemPath = $path . '/' . $item;
 
             if (is_dir($itemPath)) {

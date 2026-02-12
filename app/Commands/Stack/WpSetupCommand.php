@@ -94,7 +94,7 @@ final class WpSetupCommand extends Command
         $this->note('Waiting for database to be ready...');
 
         $dbReady = spin(
-            fn () => $this->waitForDatabase($projectPath),
+            fn (): bool => $this->waitForDatabase($projectPath),
             'Checking database connection...'
         );
 
@@ -119,7 +119,7 @@ final class WpSetupCommand extends Command
         );
 
         $result = spin(
-            fn () => $installer->runWpCli($projectPath, $wpInstallCommand),
+            fn (): bool => $installer->runWpCli($projectPath, $wpInstallCommand),
             'Running WordPress installation...'
         );
 
@@ -159,8 +159,6 @@ final class WpSetupCommand extends Command
      */
     private function areContainersRunning(string $projectPath): bool
     {
-        $tutiPath = $projectPath . '/.tuti';
-
         // Get project name from config
         $projectName = basename($projectPath);
         $configPath = $projectPath . '/.tuti/config.json';
@@ -176,7 +174,7 @@ final class WpSetupCommand extends Command
 
         exec($command, $output, $exitCode);
 
-        return $exitCode === 0 && ! empty($output);
+        return $exitCode === 0 && $output !== [];
     }
 
     /**
@@ -206,7 +204,7 @@ final class WpSetupCommand extends Command
 
             exec($healthyCommand, $healthyOutput, $healthyExitCode);
 
-            if ($healthyExitCode === 0 && ! empty($healthyOutput)) {
+            if ($healthyExitCode === 0 && $healthyOutput !== []) {
                 return true;
             }
 
@@ -220,7 +218,7 @@ final class WpSetupCommand extends Command
 
             // If container is running but not healthy yet, wait more
             // If container is running and has been for a while, assume it's ready
-            if ($runningExitCode === 0 && ! empty($runningOutput) && $attempt >= 10) {
+            if ($runningExitCode === 0 && $runningOutput !== [] && $attempt >= 10) {
                 return true;
             }
 

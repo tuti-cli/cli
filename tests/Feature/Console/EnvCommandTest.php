@@ -154,16 +154,16 @@ describe('EnvCommand Laravel Configuration Display', function (): void {
     });
 
     it('shows checkmark for configured Laravel variables', function (): void {
-        $envContent = <<<'ENV'
-APP_NAME="Test App"
-APP_KEY=base64:testkey123456
-APP_ENV=local
-APP_URL=http://localhost
-DB_CONNECTION=pgsql
-DB_HOST=postgres
-DB_DATABASE=testdb
-REDIS_HOST=redis
-ENV;
+        $envContent = <<<'ENV_WRAP'
+        APP_NAME="Test App"
+        APP_KEY=base64:testkey123456
+        APP_ENV=local
+        APP_URL=http://localhost
+        DB_CONNECTION=pgsql
+        DB_HOST=postgres
+        DB_DATABASE=testdb
+        REDIS_HOST=redis
+        ENV_WRAP;
         file_put_contents($this->testDir . '/.env', $envContent);
 
         $this->artisan('env:check')
@@ -374,11 +374,11 @@ describe('EnvCommand --show Option', function (): void {
     });
 
     it('shows all variables with --show', function (): void {
-        $envContent = <<<'ENV'
-APP_NAME=MyApp
-APP_ENV=local
-CUSTOM_VAR=customvalue
-ENV;
+        $envContent = <<<'ENV_WRAP'
+        APP_NAME=MyApp
+        APP_ENV=local
+        CUSTOM_VAR=customvalue
+        ENV_WRAP;
         file_put_contents($this->testDir . '/.env', $envContent);
 
         $this->artisan('env:check', ['--show' => true])

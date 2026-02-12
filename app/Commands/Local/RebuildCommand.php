@@ -56,7 +56,7 @@ final class RebuildCommand extends Command
 
             if (! $infrastructureManager->isRunning()) {
                 spin(
-                    fn () => $infrastructureManager->ensureReady(),
+                    fn (): bool => $infrastructureManager->ensureReady(),
                     'Starting Traefik infrastructure...'
                 );
                 $this->success('Infrastructure ready');
@@ -161,7 +161,7 @@ final class RebuildCommand extends Command
                 // Stream output to user (default behavior)
                 $result = Process::path($tutiPath)
                     ->timeout(600) // 10 minutes for build
-                    ->run($buildCommand, function ($type, $buffer) {
+                    ->run($buildCommand, function ($type, $buffer): void {
                         // Stream output to user
                         echo $buffer;
                     });

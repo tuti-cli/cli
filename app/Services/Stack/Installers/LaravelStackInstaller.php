@@ -22,21 +22,21 @@ use RuntimeException;
  *
  * Uses Docker to run Composer, so no local PHP/Composer installation is required.
  */
-final class LaravelStackInstaller implements StackInstallerInterface
+final readonly class LaravelStackInstaller implements StackInstallerInterface
 {
-    private const IDENTIFIER = 'laravel';
+    private const string IDENTIFIER = 'laravel';
 
-    private const SUPPORTED_IDENTIFIERS = [
+    private const array SUPPORTED_IDENTIFIERS = [
         'laravel',
         'laravel-stack',
     ];
 
     public function __construct(
-        private readonly StackLoaderService $stackLoader,
-        private readonly StackFilesCopierService $copierService,
-        private readonly StackRepositoryService $repositoryService,
-        private readonly DockerExecutorInterface $dockerExecutor,
-        private readonly InfrastructureManagerInterface $infrastructureManager,
+        private StackLoaderService $stackLoader,
+        private StackFilesCopierService $copierService,
+        private StackRepositoryService $repositoryService,
+        private DockerExecutorInterface $dockerExecutor,
+        private InfrastructureManagerInterface $infrastructureManager,
     ) {}
 
     public function getIdentifier(): string
@@ -98,7 +98,7 @@ final class LaravelStackInstaller implements StackInstallerInterface
         $this->ensureInfrastructureReady();
 
         // Create the project using Docker + Composer
-        $result = $this->createLaravelProject($projectPath, $projectName, $options);
+        $result = $this->createLaravelProject($projectPath, $options);
 
         if (! $result) {
             throw new RuntimeException('Failed to create Laravel project');
@@ -172,7 +172,7 @@ final class LaravelStackInstaller implements StackInstallerInterface
         }
 
         // Fallback: if no base64: prefix found, return the last non-empty line
-        $nonEmptyLines = array_filter($lines, fn ($l) => ! empty(mb_trim($l)));
+        $nonEmptyLines = array_filter($lines, fn ($l): bool => !in_array(mb_trim($l), ['', '0'], true));
         $lastLine = mb_trim(end($nonEmptyLines));
 
         // Only return if it looks like a base64 key
@@ -230,13 +230,11 @@ final class LaravelStackInstaller implements StackInstallerInterface
      *
      * @param  array<string, mixed>  $options
      */
-    private function createLaravelProject(string $projectPath, string $projectName, array $options): bool
+    private function createLaravelProject(string $projectPath, array $options): bool
     {
         // Ensure project directory exists
-        if (! is_dir($projectPath)) {
-            if (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath)) {
-                throw new RuntimeException("Failed to create directory: {$projectPath}");
-            }
+        if (!is_dir($projectPath) && (!mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+            throw new RuntimeException("Failed to create directory: {$projectPath}");
         }
 
         // Build the composer command

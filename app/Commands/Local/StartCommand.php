@@ -58,7 +58,7 @@ final class StartCommand extends Command
 
                 if (! $infrastructureManager->isRunning()) {
                     spin(
-                        fn () => $infrastructureManager->ensureReady(),
+                        fn (): bool => $infrastructureManager->ensureReady(),
                         'Starting Traefik infrastructure...'
                     );
                     $this->success('Infrastructure ready');
@@ -154,7 +154,7 @@ final class StartCommand extends Command
                     if (isset($error['data']['error'])) {
                         $errorLines = explode("\n", (string) $error['data']['error']);
                         foreach (array_slice($errorLines, 0, 3) as $line) {
-                            if (! empty(mb_trim($line))) {
+                            if (!in_array(mb_trim($line), ['', '0'], true)) {
                                 $this->line("    <fg=yellow>{$line}</>");
                             }
                         }

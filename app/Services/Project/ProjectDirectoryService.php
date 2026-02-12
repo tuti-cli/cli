@@ -14,7 +14,7 @@ use RuntimeException;
  *
  * Manages .tuti directory structure within the user's project.
  */
-final class ProjectDirectoryService
+final readonly class ProjectDirectoryService
 {
     public function __construct(
         private WorkingDirectoryService $workingDirectory
@@ -68,11 +68,9 @@ final class ProjectDirectoryService
             try {
                 File::makeDirectory($tutiPath, 0755, true);
             } catch (Exception $e) {
-                throw new RuntimeException(
-                    "Failed to create .tuti directory at: {$tutiPath}. " .
-                    "Error: {$e->getMessage()}. " .
-                    "Please check write permissions for: {$this->getProjectRoot()}"
-                );
+                throw new RuntimeException("Failed to create .tuti directory at: {$tutiPath}. " .
+                "Error: {$e->getMessage()}. " .
+                "Please check write permissions for: {$this->getProjectRoot()}", $e->getCode(), $e);
             }
         }
     }

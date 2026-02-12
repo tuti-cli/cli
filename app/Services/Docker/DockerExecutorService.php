@@ -17,19 +17,19 @@ use RuntimeException;
  *
  * Uses temporary containers that are removed after execution.
  */
-final class DockerExecutorService implements DockerExecutorInterface
+final readonly class DockerExecutorService implements DockerExecutorInterface
 {
-    private const DEFAULT_PHP_IMAGE = 'serversideup/php';
+    private const string DEFAULT_PHP_IMAGE = 'serversideup/php';
 
-    private const DEFAULT_PHP_VERSION = '8.4';
+    private const string DEFAULT_PHP_VERSION = '8.4';
 
-    private const DEFAULT_NODE_IMAGE = 'node:20-alpine';
+    private const string DEFAULT_NODE_IMAGE = 'node:20-alpine';
 
-    private const DEFAULT_TIMEOUT = 600; // 10 minutes
+    private const int DEFAULT_TIMEOUT = 600; // 10 minutes
 
     public function __construct(
-        private readonly string $phpImage = self::DEFAULT_PHP_IMAGE,
-        private readonly string $phpVersion = self::DEFAULT_PHP_VERSION,
+        private string $phpImage = self::DEFAULT_PHP_IMAGE,
+        private string $phpVersion = self::DEFAULT_PHP_VERSION,
     ) {}
 
     public function runComposer(string $command, string $workDir, array $env = []): DockerExecutionResult
@@ -312,10 +312,8 @@ final class DockerExecutorService implements DockerExecutorInterface
      */
     private function ensureDirectoryExists(string $path): void
     {
-        if (! is_dir($path)) {
-            if (! mkdir($path, 0755, true) && ! is_dir($path)) {
-                throw new RuntimeException("Failed to create directory: {$path}");
-            }
+        if (!is_dir($path) && (!mkdir($path, 0755, true) && ! is_dir($path))) {
+            throw new RuntimeException("Failed to create directory: {$path}");
         }
     }
 }

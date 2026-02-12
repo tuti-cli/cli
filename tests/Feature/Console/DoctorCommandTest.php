@@ -95,7 +95,7 @@ describe('DoctorCommand Docker Check', function (): void {
 
     it('fails when Docker is not installed', function (): void {
         Process::fake([
-            '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'command not found'),
+            '*docker*--version*' => Process::result(errorOutput: 'command not found', exitCode: 1),
         ]);
 
         $this->artisan('doctor')
@@ -106,7 +106,7 @@ describe('DoctorCommand Docker Check', function (): void {
 
     it('displays helpful hint when Docker is not installed', function (): void {
         Process::fake([
-            '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'command not found'),
+            '*docker*--version*' => Process::result(errorOutput: 'command not found', exitCode: 1),
         ]);
 
         $this->artisan('doctor')
@@ -117,7 +117,7 @@ describe('DoctorCommand Docker Check', function (): void {
     it('fails when Docker daemon is not running', function (): void {
         Process::fake([
             '*docker*--version*' => Process::result('Docker version 27.0.0'),
-            '*docker*info*' => Process::result(exitCode: 1, errorOutput: 'Cannot connect'),
+            '*docker*info*' => Process::result(errorOutput: 'Cannot connect', exitCode: 1),
         ]);
 
         $this->artisan('doctor')
@@ -129,7 +129,7 @@ describe('DoctorCommand Docker Check', function (): void {
     it('displays hint when Docker daemon is not running', function (): void {
         Process::fake([
             '*docker*--version*' => Process::result('Docker version 27.0.0'),
-            '*docker*info*' => Process::result(exitCode: 1, errorOutput: 'Cannot connect'),
+            '*docker*info*' => Process::result(errorOutput: 'Cannot connect', exitCode: 1),
         ]);
 
         $this->artisan('doctor')
@@ -191,7 +191,7 @@ describe('DoctorCommand Docker Compose Check', function (): void {
         Process::fake([
             '*docker*--version*' => Process::result('Docker version 27.0.0'),
             '*docker*info*' => Process::result('Server Version: 27.0.0'),
-            '*docker*compose*version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
+            '*docker*compose*version*' => Process::result(errorOutput: 'not found', exitCode: 1),
         ]);
 
         $this->artisan('doctor')
@@ -204,7 +204,7 @@ describe('DoctorCommand Docker Compose Check', function (): void {
         Process::fake([
             '*docker*--version*' => Process::result('Docker version 27.0.0'),
             '*docker*info*' => Process::result('Server Version: 27.0.0'),
-            '*docker*compose*version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
+            '*docker*compose*version*' => Process::result(errorOutput: 'not found', exitCode: 1),
         ]);
 
         $this->artisan('doctor')
@@ -472,7 +472,7 @@ describe('DoctorCommand Summary Display', function (): void {
 
     it('displays issue count when issues exist', function (): void {
         Process::fake([
-            '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
+            '*docker*--version*' => Process::result(errorOutput: 'not found', exitCode: 1),
         ]);
 
         $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
@@ -487,7 +487,7 @@ describe('DoctorCommand Summary Display', function (): void {
 
     it('returns failure when issues exist', function (): void {
         Process::fake([
-            '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
+            '*docker*--version*' => Process::result(errorOutput: 'not found', exitCode: 1),
         ]);
 
         $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
@@ -511,7 +511,7 @@ describe('DoctorCommand Summary Display', function (): void {
 
     it('displays fix hint when issues exist', function (): void {
         Process::fake([
-            '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
+            '*docker*--version*' => Process::result(errorOutput: 'not found', exitCode: 1),
         ]);
 
         $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
@@ -645,8 +645,8 @@ describe('DoctorCommand Current Project Check', function (): void {
 
         Process::fake([
             '*docker*compose*config*' => Process::result(
-                exitCode: 1,
-                errorOutput: 'invalid YAML syntax'
+                errorOutput: 'invalid YAML syntax',
+                exitCode: 1
             ),
         ]);
 
@@ -803,7 +803,7 @@ describe('DoctorCommand Edge Cases', function (): void {
 
     it('handles multiple issues and warnings together', function (): void {
         Process::fake([
-            '*docker*--version*' => Process::result(exitCode: 1, errorOutput: 'not found'),
+            '*docker*--version*' => Process::result(errorOutput: 'not found', exitCode: 1),
         ]);
 
         $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
@@ -835,8 +835,8 @@ describe('DoctorCommand Edge Cases', function (): void {
 
         Process::fake([
             '*docker*compose*config*' => Process::result(
-                exitCode: 1,
-                errorOutput: 'invalid YAML syntax'
+                errorOutput: 'invalid YAML syntax',
+                exitCode: 1
             ),
         ]);
 

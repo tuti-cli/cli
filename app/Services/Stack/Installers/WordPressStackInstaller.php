@@ -22,22 +22,22 @@ use RuntimeException;
  *
  * Uses Docker to run WP-CLI and Composer, so no local PHP installation is required.
  */
-final class WordPressStackInstaller implements StackInstallerInterface
+final readonly class WordPressStackInstaller implements StackInstallerInterface
 {
-    private const IDENTIFIER = 'wordpress';
+    private const string IDENTIFIER = 'wordpress';
 
-    private const SUPPORTED_IDENTIFIERS = [
+    private const array SUPPORTED_IDENTIFIERS = [
         'wordpress',
         'wordpress-stack',
         'wp',
     ];
 
     public function __construct(
-        private readonly StackLoaderService $stackLoader,
-        private readonly StackFilesCopierService $copierService,
-        private readonly StackRepositoryService $repositoryService,
-        private readonly DockerExecutorInterface $dockerExecutor,
-        private readonly InfrastructureManagerInterface $infrastructureManager,
+        private StackLoaderService $stackLoader,
+        private StackFilesCopierService $copierService,
+        private StackRepositoryService $repositoryService,
+        private DockerExecutorInterface $dockerExecutor,
+        private InfrastructureManagerInterface $infrastructureManager,
     ) {}
 
     public function getIdentifier(): string
@@ -142,8 +142,8 @@ final class WordPressStackInstaller implements StackInstallerInterface
 
         // Create the project using Docker
         $result = match ($installationType) {
-            'bedrock' => $this->createBedrockProject($projectPath, $projectName, $options),
-            default => $this->createStandardWordPressProject($projectPath, $projectName, $options),
+            'bedrock' => $this->createBedrockProject($projectPath),
+            default => $this->createStandardWordPressProject($projectPath, $options),
         };
 
         if (! $result) {
@@ -340,13 +340,11 @@ final class WordPressStackInstaller implements StackInstallerInterface
      *
      * @param  array<string, mixed>  $options
      */
-    private function createStandardWordPressProject(string $projectPath, string $projectName, array $options): bool
+    private function createStandardWordPressProject(string $projectPath, array $options): bool
     {
         // Ensure project directory exists
-        if (! is_dir($projectPath)) {
-            if (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath)) {
-                throw new RuntimeException("Failed to create directory: {$projectPath}");
-            }
+        if (!is_dir($projectPath) && (!mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+            throw new RuntimeException("Failed to create directory: {$projectPath}");
         }
 
         // Download WordPress core using WP-CLI via Docker
@@ -364,7 +362,7 @@ final class WordPressStackInstaller implements StackInstallerInterface
         }
 
         // Create wp-config.php using environment variables
-        $this->createWpConfig($projectPath, $projectName);
+        $this->createWpConfig($projectPath);
 
         return true;
     }
@@ -373,7 +371,7 @@ final class WordPressStackInstaller implements StackInstallerInterface
      * Create wp-config.php file for WordPress.
      * Copies wp-config-sample.php and modifies it for Docker environment.
      */
-    private function createWpConfig(string $projectPath, string $projectName): void
+    private function createWpConfig(string $projectPath): void
     {
         $samplePath = $projectPath . '/wp-config-sample.php';
         $configPath = $projectPath . '/wp-config.php';
@@ -408,7 +406,7 @@ final class WordPressStackInstaller implements StackInstallerInterface
             $escapedValue = addslashes($value);
             $replacement = "define( '{$key}', getenv('WORDPRESS_{$key}') ?: '{$escapedValue}' );";
             // Limit to 1 replacement to prevent issues with duplicate matches
-            $content = preg_replace($pattern, $replacement, $content, 1);
+            $content = preg_replace($pattern, $replacement, (string) $content, 1);
         }
 
         // Replace table prefix to use environment variable
@@ -513,16 +511,12 @@ PHP;
 
     /**
      * Create a Bedrock WordPress project using Docker + Composer.
-     *
-     * @param  array<string, mixed>  $options
      */
-    private function createBedrockProject(string $projectPath, string $projectName, array $options): bool
+    private function createBedrockProject(string $projectPath): bool
     {
         // Ensure project directory exists
-        if (! is_dir($projectPath)) {
-            if (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath)) {
-                throw new RuntimeException("Failed to create directory: {$projectPath}");
-            }
+        if (!is_dir($projectPath) && (!mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+            throw new RuntimeException("Failed to create directory: {$projectPath}");
         }
 
         // Create Bedrock project using Composer via Docker

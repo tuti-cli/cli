@@ -82,7 +82,7 @@ final class InitCommand extends Command
         // Get available stacks
         $availableStacks = $installerRegistry->getAvailableStacks();
 
-        if (empty($availableStacks)) {
+        if ($availableStacks === []) {
             return null;
         }
 

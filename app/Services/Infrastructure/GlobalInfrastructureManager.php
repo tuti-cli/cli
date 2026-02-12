@@ -20,18 +20,18 @@ use SplFileInfo;
  *
  * Infrastructure is installed at ~/.tuti/infrastructure/traefik/
  */
-final class GlobalInfrastructureManager implements InfrastructureManagerInterface
+final readonly class GlobalInfrastructureManager implements InfrastructureManagerInterface
 {
-    private const INFRASTRUCTURE_DIR = 'infrastructure';
+    private const string INFRASTRUCTURE_DIR = 'infrastructure';
 
-    private const TRAEFIK_DIR = 'traefik';
+    private const string TRAEFIK_DIR = 'traefik';
 
-    private const NETWORK_NAME = 'traefik_proxy';
+    private const string NETWORK_NAME = 'traefik_proxy';
 
-    private const COMPOSE_PROJECT_NAME = 'tuti-traefik';
+    private const string COMPOSE_PROJECT_NAME = 'tuti-traefik';
 
     public function __construct(
-        private readonly string $globalTutiPath,
+        private string $globalTutiPath,
     ) {}
 
     public function isInstalled(): bool
@@ -56,16 +56,18 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
         }
 
         $output = mb_trim($process->output());
-        if (empty($output)) {
+        if ($output === '' || $output === '0') {
             return false;
         }
 
         // Parse NDJSON output
         foreach (explode("\n", $output) as $line) {
-            if (empty($line)) {
+            if ($line === '') {
                 continue;
             }
-
+            if ($line === '0') {
+                continue;
+            }
             $container = json_decode($line, true);
             if ($container && isset($container['State']) && $container['State'] === 'running') {
                 return true;
@@ -91,10 +93,8 @@ final class GlobalInfrastructureManager implements InfrastructureManagerInterfac
         }
 
         // Create infrastructure directory
-        if (! is_dir($traefikPath)) {
-            if (! mkdir($traefikPath, 0755, true) && ! is_dir($traefikPath)) {
-                throw new RuntimeException("Failed to create directory: {$traefikPath}");
-            }
+        if (!is_dir($traefikPath) && (!mkdir($traefikPath, 0755, true) && ! is_dir($traefikPath))) {
+            throw new RuntimeException("Failed to create directory: {$traefikPath}");
         }
 
         // Copy all files from stubs

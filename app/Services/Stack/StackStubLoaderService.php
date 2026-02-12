@@ -81,7 +81,7 @@ final readonly class StackStubLoaderService
             // Check for section marker: # @section: name
             if (preg_match('/^#\s*@section:\s*(\w+)\s*$/i', $line, $matches)) {
                 // Save previous section if it has content
-                if (! empty($currentContent)) {
+                if ($currentContent !== []) {
                     $sections[$currentSection] = mb_trim(implode("\n", $currentContent));
                 }
                 $currentSection = mb_strtolower($matches[1]);
@@ -94,7 +94,7 @@ final readonly class StackStubLoaderService
         }
 
         // Save last section
-        if (! empty($currentContent)) {
+        if ($currentContent !== []) {
             $sections[$currentSection] = mb_trim(implode("\n", $currentContent));
         }
 

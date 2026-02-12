@@ -111,7 +111,7 @@ describe('runComposer', function (): void {
 
         $this->service->runComposer('install --no-dev', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'composer install --no-dev'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'composer install --no-dev'));
     });
 
     it('throws when Docker is unavailable', function (): void {
@@ -142,7 +142,7 @@ describe('runArtisan', function (): void {
 
         $this->service->runArtisan('migrate', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'php artisan migrate'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'php artisan migrate'));
     });
 
     it('returns failure when no artisan file exists', function (): void {
@@ -160,7 +160,7 @@ describe('runArtisan', function (): void {
 
         $this->service->runArtisan('key:generate', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'DISABLE_DEFAULT_CONFIG=true'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'DISABLE_DEFAULT_CONFIG=true'));
     });
 });
 
@@ -173,7 +173,7 @@ describe('runNpm', function (): void {
 
         $this->service->runNpm('install', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'npm install')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'npm install')
             && str_contains(execCommandStr($process), 'node:20-alpine'));
     });
 
@@ -195,7 +195,7 @@ describe('runWpCli', function (): void {
 
         $this->service->runWpCli('core download', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'wordpress:cli')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'wordpress:cli')
             && str_contains(execCommandStr($process), 'wp core download'));
     });
 
@@ -209,7 +209,7 @@ describe('runWpCli', function (): void {
 
         $this->service->runWpCli('plugin list', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'docker compose')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'docker compose')
             && str_contains(execCommandStr($process), 'wpcli'));
     });
 });
@@ -223,7 +223,7 @@ describe('exec', function (): void {
 
         $this->service->exec('alpine:latest', 'echo hello', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'alpine:latest')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'alpine:latest')
             && str_contains(execCommandStr($process), 'echo hello'));
     });
 
@@ -232,7 +232,7 @@ describe('exec', function (): void {
 
         $this->service->exec('alpine', 'ls', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), $this->tempDir . ':/app'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), $this->tempDir . ':/app'));
     });
 
     it('passes environment variables', function (): void {
@@ -240,7 +240,7 @@ describe('exec', function (): void {
 
         $this->service->exec('alpine', 'env', $this->tempDir, ['FOO' => 'bar']);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'FOO=bar'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'FOO=bar'));
     });
 
     it('returns success result on successful execution', function (): void {
@@ -278,7 +278,7 @@ describe('pullImage', function (): void {
 
         expect($result->successful)->toBeTrue();
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'docker pull nginx:latest'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'docker pull nginx:latest'));
     });
 });
 
@@ -313,7 +313,7 @@ describe('execInContainer', function (): void {
 
         expect($result->successful)->toBeTrue();
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'docker exec')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'docker exec')
             && str_contains(execCommandStr($process), 'myapp_dev_app')
             && str_contains(execCommandStr($process), 'php -v'));
     });
@@ -323,6 +323,6 @@ describe('execInContainer', function (): void {
 
         $this->service->execInContainer('myapp_dev_app', 'env', ['APP_ENV' => 'testing']);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'APP_ENV=testing'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'APP_ENV=testing'));
     });
 });

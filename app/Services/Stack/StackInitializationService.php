@@ -74,13 +74,13 @@ final readonly class StackInitializationService
         $this->metadataService->create($config);
 
         // 5. Process docker-compose files with variable substitution
-        $this->processDockerComposeFiles($projectName, $environment);
+        $this->processDockerComposeFiles($projectName);
 
         // 6. Append optional services to docker-compose.yml
         $this->appendOptionalServices($selectedServices, $projectName, $environment);
 
         // 7. Copy environment file template with project-specific values (for docker-compose)
-        $this->copyEnvironmentFile($stackPath, $environment, $projectName);
+        $this->copyEnvironmentFile($environment, $projectName);
 
         // 8. Update project's .env with Docker service settings (Laravel-specific)
         // Only apply for Laravel projects (detected by artisan file)
@@ -155,7 +155,7 @@ final readonly class StackInitializationService
     /**
      * Process docker-compose files with variable substitution.
      */
-    private function processDockerComposeFiles(string $projectName, string $environment): void
+    private function processDockerComposeFiles(string $projectName): void
     {
         $composeFile = tuti_path('docker-compose.yml');
 
@@ -217,7 +217,7 @@ final readonly class StackInitializationService
             return ! in_array($category, $baseCategories, true);
         });
 
-        if (empty($optionalServices)) {
+        if ($optionalServices === []) {
             return;
         }
 
@@ -287,8 +287,10 @@ final readonly class StackInitializationService
                     // Load entire stub (legacy format)
                     $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
                 }
-
-                if ($serviceYaml === null || mb_trim($serviceYaml) === '') {
+                if ($serviceYaml === null) {
+                    continue;
+                }
+                if (mb_trim($serviceYaml) === '') {
                     continue;
                 }
 
@@ -302,7 +304,7 @@ final readonly class StackInitializationService
                         $volumesToAdd[$volume] = $projectName;
                     }
                 }
-            } catch (Exception $e) {
+            } catch (Exception) {
                 // Skip if stub loading fails - service won't be added
                 continue;
             }
@@ -316,7 +318,7 @@ final readonly class StackInitializationService
         $newContent = mb_substr($content, 0, $insertionPoint) . $servicesToAppend . "\n" . mb_substr($content, $insertionPoint);
 
         // Add volumes if any
-        if (! empty($volumesToAdd)) {
+        if ($volumesToAdd !== []) {
             $newContent = $this->appendVolumesToCompose($newContent, $volumesToAdd);
         }
 
@@ -373,7 +375,7 @@ final readonly class StackInitializationService
                         $devServicesToAppend .= "\n" . $indentedYaml;
                     }
                 }
-            } catch (Exception $e) {
+            } catch (Exception) {
                 // Skip if dev section loading fails
                 continue;
             }
@@ -412,26 +414,26 @@ final readonly class StackInitializationService
         $pattern1 = '/\n# =+\s*\n# Networks/i';
         if (preg_match($pattern1, $content, $matches, PREG_OFFSET_CAPTURE)) {
             // Return position of the newline before the header
-            return (int) $matches[0][1];
+            return $matches[0][1];
         }
 
         // Pattern 2: Look for standalone "networks:" at column 0 (top-level key)
         // Must NOT be indented (no spaces before it)
         $pattern2 = '/\nnetworks:\s*$/m';
         if (preg_match($pattern2, $content, $matches, PREG_OFFSET_CAPTURE)) {
-            return (int) $matches[0][1];
+            return $matches[0][1];
         }
 
         // Pattern 3: Find the volumes section as fallback (insert before volumes if no networks)
         $pattern3 = '/\n# =+\s*\n# Volumes/i';
         if (preg_match($pattern3, $content, $matches, PREG_OFFSET_CAPTURE)) {
-            return (int) $matches[0][1];
+            return $matches[0][1];
         }
 
         // Pattern 4: Look for volumes: key directly
         $pattern4 = '/\nvolumes:\s*$/m';
         if (preg_match($pattern4, $content, $matches, PREG_OFFSET_CAPTURE)) {
-            return (int) $matches[0][1];
+            return $matches[0][1];
         }
 
         // Last resort: append at the end of file
@@ -470,7 +472,7 @@ final readonly class StackInitializationService
         }
 
         if ($volumesToInsert !== '') {
-            $content = mb_rtrim($content) . "\n" . $volumesToInsert;
+            return mb_rtrim($content) . "\n" . $volumesToInsert;
         }
 
         return $content;
@@ -507,16 +509,14 @@ final readonly class StackInitializationService
         try {
             Yaml::parse($content);
         } catch (ParseException $e) {
-            throw new RuntimeException(
-                "Generated invalid YAML for {$filePath}: {$e->getMessage()}"
-            );
+            throw new RuntimeException("Generated invalid YAML for {$filePath}: {$e->getMessage()}", $e->getCode(), $e);
         }
     }
 
     /**
      * Copy environment file template to project root as .env
      */
-    private function copyEnvironmentFile(string $stackPath, string $environment, string $projectName = ''): void
+    private function copyEnvironmentFile(string $environment, string $projectName = ''): void
     {
         $projectRoot = $this->directoryService->getProjectRoot();
         $targetEnv = $projectRoot . '/.env';
@@ -579,7 +579,7 @@ final readonly class StackInitializationService
             ];
 
             foreach ($patterns as $pattern => $replace) {
-                $content = preg_replace($pattern, $replace, $content);
+                $content = preg_replace($pattern, $replace, (string) $content);
             }
         }
 
@@ -763,7 +763,7 @@ EOT;
         if (function_exists('exec')) {
             $result = [];
             @exec($command . ' 2>/dev/null', $result, $returnCode);
-            if ($returnCode === 0 && ! empty($result)) {
+            if ($returnCode === 0 && $result !== []) {
                 return mb_trim($result[0]);
             }
         }
@@ -795,7 +795,7 @@ EOT;
         ];
 
         foreach ($dbReplacements as $pattern => $replacement) {
-            $content = preg_replace($pattern, $replacement, $content);
+            $content = preg_replace($pattern, $replacement, (string) $content);
         }
 
         // Handle existing uncommented variables (with possible leading spaces)
@@ -808,19 +808,18 @@ EOT;
         ];
 
         foreach ($dbUpdates as $pattern => $replacement) {
-            $content = preg_replace($pattern, $replacement, $content);
+            $content = preg_replace($pattern, $replacement, (string) $content);
         }
 
         // Update Redis configuration for Docker container
-        $content = preg_replace('/^[\s]*#?[\s]*REDIS_HOST=.*/m', 'REDIS_HOST=redis', $content);
-        $content = preg_replace('/^[\s]*#?[\s]*REDIS_PASSWORD=.*/m', 'REDIS_PASSWORD=', $content);
+        $content = preg_replace('/^[\s]*#?[\s]*REDIS_HOST=.*/m', 'REDIS_HOST=redis', (string) $content);
+        $content = preg_replace('/^[\s]*#?[\s]*REDIS_PASSWORD=.*/m', 'REDIS_PASSWORD=', (string) $content);
 
         // Update Mail configuration for Mailpit in Docker
-        $content = preg_replace('/^[\s]*MAIL_HOST=.*/m', 'MAIL_HOST=mailpit', $content);
-        $content = preg_replace('/^[\s]*MAIL_PORT=.*/m', 'MAIL_PORT=1025', $content);
-        $content = preg_replace('/^[\s]*MAIL_MAILER=.*/m', 'MAIL_MAILER=smtp', $content);
+        $content = preg_replace('/^[\s]*MAIL_HOST=.*/m', 'MAIL_HOST=mailpit', (string) $content);
+        $content = preg_replace('/^[\s]*MAIL_PORT=.*/m', 'MAIL_PORT=1025', (string) $content);
 
-        return $content;
+        return preg_replace('/^[\s]*MAIL_MAILER=.*/m', 'MAIL_MAILER=smtp', (string) $content);
     }
 
     /**

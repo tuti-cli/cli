@@ -106,7 +106,7 @@ final class EnvCommand extends Command
      */
     private function checkVariables(array $lines, array $variables): void
     {
-        foreach ($variables as $var => $description) {
+        foreach (array_keys($variables) as $var) {
             $found = false;
             $value = null;
 
@@ -133,7 +133,7 @@ final class EnvCommand extends Command
      */
     private function maskSensitiveValue(string $key, ?string $value): string
     {
-        if ($value === null || $value === '' || $value === 'null') {
+        if (in_array($value, [null, '', 'null'], true)) {
             return '<not set>';
         }
 

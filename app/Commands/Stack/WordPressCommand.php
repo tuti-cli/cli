@@ -54,7 +54,7 @@ final class WordPressCommand extends Command
                 return self::FAILURE;
             }
 
-            if (! $this->preFlightChecks($directoryService, $mode)) {
+            if (! $this->preFlightChecks($directoryService)) {
                 return self::FAILURE;
             }
 
@@ -94,7 +94,7 @@ final class WordPressCommand extends Command
         }
     }
 
-    private function getInstallationMode(WordPressStackInstaller $installer): ?string
+    private function getInstallationMode(WordPressStackInstaller $installer): string
     {
         $modeOption = $this->option('mode');
 
@@ -130,7 +130,7 @@ final class WordPressCommand extends Command
         );
     }
 
-    private function preFlightChecks(ProjectDirectoryService $directoryService, string $mode): bool
+    private function preFlightChecks(ProjectDirectoryService $directoryService): bool
     {
         if ($directoryService->exists() && ! $this->option('force')) {
             $this->failure('Project already initialized. ".tuti/" directory already exists.');
@@ -494,7 +494,7 @@ final class WordPressCommand extends Command
         }
 
         foreach ($config['selected_services'] as $serviceKey) {
-            [$category, $serviceName] = explode('.', $serviceKey);
+            [$category, $serviceName] = explode('.', (string) $serviceKey);
 
             // Configure for Redis cache
             if ($category === 'cache' && $serviceName === 'redis') {
