@@ -43,8 +43,8 @@ Increase test coverage from ~5 test files to comprehensive coverage across all c
   - [x] `infra:start`, `infra:stop`, `infra:restart`, `infra:status`
   - [x] `env:check` command
   - [x] `init` command
-- [ ] Validate generated Docker Compose files are syntactically valid YAML
-- [ ] Test all service stub combinations produce valid compose output
+- [x] Validate generated Docker Compose files are syntactically valid YAML
+- [x] Test all service stub combinations produce valid compose output
 
 **User Stories:** US-6.1 (Health Check), US-2.1 (Laravel Stack), US-2.2 (WordPress Stack)
 
