@@ -42,6 +42,15 @@ final class DebugLogService
     }
 
     /**
+     * Reset the singleton instance.
+     * Used for testing to allow fresh instances after environment changes.
+     */
+    public static function resetInstance(): void
+    {
+        self::$instance = null;
+    }
+
+    /**
      * Enable debug mode.
      */
     public function enable(): void

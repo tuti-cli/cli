@@ -174,8 +174,12 @@ final readonly class StackComposeBuilderService
             $environmentOverrides
         );
 
-        // Load and process stub
-        $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
+        // Load and process stub (handle section-based stubs)
+        if ($this->stubLoader->hasSections($stubPath)) {
+            $serviceYaml = $this->stubLoader->loadSection($stubPath, 'base', $replacements);
+        } else {
+            $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
+        }
 
         // Parse YAML
         /** @var array<string, mixed>|null $serviceParsed */
