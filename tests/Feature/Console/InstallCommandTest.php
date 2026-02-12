@@ -819,6 +819,11 @@ describe('InstallCommand Edge Cases', function (): void {
     });
 
     it('throws exception when cannot determine home directory', function (): void {
+        // Skip on systems with posix extension - posix_getpwuid() fallback cannot be mocked
+        if (function_exists('posix_getpwuid')) {
+            $this->markTestSkipped('Cannot simulate missing home directory when posix extension is available.');
+        }
+
         // Clear all home directory detection methods
         putenv('HOME=');
         putenv('USERPROFILE=');
