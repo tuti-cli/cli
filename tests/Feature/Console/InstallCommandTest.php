@@ -18,7 +18,7 @@ declare(strict_types=1);
  * - Lines 266-268: USER/USERNAME environment variable fallback
  *   (Hard to test reliably in feature tests due to environment variable isolation issues)
  *
- * @see \App\Commands\InstallCommand
+ * @see App\Commands\InstallCommand
  */
 
 use App\Contracts\InfrastructureManagerInterface;
@@ -30,27 +30,27 @@ use LaravelZero\Framework\Commands\Command;
 describe('InstallCommand', function (): void {
 
     it('is registered in the application', function (): void {
-        $command = $this->app->make(\App\Commands\InstallCommand::class);
+        $command = $this->app->make(App\Commands\InstallCommand::class);
 
         expect($command)->toBeInstanceOf(Command::class);
     });
 
     it('has correct signature', function (): void {
-        $command = $this->app->make(\App\Commands\InstallCommand::class);
+        $command = $this->app->make(App\Commands\InstallCommand::class);
 
         expect($command->getName())->toBe('install');
     });
 
     it('uses HasBrandedOutput trait', function (): void {
-        $command = $this->app->make(\App\Commands\InstallCommand::class);
+        $command = $this->app->make(App\Commands\InstallCommand::class);
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has --force and --skip-infra options', function (): void {
-        $command = $this->app->make(\App\Commands\InstallCommand::class);
+        $command = $this->app->make(App\Commands\InstallCommand::class);
         $definition = $command->getDefinition();
 
         expect($definition->hasOption('force'))->toBeTrue()
@@ -58,7 +58,7 @@ describe('InstallCommand', function (): void {
     });
 
     it('has correct description', function (): void {
-        $command = $this->app->make(\App\Commands\InstallCommand::class);
+        $command = $this->app->make(App\Commands\InstallCommand::class);
 
         expect($command->getDescription())->toBe('Set up tuti CLI global configuration, directories, and infrastructure');
     });
@@ -228,7 +228,7 @@ describe('InstallCommand Global Directory Setup', function (): void {
             ->assertExitCode(Command::SUCCESS);
 
         $tutiPath = $this->testDir . '/.tuti';
-        $perms = substr(sprintf('%o', fileperms($tutiPath)), -4);
+        $perms = mb_substr(sprintf('%o', fileperms($tutiPath)), -4);
 
         expect($perms)->toBe('0755');
     });
@@ -279,8 +279,6 @@ describe('InstallCommand Config Creation', function (): void {
             ->toHaveKey('network', 'traefik_proxy')
             ->toHaveKey('domain', 'local.test');
     });
-
-
 
     it('includes timestamp in created_at field', function (): void {
         $mock = Mockery::mock(InfrastructureManagerInterface::class);
@@ -575,8 +573,6 @@ describe('InstallCommand Success Display', function (): void {
             ->expectsOutputToContain('Dashboard');
     });
 
-
-
     it('displays dashboard URL when infrastructure is running', function (): void {
         $mock = Mockery::mock(InfrastructureManagerInterface::class);
         $mock->shouldReceive('isInstalled')->andReturn(true);
@@ -730,15 +726,11 @@ describe('InstallCommand Infrastructure Setup Scenarios', function (): void {
         cleanupTestDirectory($this->testDir);
     });
 
-
-
-
-
     it('installs and starts Traefik when not installed', function (): void {
-        $fakeInfra = new \Tests\Mocks\FakeInfrastructureManager();
+        $fakeInfra = new Tests\Mocks\FakeInfrastructureManager();
         $fakeInfra->setInstalled(false);
         $fakeInfra->setRunning(false);
-        $this->app->instance(\App\Contracts\InfrastructureManagerInterface::class, $fakeInfra);
+        $this->app->instance(InfrastructureManagerInterface::class, $fakeInfra);
 
         $this->artisan('install', ['--no-interaction' => true])
             ->assertExitCode(Command::SUCCESS)

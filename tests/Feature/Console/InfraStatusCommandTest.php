@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `infra:status` command which shows the status of global infrastructure.
  *
- * @see \App\Commands\Infrastructure\StatusCommand
+ * @see StatusCommand
  */
 
 use App\Commands\Infrastructure\StatusCommand;
@@ -46,7 +46,7 @@ describe('InfraStatusCommand', function (): void {
         $command = $this->app->make(StatusCommand::class);
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     // ─── Status Output ────────────────────────────────────────────────────

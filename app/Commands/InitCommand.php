@@ -18,6 +18,7 @@ use function Laravel\Prompts\text;
 final class InitCommand extends Command
 {
     use HasBrandedOutput;
+
     // already defined in base Command class
     // {--env=dev :   Environment (dev, staging, production)}
     // {--no-interaction :   Run in non-interactive mode}

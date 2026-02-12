@@ -7,7 +7,6 @@ namespace App\Commands\Stack;
 use App\Concerns\HasBrandedOutput;
 use App\Services\Stack\Installers\WordPressStackInstaller;
 use LaravelZero\Framework\Commands\Command;
-use RuntimeException;
 
 use function Laravel\Prompts\spin;
 
@@ -37,6 +36,7 @@ final class WpSetupCommand extends Command
         // Check if we're in a WordPress project
         if (! file_exists($configPath)) {
             $this->failure('Not a tuti project. Run this command from a WordPress project directory.');
+
             return self::FAILURE;
         }
 
@@ -65,6 +65,7 @@ final class WpSetupCommand extends Command
         if (! $this->areContainersRunning($projectPath)) {
             $this->failure('Containers are not running.');
             $this->hint('Start containers first with: tuti local:start');
+
             return self::FAILURE;
         }
 
@@ -99,6 +100,7 @@ final class WpSetupCommand extends Command
 
         if (! $dbReady) {
             $this->failure('Database is not ready. Please try again in a moment.');
+
             return self::FAILURE;
         }
 
@@ -124,6 +126,7 @@ final class WpSetupCommand extends Command
         if (! $result) {
             $this->failure('WordPress installation failed.');
             $this->hint('Check container logs with: docker logs <container_name>');
+
             return self::FAILURE;
         }
 

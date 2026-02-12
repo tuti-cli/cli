@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `local:logs` command which views or follows logs for project services.
  *
- * @see \App\Commands\Local\LogsCommand
+ * @see LogsCommand
  */
 
 use App\Commands\Local\LogsCommand;
@@ -68,7 +68,7 @@ describe('LocalLogsCommand', function (): void {
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has correct description', function (): void {

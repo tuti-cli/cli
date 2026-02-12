@@ -218,6 +218,112 @@ final class WordPressStackInstaller implements StackInstallerInterface
     }
 
     /**
+     * Generate WordPress salts (authentication keys).
+     *
+     * @return array<string, string>
+     */
+    public function generateSalts(): array
+    {
+        $salts = [];
+        $keys = [
+            'WP_AUTH_KEY',
+            'WP_SECURE_AUTH_KEY',
+            'WP_LOGGED_IN_KEY',
+            'WP_NONCE_KEY',
+            'WP_AUTH_SALT',
+            'WP_SECURE_AUTH_SALT',
+            'WP_LOGGED_IN_SALT',
+            'WP_NONCE_SALT',
+        ];
+
+        foreach ($keys as $key) {
+            $salts[$key] = $this->generateSecureKey(64);
+        }
+
+        return $salts;
+    }
+
+    /**
+     * Run WP-CLI command in the project.
+     * Uses docker run with proper network and volume mounts.
+     *
+     * @param  bool  $useNetwork  Whether to connect to the project's Docker network
+     */
+    public function runWpCli(string $projectPath, string $command, bool $useNetwork = true): bool
+    {
+        // Get project name from .tuti/config.json or directory name
+        $projectName = basename($projectPath);
+        $configPath = $projectPath . '/.tuti/config.json';
+
+        if (file_exists($configPath)) {
+            $config = json_decode(file_get_contents($configPath), true);
+            $projectName = $config['project']['name'] ?? $projectName;
+        }
+
+        // Build docker run command with network access to running containers
+        $networkName = "{$projectName}_dev_network";
+        $image = 'wordpress:cli-2-php8.3';
+
+        $dockerCommand = sprintf(
+            'docker run --rm -v "%s:/var/www/html" -w /var/www/html',
+            $projectPath
+        );
+
+        // Add network if requested (for commands that need database access)
+        if ($useNetwork) {
+            $dockerCommand .= sprintf(' --network %s', $networkName);
+        }
+
+        // Add environment variables for database connection
+        $dockerCommand .= ' -e WORDPRESS_DB_HOST=database';
+        $dockerCommand .= ' -e WORDPRESS_DB_NAME=wordpress';
+        $dockerCommand .= ' -e WORDPRESS_DB_USER=wordpress';
+        $dockerCommand .= ' -e WORDPRESS_DB_PASSWORD=secret';
+
+        // Add user mapping for file permissions
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $uid = getmyuid();
+            $gid = getmygid();
+            if ($uid !== false && $gid !== false) {
+                $dockerCommand .= " --user {$uid}:{$gid}";
+            }
+        }
+
+        // Add image and WP-CLI command
+        $dockerCommand .= sprintf(' %s wp %s 2>&1', $image, $command);
+
+        exec($dockerCommand, $output, $exitCode);
+
+        return $exitCode === 0;
+    }
+
+    /**
+     * Install a WordPress plugin using WP-CLI.
+     */
+    public function installPlugin(string $projectPath, string $plugin, bool $activate = true): bool
+    {
+        $command = "plugin install {$plugin}";
+        if ($activate) {
+            $command .= ' --activate';
+        }
+
+        return $this->runWpCli($projectPath, $command);
+    }
+
+    /**
+     * Install a WordPress theme using WP-CLI.
+     */
+    public function installTheme(string $projectPath, string $theme, bool $activate = false): bool
+    {
+        $command = "theme install {$theme}";
+        if ($activate) {
+            $command .= ' --activate';
+        }
+
+        return $this->runWpCli($projectPath, $command);
+    }
+
+    /**
      * Ensure the global infrastructure (Traefik) is ready.
      */
     private function ensureInfrastructureReady(): void
@@ -282,14 +388,10 @@ final class WordPressStackInstaller implements StackInstallerInterface
         // Replace database constants with environment variable lookups
         $replacements = [
             // Database settings
-            "define( 'DB_NAME', 'database_name_here' );"
-                => "define( 'DB_NAME', getenv('WORDPRESS_DB_NAME') ?: 'wordpress' );",
-            "define( 'DB_USER', 'username_here' );"
-                => "define( 'DB_USER', getenv('WORDPRESS_DB_USER') ?: 'wordpress' );",
-            "define( 'DB_PASSWORD', 'password_here' );"
-                => "define( 'DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: 'secret' );",
-            "define( 'DB_HOST', 'localhost' );"
-                => "define( 'DB_HOST', getenv('WORDPRESS_DB_HOST') ?: 'database' );",
+            "define( 'DB_NAME', 'database_name_here' );" => "define( 'DB_NAME', getenv('WORDPRESS_DB_NAME') ?: 'wordpress' );",
+            "define( 'DB_USER', 'username_here' );" => "define( 'DB_USER', getenv('WORDPRESS_DB_USER') ?: 'wordpress' );",
+            "define( 'DB_PASSWORD', 'password_here' );" => "define( 'DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: 'secret' );",
+            "define( 'DB_HOST', 'localhost' );" => "define( 'DB_HOST', getenv('WORDPRESS_DB_HOST') ?: 'database' );",
         ];
 
         foreach ($replacements as $search => $replace) {
@@ -403,8 +505,9 @@ PHP;
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
         $salt = '';
         for ($i = 0; $i < 64; $i++) {
-            $salt .= $chars[random_int(0, strlen($chars) - 1)];
+            $salt .= $chars[random_int(0, mb_strlen($chars) - 1)];
         }
+
         return $salt;
     }
 
@@ -456,32 +559,6 @@ PHP;
     }
 
     /**
-     * Generate WordPress salts (authentication keys).
-     *
-     * @return array<string, string>
-     */
-    public function generateSalts(): array
-    {
-        $salts = [];
-        $keys = [
-            'WP_AUTH_KEY',
-            'WP_SECURE_AUTH_KEY',
-            'WP_LOGGED_IN_KEY',
-            'WP_NONCE_KEY',
-            'WP_AUTH_SALT',
-            'WP_SECURE_AUTH_SALT',
-            'WP_LOGGED_IN_SALT',
-            'WP_NONCE_SALT',
-        ];
-
-        foreach ($keys as $key) {
-            $salts[$key] = $this->generateSecureKey(64);
-        }
-
-        return $salts;
-    }
-
-    /**
      * Generate a secure random key.
      */
     private function generateSecureKey(int $length): string
@@ -490,89 +567,9 @@ PHP;
         $key = '';
 
         for ($i = 0; $i < $length; $i++) {
-            $key .= $chars[random_int(0, strlen($chars) - 1)];
+            $key .= $chars[random_int(0, mb_strlen($chars) - 1)];
         }
 
         return $key;
-    }
-
-    /**
-     * Run WP-CLI command in the project.
-     * Uses docker run with proper network and volume mounts.
-     *
-     * @param  bool  $useNetwork  Whether to connect to the project's Docker network
-     */
-    public function runWpCli(string $projectPath, string $command, bool $useNetwork = true): bool
-    {
-        // Get project name from .tuti/config.json or directory name
-        $projectName = basename($projectPath);
-        $configPath = $projectPath . '/.tuti/config.json';
-
-        if (file_exists($configPath)) {
-            $config = json_decode(file_get_contents($configPath), true);
-            $projectName = $config['project']['name'] ?? $projectName;
-        }
-
-        // Build docker run command with network access to running containers
-        $networkName = "{$projectName}_dev_network";
-        $image = 'wordpress:cli-2-php8.3';
-
-        $dockerCommand = sprintf(
-            'docker run --rm -v "%s:/var/www/html" -w /var/www/html',
-            $projectPath
-        );
-
-        // Add network if requested (for commands that need database access)
-        if ($useNetwork) {
-            $dockerCommand .= sprintf(' --network %s', $networkName);
-        }
-
-        // Add environment variables for database connection
-        $dockerCommand .= ' -e WORDPRESS_DB_HOST=database';
-        $dockerCommand .= ' -e WORDPRESS_DB_NAME=wordpress';
-        $dockerCommand .= ' -e WORDPRESS_DB_USER=wordpress';
-        $dockerCommand .= ' -e WORDPRESS_DB_PASSWORD=secret';
-
-        // Add user mapping for file permissions
-        if (PHP_OS_FAMILY !== 'Windows') {
-            $uid = getmyuid();
-            $gid = getmygid();
-            if ($uid !== false && $gid !== false) {
-                $dockerCommand .= " --user {$uid}:{$gid}";
-            }
-        }
-
-        // Add image and WP-CLI command
-        $dockerCommand .= sprintf(' %s wp %s 2>&1', $image, $command);
-
-        exec($dockerCommand, $output, $exitCode);
-
-        return $exitCode === 0;
-    }
-
-    /**
-     * Install a WordPress plugin using WP-CLI.
-     */
-    public function installPlugin(string $projectPath, string $plugin, bool $activate = true): bool
-    {
-        $command = "plugin install {$plugin}";
-        if ($activate) {
-            $command .= ' --activate';
-        }
-
-        return $this->runWpCli($projectPath, $command);
-    }
-
-    /**
-     * Install a WordPress theme using WP-CLI.
-     */
-    public function installTheme(string $projectPath, string $theme, bool $activate = false): bool
-    {
-        $command = "theme install {$theme}";
-        if ($activate) {
-            $command .= ' --activate';
-        }
-
-        return $this->runWpCli($projectPath, $command);
     }
 }

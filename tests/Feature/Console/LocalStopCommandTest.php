@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `local:stop` command which stops the local development environment.
  *
- * @see \App\Commands\Local\StopCommand
+ * @see StopCommand
  */
 
 use App\Commands\Local\StopCommand;
@@ -55,7 +55,7 @@ describe('LocalStopCommand', function (): void {
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has correct description', function (): void {

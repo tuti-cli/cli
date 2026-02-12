@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `local:status` command which displays the status of project services.
  *
- * @see \App\Commands\Local\StatusCommand
+ * @see StatusCommand
  */
 
 use App\Commands\Local\StatusCommand;
@@ -60,8 +60,8 @@ describe('LocalStatusCommand', function (): void {
         $traits = class_uses_recursive($command);
 
         expect($traits)
-            ->toContain(\App\Concerns\HasBrandedOutput::class)
-            ->toContain(\App\Concerns\BuildsProjectUrls::class);
+            ->toContain(App\Concerns\HasBrandedOutput::class)
+            ->toContain(App\Concerns\BuildsProjectUrls::class);
     });
 
     it('has correct description', function (): void {
