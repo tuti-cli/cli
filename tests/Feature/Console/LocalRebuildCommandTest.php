@@ -241,13 +241,13 @@ describe('LocalRebuildCommand Container Rebuild', function (): void {
         $this->artisan('local:rebuild')
             ->assertExitCode(Command::SUCCESS);
 
-        Process::assertRan(fn ($process) => str_contains(rebuildCommandStr($process->command), 'docker compose') &&
+        Process::assertRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), 'docker compose') &&
             str_contains(rebuildCommandStr($process->command), 'down'));
 
-        Process::assertRan(fn ($process) => str_contains(rebuildCommandStr($process->command), 'docker compose') &&
+        Process::assertRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), 'docker compose') &&
             str_contains(rebuildCommandStr($process->command), 'build'));
 
-        Process::assertRan(fn ($process) => str_contains(rebuildCommandStr($process->command), 'docker compose') &&
+        Process::assertRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), 'docker compose') &&
             str_contains(rebuildCommandStr($process->command), 'up'));
     });
 
@@ -291,21 +291,21 @@ describe('LocalRebuildCommand Container Rebuild', function (): void {
         $this->artisan('local:rebuild')
             ->assertExitCode(Command::SUCCESS);
 
-        Process::assertRan(fn ($process) => str_contains(rebuildCommandStr($process->command), 'docker-compose.dev.yml'));
+        Process::assertRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), 'docker-compose.dev.yml'));
     });
 
     it('includes env file when exists', function (): void {
         $this->artisan('local:rebuild')
             ->assertExitCode(Command::SUCCESS);
 
-        Process::assertRan(fn ($process) => str_contains(rebuildCommandStr($process->command), '--env-file'));
+        Process::assertRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), '--env-file'));
     });
 
     it('adds --pull flag to build command', function (): void {
         $this->artisan('local:rebuild')
             ->assertExitCode(Command::SUCCESS);
 
-        Process::assertRan(fn ($process) => str_contains(rebuildCommandStr($process->command), 'build') &&
+        Process::assertRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), 'build') &&
             str_contains(rebuildCommandStr($process->command), '--pull'));
     });
 });
@@ -338,7 +338,7 @@ describe('LocalRebuildCommand Options', function (): void {
         $this->artisan('local:rebuild', ['--no-cache' => true])
             ->assertExitCode(Command::SUCCESS);
 
-        Process::assertRan(fn ($process) => str_contains(rebuildCommandStr($process->command), 'build') &&
+        Process::assertRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), 'build') &&
             str_contains(rebuildCommandStr($process->command), '--no-cache'));
     });
 
@@ -346,14 +346,14 @@ describe('LocalRebuildCommand Options', function (): void {
         $this->artisan('local:rebuild', ['--force' => true])
             ->assertExitCode(Command::SUCCESS);
 
-        Process::assertNotRan(fn ($process) => str_contains(rebuildCommandStr($process->command), 'down'));
+        Process::assertNotRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), 'down'));
     });
 
     it('runs build with --detach flag quietly', function (): void {
         $this->artisan('local:rebuild', ['--detach' => true])
             ->assertExitCode(Command::SUCCESS);
 
-        Process::assertRan(fn ($process) => str_contains(rebuildCommandStr($process->command), 'build'));
+        Process::assertRan(fn ($process): bool => str_contains(rebuildCommandStr($process->command), 'build'));
     });
 });
 

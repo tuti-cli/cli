@@ -28,7 +28,7 @@ uses(Tests\TestCase::class)->in('Feature', 'Unit');
 |
 */
 
-expect()->extend('toBeValidJson', function () {
+expect()->extend('toBeValidJson', function (): object {
     $decoded = json_decode((string) $this->value, true);
 
     expect(json_last_error())->toBe(JSON_ERROR_NONE)
@@ -37,13 +37,13 @@ expect()->extend('toBeValidJson', function () {
     return $this;
 });
 
-expect()->extend('toBeDirectory', function () {
+expect()->extend('toBeDirectory', function (): object {
     expect(is_dir($this->value))->toBeTrue("Expected {$this->value} to be a directory");
 
     return $this;
 });
 
-expect()->extend('toBeExecutable', function () {
+expect()->extend('toBeExecutable', function (): object {
     expect(is_executable($this->value))->toBeTrue("Expected {$this->value} to be executable");
 
     return $this;

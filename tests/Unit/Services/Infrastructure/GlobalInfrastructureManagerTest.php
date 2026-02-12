@@ -151,7 +151,7 @@ describe('start', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'docker compose')
+        Process::assertRan(fn (object $process): bool => str_contains(infraCommandStr($process), 'docker compose')
             && str_contains(infraCommandStr($process), 'up -d'));
     });
 
@@ -161,7 +161,7 @@ describe('start', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'docker network'));
+        Process::assertRan(fn (object $process): bool => str_contains(infraCommandStr($process), 'docker network'));
     });
 
     it('throws when docker compose up fails', function (): void {
@@ -195,7 +195,7 @@ describe('stop', function (): void {
 
         $this->service->stop();
 
-        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'docker compose')
+        Process::assertRan(fn (object $process): bool => str_contains(infraCommandStr($process), 'docker compose')
             && str_contains(infraCommandStr($process), 'down'));
     });
 });
@@ -210,8 +210,8 @@ describe('restart', function (): void {
 
         $this->service->restart();
 
-        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'down'));
-        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'up -d'));
+        Process::assertRan(fn (object $process): bool => str_contains(infraCommandStr($process), 'down'));
+        Process::assertRan(fn (object $process): bool => str_contains(infraCommandStr($process), 'up -d'));
     });
 });
 
@@ -235,7 +235,7 @@ describe('ensureNetworkExists', function (): void {
 
         expect($this->service->ensureNetworkExists())->toBeTrue();
 
-        Process::assertRan(fn ($process) => str_contains(infraCommandStr($process), 'docker network create'));
+        Process::assertRan(fn (object $process): bool => str_contains(infraCommandStr($process), 'docker network create'));
     });
 
     it('throws when network creation fails', function (): void {

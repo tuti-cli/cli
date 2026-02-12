@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Process;
  * It acts as the bridge between our domain world (Project objects) and the
  * external system world (OS processes).
  */
-final class DockerComposeOrchestrator implements OrchestratorInterface
+final readonly class DockerComposeOrchestrator implements OrchestratorInterface
 {
     private DebugLogService $debug;
 
@@ -165,7 +165,10 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
 
         // Parse NDJSON (NewLine Delimited JSON) from docker compose v2
         foreach (explode("\n", mb_trim($output)) as $line) {
-            if ($line === '' || $line === '0') {
+            if ($line === '') {
+                continue;
+            }
+            if ($line === '0') {
                 continue;
             }
             $data = json_decode($line, true);
@@ -207,7 +210,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
     public function getLastError(): ?string
     {
         $errors = $this->debug->getErrors();
-        if (empty($errors)) {
+        if ($errors === []) {
             return null;
         }
 

@@ -15,7 +15,7 @@ final readonly class ProjectInitializationService
         private ProjectMetadataService $metadataService
     ) {}
 
-    public function initialize(string $projectName, string $environment): bool
+    public function initialize(string $projectName): bool
     {
         // 1. Create .tuti directory
         $this->directoryService->create();
@@ -27,7 +27,7 @@ final readonly class ProjectInitializationService
         $this->moveEnvFilesToRoot();
 
         // 4. Create config
-        $config = $this->buildMinimalConfig($projectName, $environment);
+        $config = $this->buildMinimalConfig($projectName);
         $this->metadataService->create($config);
 
         return true;
@@ -77,7 +77,7 @@ final readonly class ProjectInitializationService
     /**
      * @return array<string, mixed>
      */
-    private function buildMinimalConfig(string $projectName, string $environment): array
+    private function buildMinimalConfig(string $projectName): array
     {
         return [
             'project' => [

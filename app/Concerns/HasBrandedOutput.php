@@ -451,10 +451,8 @@ trait HasBrandedOutput
         $this->newLine();
         $this->output->writeln("  <fg={$color}>{$icon} {$title}</>");
 
-        if (! empty($lines)) {
-            foreach ($lines as $line) {
-                $this->output->writeln("    <fg=gray>{$line}</>");
-            }
+        foreach ($lines as $line) {
+            $this->output->writeln("    <fg=gray>{$line}</>");
         }
     }
 
@@ -522,8 +520,8 @@ trait HasBrandedOutput
         // Content lines
         foreach ($lines as $line) {
             // Strip ANSI codes to get real length
-            $cleanLine = preg_replace('/\x1b\[[0-9;]*m/', '', $line) ?? $line;
-            $lineLen = mb_strlen($cleanLine);
+            $cleanLine = preg_replace('/\x1b\[[0-9;]*m/', '', (string) $line) ?? $line;
+            $lineLen = mb_strlen((string) $cleanLine);
             $rightPad = max(0, $width - $lineLen - 4);
 
             $this->output->writeln(
@@ -644,7 +642,7 @@ trait HasBrandedOutput
         $this->newLine();
         $this->output->writeln("  {$this->badgeSuccess('SUCCESS')} {$message}");
 
-        if (! empty($nextSteps)) {
+        if ($nextSteps !== []) {
             $this->newLine();
             $this->output->writeln('  <fg=gray>Next steps:</>');
             foreach ($nextSteps as $step) {
@@ -664,7 +662,7 @@ trait HasBrandedOutput
         $this->newLine();
         $this->output->writeln("  {$this->badgeError('FAILED')} {$message}");
 
-        if (! empty($suggestions)) {
+        if ($suggestions !== []) {
             $this->newLine();
             $this->output->writeln('  <fg=gray>Suggestions:</>');
             foreach ($suggestions as $suggestion) {

@@ -34,7 +34,7 @@ final class DebugLogService
 
     public static function getInstance(): self
     {
-        if (self::$instance === null) {
+        if (!self::$instance instanceof \App\Services\Debug\DebugLogService) {
             self::$instance = new self();
         }
 
@@ -185,7 +185,7 @@ final class DebugLogService
      */
     public function getLogsByLevel(string $level): array
     {
-        return array_filter($this->sessionLogs, fn ($log) => $log['level'] === mb_strtoupper($level));
+        return array_filter($this->sessionLogs, fn (array $log): bool => $log['level'] === mb_strtoupper($level));
     }
 
     /**
@@ -195,7 +195,7 @@ final class DebugLogService
      */
     public function getErrors(): array
     {
-        return array_filter($this->sessionLogs, fn ($log) => in_array($log['level'], ['ERROR', 'WARNING']));
+        return array_filter($this->sessionLogs, fn (array $log): bool => in_array($log['level'], ['ERROR', 'WARNING']));
     }
 
     /**
@@ -275,13 +275,11 @@ final class DebugLogService
                 $log['message']
             );
 
-            if (! empty($log['data'])) {
-                foreach ($log['data'] as $key => $value) {
-                    if (is_string($value) && mb_strlen($value) > 100) {
-                        $value = mb_substr($value, 0, 100) . '...';
-                    }
-                    $output .= sprintf("         %s: %s\n", $key, is_string($value) ? $value : json_encode($value));
+            foreach ($log['data'] as $key => $value) {
+                if (is_string($value) && mb_strlen($value) > 100) {
+                    $value = mb_substr($value, 0, 100) . '...';
                 }
+                $output .= sprintf("         %s: %s\n", $key, is_string($value) ? $value : json_encode($value));
             }
         }
 
@@ -321,10 +319,9 @@ final class DebugLogService
     {
         $logDir = $this->getGlobalLogPath();
 
-        if (! is_dir($logDir)) {
-            if (! @mkdir($logDir, 0755, true) && ! is_dir($logDir)) {
-                return; // Silently fail if can't create log dir
-            }
+        if (!is_dir($logDir) && (!@mkdir($logDir, 0755, true) && ! is_dir($logDir))) {
+            return;
+            // Silently fail if can't create log dir
         }
 
         $logFile = $logDir . '/tuti.log';
@@ -339,7 +336,7 @@ final class DebugLogService
             mb_str_pad($entry['level'], 7),
             $entry['context'],
             $entry['message'],
-            ! empty($entry['data']) ? ' ' . json_encode($entry['data'], JSON_UNESCAPED_SLASHES) : ''
+            empty($entry['data']) ? '' : ' ' . json_encode($entry['data'], JSON_UNESCAPED_SLASHES)
         );
 
         file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);

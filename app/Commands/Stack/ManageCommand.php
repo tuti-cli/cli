@@ -55,7 +55,7 @@ final class ManageCommand extends Command
     {
         $stacks = $repositoryService->getAvailableStacks();
 
-        if (empty($stacks)) {
+        if ($stacks === []) {
             $this->warning('No stacks available');
 
             return self::SUCCESS;
@@ -94,7 +94,7 @@ final class ManageCommand extends Command
         }
 
         $path = spin(
-            fn () => $repositoryService->downloadStack($stackName),
+            fn (): string => $repositoryService->downloadStack($stackName),
             "Downloading {$stackName} stack..."
         );
 
@@ -118,7 +118,7 @@ final class ManageCommand extends Command
         }
 
         $path = spin(
-            fn () => $repositoryService->updateStack($stackName),
+            fn (): string => $repositoryService->updateStack($stackName),
             "Updating {$stackName} stack..."
         );
 
@@ -134,7 +134,7 @@ final class ManageCommand extends Command
         foreach ($stacks as $name => $info) {
             if (($info['source'] ?? '') === 'registry') {
                 spin(
-                    fn () => $repositoryService->updateStack($name),
+                    fn (): string => $repositoryService->updateStack($name),
                     "Updating {$name}..."
                 );
                 $this->success("Updated: {$name}");
@@ -177,7 +177,7 @@ final class ManageCommand extends Command
     {
         $stacks = $repositoryService->getAvailableStacks();
 
-        if (empty($stacks)) {
+        if ($stacks === []) {
             return null;
         }
 

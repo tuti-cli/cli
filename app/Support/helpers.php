@@ -91,11 +91,7 @@ if (! function_exists('global_tuti_path')) {
         if (empty($home)) {
             $user = getenv('USER') ?: getenv('USERNAME');
             if (! empty($user)) {
-                if (PHP_OS_FAMILY === 'Windows') {
-                    $home = "C:\\Users\\{$user}";
-                } else {
-                    $home = "/home/{$user}";
-                }
+                $home = PHP_OS_FAMILY === 'Windows' ? "C:\\Users\\{$user}" : "/home/{$user}";
             }
         }
 

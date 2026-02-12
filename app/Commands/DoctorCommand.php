@@ -83,13 +83,13 @@ final class DoctorCommand extends Command
         $this->newLine();
         $this->section('Summary');
 
-        if (empty($issues) && empty($warnings)) {
+        if ($issues === [] && $warnings === []) {
             $this->success('All checks passed! Your system is ready to use tuti-cli.');
 
             return self::SUCCESS;
         }
 
-        if (! empty($warnings)) {
+        if ($warnings !== []) {
             $this->warning(count($warnings) . ' warning(s) found:');
             foreach ($warnings as $warning) {
                 $this->line("  ⚠️  {$warning['message']}");
@@ -100,7 +100,7 @@ final class DoctorCommand extends Command
             $this->newLine();
         }
 
-        if (! empty($issues)) {
+        if ($issues !== []) {
             $this->failure(count($issues) . ' issue(s) found:');
             foreach ($issues as $issue) {
                 $this->line("  ❌ {$issue['message']}");

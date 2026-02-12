@@ -64,7 +64,7 @@ YAML;
     it('throws ParseException for tabs mixed with spaces', function (): void {
         $yaml = "services:\n\tapp:\n\t\timage: php:8.4";
 
-        expect(fn () => Yaml::parse($yaml))
+        expect(fn (): mixed => Yaml::parse($yaml))
             ->toThrow(ParseException::class);
     });
 
@@ -76,7 +76,7 @@ services:
      container_name: broken
 YAML;
 
-        expect(fn () => Yaml::parse($yaml))
+        expect(fn (): mixed => Yaml::parse($yaml))
             ->toThrow(ParseException::class);
     });
 
@@ -89,7 +89,7 @@ services:
     image: second
 YAML;
 
-        expect(fn () => Yaml::parse($yaml))
+        expect(fn (): mixed => Yaml::parse($yaml))
             ->toThrow(ParseException::class, 'Duplicate key');
     });
 });
@@ -114,7 +114,7 @@ STUB;
 
         // Apply 2-space indent (same logic as indentServiceYaml)
         $lines = explode("\n", mb_trim($serviceStub));
-        $indented = array_map(fn (string $line) => $line === '' ? '' : '  ' . $line, $lines);
+        $indented = array_map(fn (string $line): string => $line === '' ? '' : '  ' . $line, $lines);
         $indentedYaml = implode("\n", $indented);
 
         // Build a compose structure with the indented service inserted
@@ -157,7 +157,7 @@ STUB,
         $allIndented = '';
         foreach ($services as $stub) {
             $lines = explode("\n", mb_trim($stub));
-            $indented = array_map(fn (string $line) => $line === '' ? '' : '  ' . $line, $lines);
+            $indented = array_map(fn (string $line): string => $line === '' ? '' : '  ' . $line, $lines);
             $allIndented .= "\n" . implode("\n", $indented);
         }
 

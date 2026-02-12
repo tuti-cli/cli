@@ -73,7 +73,7 @@ describe('start', function (): void {
         $result = $this->service->start();
 
         expect($result)->toBeTrue();
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'docker compose')
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'docker compose')
             && str_contains(commandStr($p), 'up -d'));
     });
 
@@ -82,7 +82,7 @@ describe('start', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), '-f /projects/myapp/.tuti/docker-compose.yml')
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), '-f /projects/myapp/.tuti/docker-compose.yml')
             && str_contains(commandStr($p), '-p myapp'));
     });
 
@@ -103,7 +103,7 @@ describe('stop', function (): void {
         $result = $this->service->stop();
 
         expect($result)->toBeTrue();
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'down'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'down'));
     });
 });
 
@@ -114,7 +114,7 @@ describe('restart', function (): void {
 
         $this->service->restart();
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'restart'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'restart'));
     });
 
     it('restarts a specific service', function (): void {
@@ -122,7 +122,7 @@ describe('restart', function (): void {
 
         $this->service->restart('redis');
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'restart')
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'restart')
             && str_contains(commandStr($p), 'redis'));
     });
 });
@@ -137,7 +137,7 @@ describe('pullImages', function (): void {
         $result = $this->service->pullImages();
 
         expect($result)->toBeTrue();
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'pull'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'pull'));
     });
 });
 
@@ -225,7 +225,7 @@ describe('exec', function (): void {
 
         $this->service->exec('app', 'ls');
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'exec -T app sh -c ls'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'exec -T app sh -c ls'));
     });
 
     it('returns exit code and error output on failure', function (): void {
@@ -343,7 +343,7 @@ describe('build', function (): void {
 
         $this->service->build();
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'build'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'build'));
     });
 
     it('builds a specific service', function (): void {
@@ -351,7 +351,7 @@ describe('build', function (): void {
 
         $this->service->build('app');
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'build')
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'build')
             && str_contains(commandStr($p), 'app'));
     });
 });
@@ -363,7 +363,7 @@ describe('destroy', function (): void {
 
         $this->service->destroy();
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), 'down -v'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), 'down -v'));
     });
 });
 
@@ -386,7 +386,7 @@ describe('env file', function (): void {
 
         $service->start();
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), '--env-file')
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), '--env-file')
             && str_contains(commandStr($p), $envFile));
 
         cleanupTestDirectory($tempDir);
@@ -397,7 +397,7 @@ describe('env file', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn ($p) => ! str_contains(commandStr($p), '--env-file'));
+        Process::assertRan(fn (object $p): bool => ! str_contains(commandStr($p), '--env-file'));
     });
 });
 
@@ -417,7 +417,7 @@ describe('constructor', function (): void {
 
         $service->start();
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), '-p custom-project'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), '-p custom-project'));
     });
 
     it('uses injected compose path in commands', function (): void {
@@ -426,6 +426,6 @@ describe('constructor', function (): void {
 
         $service->start();
 
-        Process::assertRan(fn ($p) => str_contains(commandStr($p), '-f /custom/docker-compose.yml'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), '-f /custom/docker-compose.yml'));
     });
 });

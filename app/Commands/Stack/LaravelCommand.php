@@ -53,7 +53,7 @@ final class LaravelCommand extends Command
                 return self::FAILURE;
             }
 
-            if (! $this->preFlightChecks($directoryService, $mode)) {
+            if (! $this->preFlightChecks($directoryService)) {
                 return self::FAILURE;
             }
 
@@ -93,7 +93,7 @@ final class LaravelCommand extends Command
         }
     }
 
-    private function getInstallationMode(LaravelStackInstaller $installer): ?string
+    private function getInstallationMode(LaravelStackInstaller $installer): string
     {
         $modeOption = $this->option('mode');
 
@@ -126,7 +126,7 @@ final class LaravelCommand extends Command
         );
     }
 
-    private function preFlightChecks(ProjectDirectoryService $directoryService, string $mode): bool
+    private function preFlightChecks(ProjectDirectoryService $directoryService): bool
     {
         if ($directoryService->exists() && ! $this->option('force')) {
             $this->failure('Project already initialized. ".tuti/" directory already exists.');
@@ -442,15 +442,11 @@ final class LaravelCommand extends Command
     {
         $packages = $this->getRequiredPackages($config['selected_services']);
 
-        if (empty($packages)) {
-            return;
-        }
-
         foreach ($packages as $package => $artisanCommand) {
             $this->note("Installing {$package}...");
 
             spin(
-                fn () => $installer->runComposerRequire($config['project_path'], $package),
+                fn (): bool => $installer->runComposerRequire($config['project_path'], $package),
                 "Installing {$package}..."
             );
 
@@ -458,7 +454,7 @@ final class LaravelCommand extends Command
 
             if ($artisanCommand !== null) {
                 spin(
-                    fn () => $installer->runArtisan($config['project_path'], $artisanCommand),
+                    fn (): bool => $installer->runArtisan($config['project_path'], $artisanCommand),
                     "Running php artisan {$artisanCommand}..."
                 );
             }
@@ -502,7 +498,7 @@ final class LaravelCommand extends Command
         }
 
         foreach ($config['selected_services'] as $serviceKey) {
-            [$category, $serviceName] = explode('.', $serviceKey);
+            [$category, $serviceName] = explode('.', (string) $serviceKey);
 
             // Configure for Horizon
             if ($category === 'workers' && $serviceName === 'horizon') {

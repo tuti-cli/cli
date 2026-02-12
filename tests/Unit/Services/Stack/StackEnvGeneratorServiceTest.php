@@ -61,11 +61,11 @@ describe('generate', function (): void {
     });
 
     it('replaces project config variables in the template', function (): void {
-        $template = createEnvTemplate($this->testDir, <<<'ENV'
-PROJECT_NAME={PROJECT_NAME}
-APP_DOMAIN={APP_DOMAIN}
-APP_ENV={APP_ENV}
-ENV);
+        $template = createEnvTemplate($this->testDir, <<<'ENV_WRAP'
+        PROJECT_NAME={PROJECT_NAME}
+        APP_DOMAIN={APP_DOMAIN}
+        APP_ENV={APP_ENV}
+        ENV_WRAP);
         $output = $this->testDir . '/.env';
 
         $this->service->generate($template, [], [
