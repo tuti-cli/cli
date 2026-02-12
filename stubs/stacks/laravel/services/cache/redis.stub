@@ -27,6 +27,7 @@ redis_data:
 
 # @section: env
 REDIS_HOST=redis
+REDIS_PASSWORD=
 REDIS_PORT=6379
 REDIS_VERSION=7
 REDIS_MAX_MEMORY=256mb

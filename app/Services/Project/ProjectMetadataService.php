@@ -64,6 +64,26 @@ final readonly class ProjectMetadataService
     }
 
     /**
+     * Validate a project configuration array structure.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function validate(array $data): void
+    {
+        if (! isset($data['project']) || ! is_array($data['project'])) {
+            throw new RuntimeException("Configuration missing 'project' key or it is not an array");
+        }
+
+        if (! isset($data['project']['name']) || ! is_string($data['project']['name'])) {
+            throw new RuntimeException("Configuration missing 'project.name' or it is not a string");
+        }
+
+        if (! isset($data['project']['type']) || ! is_string($data['project']['type'])) {
+            throw new RuntimeException("Configuration missing 'project.type' or it is not a string");
+        }
+    }
+
+    /**
      * Check if project is initialized.
      */
     public function isInitialized(): bool

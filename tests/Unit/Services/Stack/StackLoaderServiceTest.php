@@ -200,6 +200,65 @@ describe('validate', function (): void {
     });
 });
 
+// ─── validate - service structure ────────────────────────────────────────
+// Validates that required_services and optional_services entries have correct structure.
+
+describe('validate - service structure', function (): void {
+
+    it('validates required_services have category and options', function (): void {
+        $manifest = laravelManifest();
+        $manifest['required_services']['database'] = ['prompt' => 'Pick DB'];
+
+        expect(fn () => $this->service->validate($manifest))
+            ->toThrow(RuntimeException::class, "required_services.database must have a string 'category' field");
+    });
+
+    it('validates required_services entries are arrays', function (): void {
+        $manifest = laravelManifest();
+        $manifest['required_services']['database'] = 'not-an-array';
+
+        expect(fn () => $this->service->validate($manifest))
+            ->toThrow(RuntimeException::class, 'required_services.database must be an array');
+    });
+
+    it('validates optional_services structure', function (): void {
+        $manifest = laravelManifest();
+        $manifest['optional_services']['cache'] = ['category' => 'cache'];
+
+        expect(fn () => $this->service->validate($manifest))
+            ->toThrow(RuntimeException::class, "optional_services.cache must have an array 'options' field");
+    });
+
+    it('validates generated_variables have valid generators', function (): void {
+        $manifest = laravelManifest();
+        $manifest['generated_variables'] = [
+            'SECRET' => [
+                'generator' => 'invalid_generator',
+                'length' => 32,
+            ],
+        ];
+
+        expect(fn () => $this->service->validate($manifest))
+            ->toThrow(RuntimeException::class, "invalid generator 'invalid_generator'");
+    });
+
+    it('passes validation for well-formed manifest with all sections', function (): void {
+        $manifest = laravelManifest();
+        $manifest['generated_variables'] = [
+            'APP_KEY' => [
+                'generator' => 'laravel_key',
+                'command' => 'php artisan key:generate --show',
+            ],
+            'DB_PASSWORD' => [
+                'generator' => 'secure_random',
+                'length' => 32,
+            ],
+        ];
+
+        expect($this->service->validate($manifest))->toBeTrue();
+    });
+});
+
 // ─── Metadata accessors ─────────────────────────────────────────────────
 // Simple getters: getStackName(), getStackType(), getFramework()
 // These just read keys from the manifest array.

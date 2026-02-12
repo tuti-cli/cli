@@ -1,0 +1,12 @@
+{
+    "version": "1.0.0",
+    "services": {
+        "databases": {
+            "postgres": {
+                "name": "PostgreSQL",
+                "description": "PostgreSQL database for testing",
+                "stub": "databases/postgres.stub"
+            }
+        }
+    }
+}

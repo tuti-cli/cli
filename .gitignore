@@ -46,5 +46,8 @@ phpstan.neon
 /box.json.dist
 /app/Commands/Test/docker-compose.test.yml
 
-# Claude Code (local ignore, settings are tracked)
-# .claude/ is tracked for team settings
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

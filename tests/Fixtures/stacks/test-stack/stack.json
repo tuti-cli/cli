@@ -1,0 +1,16 @@
+{
+    "name": "Test Stack",
+    "type": "framework",
+    "framework": "test",
+    "description": "Test stack for unit testing",
+    "version": "1.0.0",
+    "required_services": {
+        "database": {
+            "category": "databases",
+            "options": ["postgres"],
+            "default": "postgres",
+            "prompt": "Select database:"
+        }
+    },
+    "optional_services": []
+}

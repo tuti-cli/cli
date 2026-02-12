@@ -35,16 +35,16 @@ Increase test coverage from ~5 test files to comprehensive coverage across all c
   - [x] `DockerService` - Docker Compose wrapper (33 tests, refactored for testability)
   - [x] `ProjectDirectoryService` - Project directory management (14 tests)
 - [ ] Feature tests for all user-facing commands (target: >80% coverage)
-  - [ ] `install` command
-  - [ ] `doctor` command
+  - [x] `install` command
+  - [x] `doctor` command
   - [ ] `stack:laravel` command
   - [ ] `stack:wordpress` command
   - [ ] `local:start`, `local:stop`, `local:status`, `local:logs`, `local:rebuild`
-  - [ ] `infra:start`, `infra:stop`, `infra:restart`, `infra:status`
-  - [ ] `env:check` command
-  - [ ] `init` command
-- [ ] Validate generated Docker Compose files are syntactically valid YAML
-- [ ] Test all service stub combinations produce valid compose output
+  - [x] `infra:start`, `infra:stop`, `infra:restart`, `infra:status`
+  - [x] `env:check` command
+  - [x] `init` command
+- [x] Validate generated Docker Compose files are syntactically valid YAML
+- [x] Test all service stub combinations produce valid compose output
 
 **User Stories:** US-6.1 (Health Check), US-2.1 (Laravel Stack), US-2.2 (WordPress Stack)
 
@@ -70,10 +70,10 @@ Fix known issues discovered during codebase analysis.
 
 **Deliverables:**
 - [x] Fix `StackEnvGeneratorService.generateSecureValues()` regex bug - space in `CHANGE_THIS(? :_IN_PRODUCTION)?` pattern makes non-capturing group invalid
-- [ ] Fix Redis password `null` string issue - ensure `REDIS_PASSWORD=` (empty) is used, not `REDIS_PASSWORD=null`
-- [ ] Validate Docker Compose YAML output for indentation correctness
-- [ ] Add JSON schema validation for `config.json`, `stack.json`, `registry.json` files
-- [ ] Handle stale entries in `GlobalRegistryService.projects.json` (detect moved/deleted directories)
+- [x] Fix Redis password `null` string issue - ensure `REDIS_PASSWORD=` (empty) is used, not `REDIS_PASSWORD=null`
+- [x] Validate Docker Compose YAML output for indentation correctness
+- [x] Add JSON schema validation for `config.json`, `stack.json`, `registry.json` files
+- [x] Handle stale entries in `GlobalRegistryService.projects.json` (detect moved/deleted directories)
 
 ### 1.4 Remove Dev Commands from Production (Priority: High)
 
@@ -117,7 +117,7 @@ Complete the `wp:setup` placeholder command.
 - [ ] Test coverage: Commands >80%, Services >90%
 - [ ] CI pipeline runs on every PR and blocks merging on failure
 - [ ] No dev/test commands in production binary
-- [ ] Known bugs fixed (regex, Redis, YAML validation)
+- [x] Known bugs fixed (regex, Redis, YAML validation)
 - [ ] A new user can install and create a Laravel/WordPress project following the README
 - [ ] `tuti doctor` catches all common configuration issues
 
