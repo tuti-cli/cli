@@ -78,23 +78,23 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
      *
      * Uses project's WP-CLI service if available, otherwise falls back to temporary container.
      *
-     * @param  string  $command  The WP-CLI command to run
+     * @param  array<int, string>  $arguments  The WP-CLI command arguments (e.g., ['core', 'download', '--version=6.4'])
      * @param  string  $workDir  The working directory to mount
      * @param  array<string, string>  $env  Environment variables
      * @param  string|null  $networkName  Optional Docker network to connect to (for database access)
      */
-    public function runWpCli(string $command, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
+    public function runWpCli(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
     {
         $this->ensureDockerAvailable();
         $this->ensureDirectoryExists($workDir);
 
         // Check if WP-CLI service is running in the project
         if ($this->isWpCliServiceRunning($workDir)) {
-            return $this->execInWpCliService($command, $workDir, $env);
+            return $this->execInWpCliService($arguments, $workDir, $env);
         }
 
         // Fall back to temporary container
-        return $this->runWpCliTemporary($command, $workDir, $env, $networkName);
+        return $this->runWpCliTemporary($arguments, $workDir, $env, $networkName);
     }
 
     /**
@@ -238,9 +238,10 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
     /**
      * Execute WP-CLI command in the project's WP-CLI service container.
      *
-     * @param  array<string, string>  $env
+     * @param  array<int, string>  $arguments  WP-CLI command arguments
+     * @param  array<string, string>  $env  Environment variables
      */
-    private function execInWpCliService(string $command, string $projectPath, array $env = []): DockerExecutionResult
+    private function execInWpCliService(array $arguments, string $projectPath, array $env = []): DockerExecutionResult
     {
         $composeFile = $projectPath . '/docker-compose.yml';
         $composeDevFile = $projectPath . '/docker-compose.dev.yml';
@@ -263,9 +264,15 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         }
 
         $parts[] = 'wpcli';
-        $parts[] = 'sh';
-        $parts[] = '-c';
-        $parts[] = "php -d memory_limit=512M /usr/local/bin/wp {$command}";
+        // Use PHP with increased memory limit, then wp binary with safe array arguments
+        $parts[] = 'php';
+        $parts[] = '-d';
+        $parts[] = 'memory_limit=512M';
+        $parts[] = '/usr/local/bin/wp';
+        // Append all WP-CLI arguments as separate array elements (safe from injection)
+        foreach ($arguments as $arg) {
+            $parts[] = $arg;
+        }
 
         $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
 
@@ -282,9 +289,10 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
      *
      * Used when project's WP-CLI service is not available.
      *
-     * @param  array<string, string>  $env
+     * @param  array<int, string>  $arguments  WP-CLI command arguments
+     * @param  array<string, string>  $env  Environment variables
      */
-    private function runWpCliTemporary(string $command, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
+    private function runWpCliTemporary(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
     {
         $image = 'wordpress:cli-2-php8.3';
 
@@ -326,11 +334,16 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
             }
         }
 
-        // Add image and WP-CLI command
+        // Add image and WP-CLI command with safe array arguments
         $parts[] = $image;
-        $parts[] = 'sh';
-        $parts[] = '-c';
-        $parts[] = "php -d memory_limit=512M /usr/local/bin/wp {$command}";
+        $parts[] = 'php';
+        $parts[] = '-d';
+        $parts[] = 'memory_limit=512M';
+        $parts[] = '/usr/local/bin/wp';
+        // Append all WP-CLI arguments as separate array elements (safe from injection)
+        foreach ($arguments as $arg) {
+            $parts[] = $arg;
+        }
 
         $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
 

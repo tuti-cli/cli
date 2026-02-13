@@ -247,9 +247,10 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
      * Run WP-CLI command in the project.
      * Delegates to DockerExecutorService for safe command execution.
      *
+     * @param  array<int, string>  $arguments  WP-CLI command arguments
      * @param  array<string, string>  $env  Additional environment variables
      */
-    public function runWpCli(string $projectPath, string $command, array $env = []): bool
+    public function runWpCli(string $projectPath, array $arguments, array $env = []): bool
     {
         // Get project name from .tuti/config.json or directory name for network name
         $projectName = basename($projectPath);
@@ -264,7 +265,7 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
         $networkName = "{$projectName}_dev_network";
 
         $result = $this->dockerExecutor->runWpCli(
-            $command,
+            $arguments,
             $projectPath,
             $env,
             $networkName
@@ -278,12 +279,12 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
      */
     public function installPlugin(string $projectPath, string $plugin, bool $activate = true): bool
     {
-        $command = "plugin install {$plugin}";
+        $arguments = ['plugin', 'install', $plugin];
         if ($activate) {
-            $command .= ' --activate';
+            $arguments[] = '--activate';
         }
 
-        return $this->runWpCli($projectPath, $command);
+        return $this->runWpCli($projectPath, $arguments);
     }
 
     /**
@@ -291,12 +292,12 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
      */
     public function installTheme(string $projectPath, string $theme, bool $activate = false): bool
     {
-        $command = "theme install {$theme}";
+        $arguments = ['theme', 'install', $theme];
         if ($activate) {
-            $command .= ' --activate';
+            $arguments[] = '--activate';
         }
 
-        return $this->runWpCli($projectPath, $command);
+        return $this->runWpCli($projectPath, $arguments);
     }
 
     /**
@@ -328,9 +329,16 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
         $locale = $options['locale'] ?? 'en_US';
 
         // Note: WP-CLI container mounts to /var/www/html, not /app
-        $command = "core download --version={$wpVersion} --locale={$locale} --path=/var/www/html";
+        // Use array syntax for safe command execution (no shell injection)
+        $arguments = [
+            'core',
+            'download',
+            "--version={$wpVersion}",
+            "--locale={$locale}",
+            '--path=/var/www/html',
+        ];
 
-        $result = $this->dockerExecutor->runWpCli($command, $projectPath);
+        $result = $this->dockerExecutor->runWpCli($arguments, $projectPath);
 
         if (! $result->successful) {
             throw new RuntimeException(

@@ -73,8 +73,8 @@ final class WpSetupCommand extends Command
 
         // Check if WordPress is already installed
         if (! $this->option('force')) {
-            $checkCommand = 'core is-installed';
-            if ($installer->runWpCli($projectPath, $checkCommand)) {
+            $checkArguments = ['core', 'is-installed'];
+            if ($installer->runWpCli($projectPath, $checkArguments)) {
                 $this->warning('WordPress is already installed.');
                 $this->hint('Use --force to reinstall, or visit the site directly.');
 
@@ -109,17 +109,20 @@ final class WpSetupCommand extends Command
         // Run WordPress installation
         $this->note('Installing WordPress...');
 
-        $wpInstallCommand = sprintf(
-            'core install --url="%s" --title="%s" --admin_user="%s" --admin_password="%s" --admin_email="%s" --skip-email',
-            $autoSetup['site_url'],
-            $autoSetup['site_title'],
-            $autoSetup['admin_user'],
-            $autoSetup['admin_password'],
-            $autoSetup['admin_email']
-        );
+        // Use array syntax for safe command execution (no shell injection)
+        $wpInstallArguments = [
+            'core',
+            'install',
+            "--url={$autoSetup['site_url']}",
+            "--title={$autoSetup['site_title']}",
+            "--admin_user={$autoSetup['admin_user']}",
+            "--admin_password={$autoSetup['admin_password']}",
+            "--admin_email={$autoSetup['admin_email']}",
+            '--skip-email',
+        ];
 
         $result = spin(
-            fn (): bool => $installer->runWpCli($projectPath, $wpInstallCommand),
+            fn (): bool => $installer->runWpCli($projectPath, $wpInstallArguments),
             'Running WordPress installation...'
         );
 

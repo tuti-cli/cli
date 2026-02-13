@@ -193,16 +193,18 @@ describe('runWpCli', function (): void {
     it('runs wp-cli via docker run with wordpress cli image', function (): void {
         fakeDockerAvailable();
 
-        $this->service->runWpCli('core download', $this->tempDir);
+        $this->service->runWpCli(['core', 'download'], $this->tempDir);
 
         Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'wordpress:cli-2-php8.3')
-            && str_contains(execCommandStr($process), 'wp core download'));
+            && str_contains(execCommandStr($process), '/usr/local/bin/wp')
+            && str_contains(execCommandStr($process), 'core')
+            && str_contains(execCommandStr($process), 'download'));
     });
 
     it('mounts working directory to /var/www/html', function (): void {
         fakeDockerAvailable();
 
-        $this->service->runWpCli('plugin list', $this->tempDir);
+        $this->service->runWpCli(['plugin', 'list'], $this->tempDir);
 
         Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), $this->tempDir . ':/var/www/html'));
     });
@@ -210,7 +212,7 @@ describe('runWpCli', function (): void {
     it('connects to network when specified', function (): void {
         fakeDockerAvailable();
 
-        $this->service->runWpCli('core install', $this->tempDir, [], 'myproject_dev_network');
+        $this->service->runWpCli(['core', 'install'], $this->tempDir, [], 'myproject_dev_network');
 
         Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), '--network')
             && str_contains(execCommandStr($process), 'myproject_dev_network'));
@@ -219,7 +221,7 @@ describe('runWpCli', function (): void {
     it('does not include network flag when not specified', function (): void {
         fakeDockerAvailable();
 
-        $this->service->runWpCli('core download', $this->tempDir);
+        $this->service->runWpCli(['core', 'download'], $this->tempDir);
 
         Process::assertRan(fn (object $process): bool => ! str_contains(execCommandStr($process), '--network'));
     });
@@ -227,10 +229,39 @@ describe('runWpCli', function (): void {
     it('sets default wordpress database environment variables', function (): void {
         fakeDockerAvailable();
 
-        $this->service->runWpCli('core install', $this->tempDir);
+        $this->service->runWpCli(['core', 'install'], $this->tempDir);
 
         Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'WORDPRESS_DB_HOST=database')
             && str_contains(execCommandStr($process), 'WORDPRESS_DB_NAME=wordpress'));
+    });
+
+    it('uses php with increased memory limit', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli(['core', 'download'], $this->tempDir);
+
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'php')
+            && str_contains(execCommandStr($process), '-d')
+            && str_contains(execCommandStr($process), 'memory_limit=512M'));
+    });
+
+    it('passes arguments as separate array elements (no shell interpolation)', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli(['core', 'download', '--version=6.4', '--locale=en_US'], $this->tempDir);
+
+        $cmd = '';
+        Process::assertRan(function (object $process) use (&$cmd): bool {
+            $cmd = execCommandStr($process);
+
+            return true;
+        });
+
+        // Arguments should be separate, not interpolated into a shell string
+        expect($cmd)->toContain('core')
+            ->and($cmd)->toContain('download')
+            ->and($cmd)->toContain('--version=6.4')
+            ->and($cmd)->toContain('--locale=en_US');
     });
 });
 
