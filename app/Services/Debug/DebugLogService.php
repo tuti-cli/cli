@@ -195,7 +195,7 @@ final class DebugLogService
      */
     public function getErrors(): array
     {
-        return array_filter($this->sessionLogs, fn (array $log): bool => in_array($log['level'], ['ERROR', 'WARNING']));
+        return array_filter($this->sessionLogs, fn (array $log): bool => in_array($log['level'], ['ERROR', 'WARNING'], true));
     }
 
     /**
