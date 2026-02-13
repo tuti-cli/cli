@@ -327,7 +327,8 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
         $wpVersion = $options['wp_version'] ?? 'latest';
         $locale = $options['locale'] ?? 'en_US';
 
-        $command = "core download --version={$wpVersion} --locale={$locale} --path=/app";
+        // Note: WP-CLI container mounts to /var/www/html, not /app
+        $command = "core download --version={$wpVersion} --locale={$locale} --path=/var/www/html";
 
         $result = $this->dockerExecutor->runWpCli($command, $projectPath);
 

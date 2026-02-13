@@ -43,15 +43,15 @@
         }
     },
 
-    "included_services": {
-        "wpcli": {
-            "category": "cli",
-            "service": "wpcli",
-            "description": "WP-CLI for WordPress management (automatically included)"
-        }
-    },
+    "included_services": {},
 
     "optional_services": {
+        "wpcli": {
+            "category": "cli",
+            "options": ["wpcli"],
+            "default": null,
+            "prompt": "Would you like to add WP-CLI service for WordPress management?"
+        },
         "cache": {
             "category": "cache",
             "options": ["redis"],
