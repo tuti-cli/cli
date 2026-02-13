@@ -131,6 +131,12 @@ final class FakeInfrastructureManager implements InfrastructureManagerInterface
         return 'https://traefik.local.test';
     }
 
+    public function restart(): void
+    {
+        $this->stop();
+        $this->start();
+    }
+
     public function ensureNetworkExists(string $networkName = 'traefik_proxy'): bool
     {
         return $this->ensureReadyResult;

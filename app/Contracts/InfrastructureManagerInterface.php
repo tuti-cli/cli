@@ -71,4 +71,14 @@ interface InfrastructureManagerInterface
      * @return array<string, array{installed: bool, running: bool, health: string}>
      */
     public function getStatus(): array;
+
+    /**
+     * Get the Traefik dashboard URL.
+     */
+    public function getDashboardUrl(): string;
+
+    /**
+     * Restart the infrastructure containers.
+     */
+    public function restart(): void;
 }
