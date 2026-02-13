@@ -47,12 +47,7 @@ final class LaravelCommand extends Command
         try {
             $mode = $this->getInstallationMode($installer);
 
-            if ($mode === null) {
-                $this->failure('Installation cancelled.');
-                return self::FAILURE;
-            }
-
-            if (! $this->preFlightChecks($directoryService, $mode)) {
+            if (! $this->preFlightChecks($directoryService)) {
                 return self::FAILURE;
             }
 
@@ -60,11 +55,13 @@ final class LaravelCommand extends Command
 
             if ($config === null) {
                 $this->failure('Configuration cancelled.');
+
                 return self::FAILURE;
             }
 
             if (! $this->confirmConfiguration($config)) {
                 $this->warning('Installation cancelled.');
+
                 return self::SUCCESS;
             }
 
@@ -90,7 +87,7 @@ final class LaravelCommand extends Command
         }
     }
 
-    private function getInstallationMode(LaravelStackInstaller $installer): ?string
+    private function getInstallationMode(LaravelStackInstaller $installer): string
     {
         $modeOption = $this->option('mode');
 
@@ -123,11 +120,12 @@ final class LaravelCommand extends Command
         );
     }
 
-    private function preFlightChecks(ProjectDirectoryService $directoryService, string $mode): bool
+    private function preFlightChecks(ProjectDirectoryService $directoryService): bool
     {
         if ($directoryService->exists() && ! $this->option('force')) {
             $this->failure('Project already initialized. ".tuti/" directory already exists.');
             $this->hint('Use --force to reinitialize (this will remove existing configuration)');
+
             return false;
         }
 
@@ -280,6 +278,7 @@ final class LaravelCommand extends Command
 
             if (count($serviceOptions) === 1) {
                 $defaults[] = "{$category}.{$serviceOptions[0]}";
+
                 continue;
             }
 
@@ -416,7 +415,7 @@ final class LaravelCommand extends Command
 
             if ($appKey !== null && str_starts_with($appKey, 'base64:')) {
                 $this->success('APP_KEY generated successfully');
-                $this->line('  ' . substr($appKey, 0, 30) . '...');
+                $this->line('  ' . mb_substr($appKey, 0, 30) . '...');
                 $this->updateEnvValue($config['project_path'], 'APP_KEY', $appKey);
             } else {
                 $this->warning('Could not generate APP_KEY automatically');
@@ -437,15 +436,11 @@ final class LaravelCommand extends Command
     {
         $packages = $this->getRequiredPackages($config['selected_services']);
 
-        if (empty($packages)) {
-            return;
-        }
-
         foreach ($packages as $package => $artisanCommand) {
             $this->note("Installing {$package}...");
 
             spin(
-                fn () => $installer->runComposerRequire($config['project_path'], $package),
+                fn (): bool => $installer->runComposerRequire($config['project_path'], $package),
                 "Installing {$package}..."
             );
 
@@ -453,7 +448,7 @@ final class LaravelCommand extends Command
 
             if ($artisanCommand !== null) {
                 spin(
-                    fn () => $installer->runArtisan($config['project_path'], $artisanCommand),
+                    fn (): bool => $installer->runArtisan($config['project_path'], $artisanCommand),
                     "Running php artisan {$artisanCommand}..."
                 );
             }
@@ -497,7 +492,7 @@ final class LaravelCommand extends Command
         }
 
         foreach ($config['selected_services'] as $serviceKey) {
-            [$category, $serviceName] = explode('.', $serviceKey);
+            [$category, $serviceName] = explode('.', (string) $serviceKey);
 
             // Configure for Horizon
             if ($category === 'workers' && $serviceName === 'horizon') {
@@ -531,7 +526,7 @@ final class LaravelCommand extends Command
         if (preg_match("/^{$key}=/m", $content)) {
             $content = preg_replace("/^{$key}=.*$/m", "{$key}={$value}", $content);
         } else {
-            $content = rtrim($content) . "\n{$key}={$value}\n";
+            $content = mb_rtrim($content) . "\n{$key}={$value}\n";
         }
 
         file_put_contents($envPath, $content);

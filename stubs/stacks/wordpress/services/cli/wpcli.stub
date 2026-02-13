@@ -22,8 +22,6 @@ wpcli:
   # Keep container running for interactive commands
   command: ["tail", "-f", "/dev/null"]
   restart: unless-stopped
-  profiles:
-    - cli
 
 # @section: dev
 wpcli:

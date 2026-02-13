@@ -10,7 +10,7 @@ declare(strict_types=1);
  * service stubs (like postgres.stub, redis.stub) and splits them into
  * sections (base, dev, volumes, env) while replacing {{PLACEHOLDER}} values.
  *
- * @see \App\Services\Stack\StackStubLoaderService
+ * @see StackStubLoaderService
  */
 
 use App\Services\Stack\StackStubLoaderService;

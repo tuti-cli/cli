@@ -81,11 +81,12 @@ final readonly class StackStubLoaderService
             // Check for section marker: # @section: name
             if (preg_match('/^#\s*@section:\s*(\w+)\s*$/i', $line, $matches)) {
                 // Save previous section if it has content
-                if (! empty($currentContent)) {
-                    $sections[$currentSection] = trim(implode("\n", $currentContent));
+                if ($currentContent !== []) {
+                    $sections[$currentSection] = mb_trim(implode("\n", $currentContent));
                 }
-                $currentSection = strtolower($matches[1]);
+                $currentSection = mb_strtolower($matches[1]);
                 $currentContent = [];
+
                 continue;
             }
 
@@ -93,8 +94,8 @@ final readonly class StackStubLoaderService
         }
 
         // Save last section
-        if (! empty($currentContent)) {
-            $sections[$currentSection] = trim(implode("\n", $currentContent));
+        if ($currentContent !== []) {
+            $sections[$currentSection] = mb_trim(implode("\n", $currentContent));
         }
 
         return $sections;
@@ -144,7 +145,7 @@ final readonly class StackStubLoaderService
     {
         preg_match_all('/\{\{([A-Z_]+)\}\}/', $content, $matches);
 
-        return $matches[1] ?? [];
+        return $matches[1];
     }
 
     /**

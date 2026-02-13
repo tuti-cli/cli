@@ -22,22 +22,22 @@ use RuntimeException;
  *
  * Uses Docker to run WP-CLI and Composer, so no local PHP installation is required.
  */
-final class WordPressStackInstaller implements StackInstallerInterface
+final readonly class WordPressStackInstaller implements StackInstallerInterface
 {
-    private const IDENTIFIER = 'wordpress';
+    private const string IDENTIFIER = 'wordpress';
 
-    private const SUPPORTED_IDENTIFIERS = [
+    private const array SUPPORTED_IDENTIFIERS = [
         'wordpress',
         'wordpress-stack',
         'wp',
     ];
 
     public function __construct(
-        private readonly StackLoaderService $stackLoader,
-        private readonly StackFilesCopierService $copierService,
-        private readonly StackRepositoryService $repositoryService,
-        private readonly DockerExecutorInterface $dockerExecutor,
-        private readonly InfrastructureManagerInterface $infrastructureManager,
+        private StackLoaderService $stackLoader,
+        private StackFilesCopierService $copierService,
+        private StackRepositoryService $repositoryService,
+        private DockerExecutorInterface $dockerExecutor,
+        private InfrastructureManagerInterface $infrastructureManager,
     ) {}
 
     public function getIdentifier(): string
@@ -142,8 +142,8 @@ final class WordPressStackInstaller implements StackInstallerInterface
 
         // Create the project using Docker
         $result = match ($installationType) {
-            'bedrock' => $this->createBedrockProject($projectPath, $projectName, $options),
-            default => $this->createStandardWordPressProject($projectPath, $projectName, $options),
+            'bedrock' => $this->createBedrockProject($projectPath),
+            default => $this->createStandardWordPressProject($projectPath, $options),
         };
 
         if (! $result) {
@@ -218,6 +218,89 @@ final class WordPressStackInstaller implements StackInstallerInterface
     }
 
     /**
+     * Generate WordPress salts (authentication keys).
+     *
+     * @return array<string, string>
+     */
+    public function generateSalts(): array
+    {
+        $salts = [];
+        $keys = [
+            'WP_AUTH_KEY',
+            'WP_SECURE_AUTH_KEY',
+            'WP_LOGGED_IN_KEY',
+            'WP_NONCE_KEY',
+            'WP_AUTH_SALT',
+            'WP_SECURE_AUTH_SALT',
+            'WP_LOGGED_IN_SALT',
+            'WP_NONCE_SALT',
+        ];
+
+        foreach ($keys as $key) {
+            $salts[$key] = $this->generateSecureKey(64);
+        }
+
+        return $salts;
+    }
+
+    /**
+     * Run WP-CLI command in the project.
+     * Delegates to DockerExecutorService for safe command execution.
+     *
+     * @param  array<int, string>  $arguments  WP-CLI command arguments
+     * @param  array<string, string>  $env  Additional environment variables
+     */
+    public function runWpCli(string $projectPath, array $arguments, array $env = []): bool
+    {
+        // Get project name from .tuti/config.json or directory name for network name
+        $projectName = basename($projectPath);
+        $configPath = $projectPath . '/.tuti/config.json';
+
+        if (file_exists($configPath)) {
+            $config = json_decode(file_get_contents($configPath), true);
+            $projectName = $config['project']['name'] ?? $projectName;
+        }
+
+        // Build network name (matches DockerComposeOrchestrator pattern)
+        $networkName = "{$projectName}_dev_network";
+
+        $result = $this->dockerExecutor->runWpCli(
+            $arguments,
+            $projectPath,
+            $env,
+            $networkName
+        );
+
+        return $result->successful;
+    }
+
+    /**
+     * Install a WordPress plugin using WP-CLI.
+     */
+    public function installPlugin(string $projectPath, string $plugin, bool $activate = true): bool
+    {
+        $arguments = ['plugin', 'install', $plugin];
+        if ($activate) {
+            $arguments[] = '--activate';
+        }
+
+        return $this->runWpCli($projectPath, $arguments);
+    }
+
+    /**
+     * Install a WordPress theme using WP-CLI.
+     */
+    public function installTheme(string $projectPath, string $theme, bool $activate = false): bool
+    {
+        $arguments = ['theme', 'install', $theme];
+        if ($activate) {
+            $arguments[] = '--activate';
+        }
+
+        return $this->runWpCli($projectPath, $arguments);
+    }
+
+    /**
      * Ensure the global infrastructure (Traefik) is ready.
      */
     private function ensureInfrastructureReady(): void
@@ -234,22 +317,28 @@ final class WordPressStackInstaller implements StackInstallerInterface
      *
      * @param  array<string, mixed>  $options
      */
-    private function createStandardWordPressProject(string $projectPath, string $projectName, array $options): bool
+    private function createStandardWordPressProject(string $projectPath, array $options): bool
     {
         // Ensure project directory exists
-        if (! is_dir($projectPath)) {
-            if (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath)) {
-                throw new RuntimeException("Failed to create directory: {$projectPath}");
-            }
+        if (! is_dir($projectPath) && (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+            throw new RuntimeException("Failed to create directory: {$projectPath}");
         }
 
         // Download WordPress core using WP-CLI via Docker
         $wpVersion = $options['wp_version'] ?? 'latest';
         $locale = $options['locale'] ?? 'en_US';
 
-        $command = "core download --version={$wpVersion} --locale={$locale} --path=/app";
+        // Note: WP-CLI container mounts to /var/www/html, not /app
+        // Use array syntax for safe command execution (no shell injection)
+        $arguments = [
+            'core',
+            'download',
+            "--version={$wpVersion}",
+            "--locale={$locale}",
+            '--path=/var/www/html',
+        ];
 
-        $result = $this->dockerExecutor->runWpCli($command, $projectPath);
+        $result = $this->dockerExecutor->runWpCli($arguments, $projectPath);
 
         if (! $result->successful) {
             throw new RuntimeException(
@@ -258,7 +347,7 @@ final class WordPressStackInstaller implements StackInstallerInterface
         }
 
         // Create wp-config.php using environment variables
-        $this->createWpConfig($projectPath, $projectName);
+        $this->createWpConfig($projectPath);
 
         return true;
     }
@@ -267,7 +356,7 @@ final class WordPressStackInstaller implements StackInstallerInterface
      * Create wp-config.php file for WordPress.
      * Copies wp-config-sample.php and modifies it for Docker environment.
      */
-    private function createWpConfig(string $projectPath, string $projectName): void
+    private function createWpConfig(string $projectPath): void
     {
         $samplePath = $projectPath . '/wp-config-sample.php';
         $configPath = $projectPath . '/wp-config.php';
@@ -282,14 +371,10 @@ final class WordPressStackInstaller implements StackInstallerInterface
         // Replace database constants with environment variable lookups
         $replacements = [
             // Database settings
-            "define( 'DB_NAME', 'database_name_here' );"
-                => "define( 'DB_NAME', getenv('WORDPRESS_DB_NAME') ?: 'wordpress' );",
-            "define( 'DB_USER', 'username_here' );"
-                => "define( 'DB_USER', getenv('WORDPRESS_DB_USER') ?: 'wordpress' );",
-            "define( 'DB_PASSWORD', 'password_here' );"
-                => "define( 'DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: 'secret' );",
-            "define( 'DB_HOST', 'localhost' );"
-                => "define( 'DB_HOST', getenv('WORDPRESS_DB_HOST') ?: 'database' );",
+            "define( 'DB_NAME', 'database_name_here' );" => "define( 'DB_NAME', getenv('WORDPRESS_DB_NAME') ?: 'wordpress' );",
+            "define( 'DB_USER', 'username_here' );" => "define( 'DB_USER', getenv('WORDPRESS_DB_USER') ?: 'wordpress' );",
+            "define( 'DB_PASSWORD', 'password_here' );" => "define( 'DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: 'secret' );",
+            "define( 'DB_HOST', 'localhost' );" => "define( 'DB_HOST', getenv('WORDPRESS_DB_HOST') ?: 'database' );",
         ];
 
         foreach ($replacements as $search => $replace) {
@@ -306,7 +391,7 @@ final class WordPressStackInstaller implements StackInstallerInterface
             $escapedValue = addslashes($value);
             $replacement = "define( '{$key}', getenv('WORDPRESS_{$key}') ?: '{$escapedValue}' );";
             // Limit to 1 replacement to prevent issues with duplicate matches
-            $content = preg_replace($pattern, $replacement, $content, 1);
+            $content = preg_replace($pattern, $replacement, (string) $content, 1);
         }
 
         // Replace table prefix to use environment variable
@@ -403,23 +488,20 @@ PHP;
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
         $salt = '';
         for ($i = 0; $i < 64; $i++) {
-            $salt .= $chars[random_int(0, strlen($chars) - 1)];
+            $salt .= $chars[random_int(0, mb_strlen($chars) - 1)];
         }
+
         return $salt;
     }
 
     /**
      * Create a Bedrock WordPress project using Docker + Composer.
-     *
-     * @param  array<string, mixed>  $options
      */
-    private function createBedrockProject(string $projectPath, string $projectName, array $options): bool
+    private function createBedrockProject(string $projectPath): bool
     {
         // Ensure project directory exists
-        if (! is_dir($projectPath)) {
-            if (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath)) {
-                throw new RuntimeException("Failed to create directory: {$projectPath}");
-            }
+        if (! is_dir($projectPath) && (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+            throw new RuntimeException("Failed to create directory: {$projectPath}");
         }
 
         // Create Bedrock project using Composer via Docker
@@ -456,32 +538,6 @@ PHP;
     }
 
     /**
-     * Generate WordPress salts (authentication keys).
-     *
-     * @return array<string, string>
-     */
-    public function generateSalts(): array
-    {
-        $salts = [];
-        $keys = [
-            'WP_AUTH_KEY',
-            'WP_SECURE_AUTH_KEY',
-            'WP_LOGGED_IN_KEY',
-            'WP_NONCE_KEY',
-            'WP_AUTH_SALT',
-            'WP_SECURE_AUTH_SALT',
-            'WP_LOGGED_IN_SALT',
-            'WP_NONCE_SALT',
-        ];
-
-        foreach ($keys as $key) {
-            $salts[$key] = $this->generateSecureKey(64);
-        }
-
-        return $salts;
-    }
-
-    /**
      * Generate a secure random key.
      */
     private function generateSecureKey(int $length): string
@@ -490,89 +546,9 @@ PHP;
         $key = '';
 
         for ($i = 0; $i < $length; $i++) {
-            $key .= $chars[random_int(0, strlen($chars) - 1)];
+            $key .= $chars[random_int(0, mb_strlen($chars) - 1)];
         }
 
         return $key;
-    }
-
-    /**
-     * Run WP-CLI command in the project.
-     * Uses docker run with proper network and volume mounts.
-     *
-     * @param  bool  $useNetwork  Whether to connect to the project's Docker network
-     */
-    public function runWpCli(string $projectPath, string $command, bool $useNetwork = true): bool
-    {
-        // Get project name from .tuti/config.json or directory name
-        $projectName = basename($projectPath);
-        $configPath = $projectPath . '/.tuti/config.json';
-
-        if (file_exists($configPath)) {
-            $config = json_decode(file_get_contents($configPath), true);
-            $projectName = $config['project']['name'] ?? $projectName;
-        }
-
-        // Build docker run command with network access to running containers
-        $networkName = "{$projectName}_dev_network";
-        $image = 'wordpress:cli-2-php8.3';
-
-        $dockerCommand = sprintf(
-            'docker run --rm -v "%s:/var/www/html" -w /var/www/html',
-            $projectPath
-        );
-
-        // Add network if requested (for commands that need database access)
-        if ($useNetwork) {
-            $dockerCommand .= sprintf(' --network %s', $networkName);
-        }
-
-        // Add environment variables for database connection
-        $dockerCommand .= ' -e WORDPRESS_DB_HOST=database';
-        $dockerCommand .= ' -e WORDPRESS_DB_NAME=wordpress';
-        $dockerCommand .= ' -e WORDPRESS_DB_USER=wordpress';
-        $dockerCommand .= ' -e WORDPRESS_DB_PASSWORD=secret';
-
-        // Add user mapping for file permissions
-        if (PHP_OS_FAMILY !== 'Windows') {
-            $uid = getmyuid();
-            $gid = getmygid();
-            if ($uid !== false && $gid !== false) {
-                $dockerCommand .= " --user {$uid}:{$gid}";
-            }
-        }
-
-        // Add image and WP-CLI command
-        $dockerCommand .= sprintf(' %s wp %s 2>&1', $image, $command);
-
-        exec($dockerCommand, $output, $exitCode);
-
-        return $exitCode === 0;
-    }
-
-    /**
-     * Install a WordPress plugin using WP-CLI.
-     */
-    public function installPlugin(string $projectPath, string $plugin, bool $activate = true): bool
-    {
-        $command = "plugin install {$plugin}";
-        if ($activate) {
-            $command .= ' --activate';
-        }
-
-        return $this->runWpCli($projectPath, $command);
-    }
-
-    /**
-     * Install a WordPress theme using WP-CLI.
-     */
-    public function installTheme(string $projectPath, string $theme, bool $activate = false): bool
-    {
-        $command = "theme install {$theme}";
-        if ($activate) {
-            $command .= ' --activate';
-        }
-
-        return $this->runWpCli($projectPath, $command);
     }
 }

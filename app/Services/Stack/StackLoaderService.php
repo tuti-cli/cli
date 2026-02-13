@@ -143,6 +143,42 @@ final readonly class StackLoaderService
     }
 
     /**
+     * Get stack name
+     *
+     * @param  array<string, mixed>  $stackManifest
+     */
+    public function getStackName(array $stackManifest): string
+    {
+        $this->validate($stackManifest);
+
+        return $stackManifest['name'];
+    }
+
+    /**
+     * Get stack type (php, python, node, etc.)
+     *
+     * @param  array<string, mixed>  $stackManifest
+     */
+    public function getStackType(array $stackManifest): string
+    {
+        $this->validate($stackManifest);
+
+        return $stackManifest['type'];
+    }
+
+    /**
+     * Get framework name (laravel, wordpress, django, etc.)
+     *
+     * @param  array<string, mixed>  $stackManifest
+     */
+    public function getFramework(array $stackManifest): string
+    {
+        $this->validate($stackManifest);
+
+        return $stackManifest['framework'];
+    }
+
+    /**
      * Validate service entries have required structure.
      *
      * @param  array<string, mixed>  $services
@@ -188,35 +224,5 @@ final readonly class StackLoaderService
                 );
             }
         }
-    }
-
-    /**
-     * Get stack name
-     *
-     * @param  array<string, mixed>  $stackManifest
-     */
-    public function getStackName(array $stackManifest): string
-    {
-        return $stackManifest['name'];
-    }
-
-    /**
-     * Get stack type (php, python, node, etc.)
-     *
-     * @param  array<string, mixed>  $stackManifest
-     */
-    public function getStackType(array $stackManifest): string
-    {
-        return $stackManifest['type'];
-    }
-
-    /**
-     * Get framework name (laravel, wordpress, django, etc.)
-     *
-     * @param  array<string, mixed>  $stackManifest
-     */
-    public function getFramework(array $stackManifest): string
-    {
-        return $stackManifest['framework'];
     }
 }

@@ -17,6 +17,10 @@ namespace App\Domain\Project\ValueObjects;
  */
 final readonly class ProjectConfigurationVO
 {
+    /**
+     * @param  array<string, mixed>  $environments
+     * @param  array<string, mixed>  $rawConfig
+     */
     public function __construct(
         public string $name,
         public string $type,
@@ -27,6 +31,8 @@ final readonly class ProjectConfigurationVO
 
     /**
      * Factory method to create from raw array (e.g. from config.json)
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {

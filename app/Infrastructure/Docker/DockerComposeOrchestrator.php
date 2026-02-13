@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Process;
  * It acts as the bridge between our domain world (Project objects) and the
  * external system world (OS processes).
  */
-final class DockerComposeOrchestrator implements OrchestratorInterface
+final readonly class DockerComposeOrchestrator implements OrchestratorInterface
 {
     private DebugLogService $debug;
 
@@ -53,6 +53,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
                         $project->path . '/.tuti/docker/docker-compose.yml',
                     ],
                 ]);
+
                 return false;
             }
         }
@@ -155,6 +156,7 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
             $this->debug->warning('Failed to get container status', [
                 'error' => $result->errorOutput(),
             ]);
+
             return [];
         }
 
@@ -163,7 +165,10 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
 
         // Parse NDJSON (NewLine Delimited JSON) from docker compose v2
         foreach (explode("\n", mb_trim($output)) as $line) {
-            if ($line === '' || $line === '0') {
+            if ($line === '') {
+                continue;
+            }
+            if ($line === '0') {
                 continue;
             }
             $data = json_decode($line, true);
@@ -205,16 +210,20 @@ final class DockerComposeOrchestrator implements OrchestratorInterface
     public function getLastError(): ?string
     {
         $errors = $this->debug->getErrors();
-        if (empty($errors)) {
+        if ($errors === []) {
             return null;
         }
 
         $lastError = end($errors);
+
         return $lastError['message'] . (isset($lastError['data']['error']) ? ': ' . $lastError['data']['error'] : '');
     }
 
     /**
      * Build docker compose command string for the project.
+     *
+     * @param  array<int, string>  $args
+     * @return array<int, string>
      */
     private function buildComposeCommand(Project $project, array $args): array
     {

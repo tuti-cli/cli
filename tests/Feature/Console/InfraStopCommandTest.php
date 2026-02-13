@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `infra:stop` command which stops the global infrastructure.
  *
- * @see \App\Commands\Infrastructure\StopCommand
+ * @see StopCommand
  */
 
 use App\Commands\Infrastructure\StopCommand;
@@ -53,7 +53,7 @@ describe('InfraStopCommand', function (): void {
         $command = $this->app->make(StopCommand::class);
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     // ─── Not Installed / Already Stopped ──────────────────────────────────

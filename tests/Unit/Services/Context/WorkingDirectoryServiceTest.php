@@ -13,7 +13,7 @@ declare(strict_types=1);
  * setWorkingDirectory() overrides this cache (used by tests and commands).
  * reset() clears the cache so getcwd() is called again.
  *
- * @see \App\Services\Context\WorkingDirectoryService
+ * @see WorkingDirectoryService
  */
 
 use App\Services\Context\WorkingDirectoryService;

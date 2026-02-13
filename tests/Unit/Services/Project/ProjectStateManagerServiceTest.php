@@ -17,8 +17,8 @@ declare(strict_types=1);
  * success/failure results — so we test the state machine logic without
  * Docker running.
  *
- * @see \App\Services\Project\ProjectStateManagerService
- * @see \Tests\Mocks\FakeDockerOrchestrator
+ * @see ProjectStateManagerService
+ * @see FakeDockerOrchestrator
  */
 
 use App\Domain\Project\Enums\ProjectStateEnum;

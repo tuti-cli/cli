@@ -19,13 +19,13 @@ if (! function_exists('debug_log')) {
     /**
      * Log a debug message.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     function debug_log(string $message, array $data = [], string $level = 'DEBUG'): void
     {
         $debug = DebugLogService::getInstance();
 
-        match (strtoupper($level)) {
+        match (mb_strtoupper($level)) {
             'ERROR' => $debug->error($message, $data),
             'WARNING' => $debug->warning($message, $data),
             'INFO' => $debug->info($message, $data),
@@ -91,11 +91,7 @@ if (! function_exists('global_tuti_path')) {
         if (empty($home)) {
             $user = getenv('USER') ?: getenv('USERNAME');
             if (! empty($user)) {
-                if (PHP_OS_FAMILY === 'Windows') {
-                    $home = "C:\\Users\\{$user}";
-                } else {
-                    $home = "/home/{$user}";
-                }
+                $home = PHP_OS_FAMILY === 'Windows' ? "C:\\Users\\{$user}" : "/home/{$user}";
             }
         }
 

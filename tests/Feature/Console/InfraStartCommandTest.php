@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `infra:start` command which starts the global infrastructure.
  *
- * @see \App\Commands\Infrastructure\StartCommand
+ * @see StartCommand
  */
 
 use App\Commands\Infrastructure\StartCommand;
@@ -46,7 +46,7 @@ describe('InfraStartCommand', function (): void {
         $command = $this->app->make(StartCommand::class);
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     // ─── Not Installed ────────────────────────────────────────────────────

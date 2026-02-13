@@ -22,15 +22,12 @@ final readonly class GlobalRegistryService
 
     /**
      * Register or update a project in the registry.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function register(string $name, array $data): void
     {
         $registry = $this->load();
-
-        // Ensure 'projects' key exists
-        if (! isset($registry['projects'])) {
-            $registry['projects'] = [];
-        }
 
         // Merge existing data if any (preserve allocated ports if not provided)
         $existing = $registry['projects'][$name] ?? [];
@@ -43,6 +40,8 @@ final readonly class GlobalRegistryService
 
     /**
      * Get a project by name.
+     *
+     * @return array<string, mixed>|null
      */
     public function getProject(string $name): ?array
     {
@@ -53,11 +52,14 @@ final readonly class GlobalRegistryService
 
     /**
      * Get all registered projects.
+     *
+     * @return array<string, array<string, mixed>>
      */
     public function all(): array
     {
         $registry = $this->load();
 
+        /** @phpstan-ignore-next-line  - Defensive fallback for corrupted/incomplete JSON data*/
         return $registry['projects'] ?? [];
     }
 
@@ -120,6 +122,8 @@ final readonly class GlobalRegistryService
 
     /**
      * Load registry data.
+     *
+     * @return array{projects: array<string, array<string, mixed>>}
      */
     private function load(): array
     {
@@ -134,6 +138,8 @@ final readonly class GlobalRegistryService
 
     /**
      * Save registry data.
+     *
+     * @param  array{projects: array<string, array<string, mixed>>}  $data
      */
     private function save(array $data): void
     {

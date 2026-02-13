@@ -24,9 +24,6 @@ final class StackRegistryManagerService
      */
     private ?array $currentRegistry = null;
 
-    /**
-     * @var string|null
-     */
     private ?string $currentStackPath = null;
 
     /**
@@ -40,6 +37,7 @@ final class StackRegistryManagerService
 
         if (isset($this->registryCache[$stackPath])) {
             $this->currentRegistry = $this->registryCache[$stackPath];
+
             return;
         }
 
@@ -68,43 +66,12 @@ final class StackRegistryManagerService
     }
 
     /**
-     * Validate registry structure after loading.
-     *
-     * @param  array<string, mixed>  $registry
-     */
-    private function validateRegistry(array $registry, string $path): void
-    {
-        if (! isset($registry['version'])) {
-            throw new RuntimeException("Service registry missing 'version' key: {$path}");
-        }
-
-        if (! isset($registry['services']) || ! is_array($registry['services'])) {
-            throw new RuntimeException("Service registry missing 'services' key: {$path}");
-        }
-
-        foreach ($registry['services'] as $category => $services) {
-            foreach ($services as $serviceName => $entry) {
-                if (! is_array($entry)) {
-                    continue;
-                }
-
-                if (! isset($entry['name'])) {
-                    throw new RuntimeException("Service '{$category}.{$serviceName}' missing 'name' field in: {$path}");
-                }
-
-                if (! isset($entry['stub'])) {
-                    throw new RuntimeException("Service '{$category}.{$serviceName}' missing 'stub' field in: {$path}");
-                }
-            }
-        }
-    }
-
-    /**
      * Get the registry version
      */
     public function getVersion(): string
     {
         $this->ensureRegistryLoaded();
+
         return $this->currentRegistry['version'] ?? '0.0.0';
     }
 
@@ -116,6 +83,7 @@ final class StackRegistryManagerService
     public function getAllServices(): array
     {
         $this->ensureRegistryLoaded();
+
         return $this->currentRegistry['services'] ?? [];
     }
 
@@ -127,6 +95,7 @@ final class StackRegistryManagerService
     public function getServicesByCategory(string $category): array
     {
         $this->ensureRegistryLoaded();
+
         return $this->currentRegistry['services'][$category] ?? [];
     }
 
@@ -153,6 +122,7 @@ final class StackRegistryManagerService
     public function hasService(string $category, string $serviceName): bool
     {
         $this->ensureRegistryLoaded();
+
         return isset($this->currentRegistry['services'][$category][$serviceName]);
     }
 
@@ -161,7 +131,7 @@ final class StackRegistryManagerService
      *
      * @param  string  $category  Service category (e.g., 'databases')
      * @param  string  $serviceName  Service name (e.g., 'postgres')
-     * @return string  Absolute path to stub file
+     * @return string Absolute path to stub file
      */
     public function getServiceStubPath(string $category, string $serviceName): string
     {
@@ -182,6 +152,7 @@ final class StackRegistryManagerService
     public function getServiceDefaultVariables(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
+
         return $service['default_variables'] ?? [];
     }
 
@@ -193,6 +164,7 @@ final class StackRegistryManagerService
     public function getServiceRequiredVariables(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
+
         return $service['required_variables'] ?? [];
     }
 
@@ -204,6 +176,7 @@ final class StackRegistryManagerService
     public function getCategories(): array
     {
         $this->ensureRegistryLoaded();
+
         return array_keys($this->currentRegistry['services'] ?? []);
     }
 
@@ -215,6 +188,7 @@ final class StackRegistryManagerService
     public function getServiceDependencies(string $category, string $serviceName): array
     {
         $service = $this->getService($category, $serviceName);
+
         return $service['depends_on'] ?? [];
     }
 
@@ -223,7 +197,7 @@ final class StackRegistryManagerService
      * Adds any missing dependencies to the service list
      *
      * @param  array<int, string>  $selectedServices  Array of service keys (e.g., ['workers.horizon'])
-     * @return array<int, string>  Array of service keys including resolved dependencies
+     * @return array<int, string> Array of service keys including resolved dependencies
      */
     public function resolveDependencies(array $selectedServices): array
     {
@@ -273,6 +247,38 @@ final class StackRegistryManagerService
     }
 
     /**
+     * Validate registry structure after loading.
+     *
+     * @param  array<string, mixed>  $registry
+     */
+    private function validateRegistry(array $registry, string $path): void
+    {
+        if (! isset($registry['version'])) {
+            throw new RuntimeException("Service registry missing 'version' key: {$path}");
+        }
+
+        if (! isset($registry['services']) || ! is_array($registry['services'])) {
+            throw new RuntimeException("Service registry missing 'services' key: {$path}");
+        }
+
+        foreach ($registry['services'] as $category => $services) {
+            foreach ($services as $serviceName => $entry) {
+                if (! is_array($entry)) {
+                    continue;
+                }
+
+                if (! isset($entry['name'])) {
+                    throw new RuntimeException("Service '{$category}.{$serviceName}' missing 'name' field in: {$path}");
+                }
+
+                if (! isset($entry['stub'])) {
+                    throw new RuntimeException("Service '{$category}.{$serviceName}' missing 'stub' field in: {$path}");
+                }
+            }
+        }
+    }
+
+    /**
      * Find the full service key for a service name
      *
      * @return string|null Service key (e.g., 'cache.redis') or null if not found
@@ -308,6 +314,7 @@ final class StackRegistryManagerService
                     $sorted[] = $serviceKey;
                     unset($remaining[$key]);
                     $added = true;
+
                     continue;
                 }
 
@@ -317,6 +324,7 @@ final class StackRegistryManagerService
                     $sorted[] = $serviceKey;
                     unset($remaining[$key]);
                     $added = true;
+
                     continue;
                 }
 

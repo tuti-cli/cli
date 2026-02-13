@@ -7,7 +7,6 @@ namespace App\Commands\Stack;
 use App\Concerns\HasBrandedOutput;
 use App\Services\Stack\Installers\WordPressStackInstaller;
 use LaravelZero\Framework\Commands\Command;
-use RuntimeException;
 
 use function Laravel\Prompts\spin;
 
@@ -37,6 +36,7 @@ final class WpSetupCommand extends Command
         // Check if we're in a WordPress project
         if (! file_exists($configPath)) {
             $this->failure('Not a tuti project. Run this command from a WordPress project directory.');
+
             return self::FAILURE;
         }
 
@@ -65,6 +65,7 @@ final class WpSetupCommand extends Command
         if (! $this->areContainersRunning($projectPath)) {
             $this->failure('Containers are not running.');
             $this->hint('Start containers first with: tuti local:start');
+
             return self::FAILURE;
         }
 
@@ -72,8 +73,8 @@ final class WpSetupCommand extends Command
 
         // Check if WordPress is already installed
         if (! $this->option('force')) {
-            $checkCommand = 'core is-installed';
-            if ($installer->runWpCli($projectPath, $checkCommand)) {
+            $checkArguments = ['core', 'is-installed'];
+            if ($installer->runWpCli($projectPath, $checkArguments)) {
                 $this->warning('WordPress is already installed.');
                 $this->hint('Use --force to reinstall, or visit the site directly.');
 
@@ -93,12 +94,13 @@ final class WpSetupCommand extends Command
         $this->note('Waiting for database to be ready...');
 
         $dbReady = spin(
-            fn () => $this->waitForDatabase($projectPath),
+            fn (): bool => $this->waitForDatabase($projectPath),
             'Checking database connection...'
         );
 
         if (! $dbReady) {
             $this->failure('Database is not ready. Please try again in a moment.');
+
             return self::FAILURE;
         }
 
@@ -107,23 +109,27 @@ final class WpSetupCommand extends Command
         // Run WordPress installation
         $this->note('Installing WordPress...');
 
-        $wpInstallCommand = sprintf(
-            'core install --url="%s" --title="%s" --admin_user="%s" --admin_password="%s" --admin_email="%s" --skip-email',
-            $autoSetup['site_url'],
-            $autoSetup['site_title'],
-            $autoSetup['admin_user'],
-            $autoSetup['admin_password'],
-            $autoSetup['admin_email']
-        );
+        // Use array syntax for safe command execution (no shell injection)
+        $wpInstallArguments = [
+            'core',
+            'install',
+            "--url={$autoSetup['site_url']}",
+            "--title={$autoSetup['site_title']}",
+            "--admin_user={$autoSetup['admin_user']}",
+            "--admin_password={$autoSetup['admin_password']}",
+            "--admin_email={$autoSetup['admin_email']}",
+            '--skip-email',
+        ];
 
         $result = spin(
-            fn () => $installer->runWpCli($projectPath, $wpInstallCommand),
+            fn (): bool => $installer->runWpCli($projectPath, $wpInstallArguments),
             'Running WordPress installation...'
         );
 
         if (! $result) {
             $this->failure('WordPress installation failed.');
             $this->hint('Check container logs with: docker logs <container_name>');
+
             return self::FAILURE;
         }
 
@@ -156,8 +162,6 @@ final class WpSetupCommand extends Command
      */
     private function areContainersRunning(string $projectPath): bool
     {
-        $tutiPath = $projectPath . '/.tuti';
-
         // Get project name from config
         $projectName = basename($projectPath);
         $configPath = $projectPath . '/.tuti/config.json';
@@ -173,7 +177,7 @@ final class WpSetupCommand extends Command
 
         exec($command, $output, $exitCode);
 
-        return $exitCode === 0 && ! empty($output);
+        return $exitCode === 0 && $output !== [];
     }
 
     /**
@@ -203,7 +207,7 @@ final class WpSetupCommand extends Command
 
             exec($healthyCommand, $healthyOutput, $healthyExitCode);
 
-            if ($healthyExitCode === 0 && ! empty($healthyOutput)) {
+            if ($healthyExitCode === 0 && $healthyOutput !== []) {
                 return true;
             }
 
@@ -217,7 +221,7 @@ final class WpSetupCommand extends Command
 
             // If container is running but not healthy yet, wait more
             // If container is running and has been for a while, assume it's ready
-            if ($runningExitCode === 0 && ! empty($runningOutput) && $attempt >= 10) {
+            if ($runningExitCode === 0 && $runningOutput !== [] && $attempt >= 10) {
                 return true;
             }
 

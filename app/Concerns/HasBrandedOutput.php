@@ -6,6 +6,7 @@ namespace App\Concerns;
 
 use App\Enums\Theme;
 use Symfony\Component\Console\Output\OutputInterface;
+
 use function Termwind\render;
 
 /**
@@ -114,7 +115,7 @@ trait HasBrandedOutput
     protected function tagline(string $featureName): void
     {
         $tagline = "✦ TUTI :: {$featureName} :: Environments Made Simple ✦ ";
-        $this->output->writeln('  '. $this->badge($tagline));
+        $this->output->writeln('  ' . $this->badge($tagline));
     }
 
     protected function outro(string $text, ?string $linkLabel = null, ?string $linkUrl = null, int $terminalWidth = 80): void
@@ -404,6 +405,8 @@ trait HasBrandedOutput
 
     /**
      * Display a success callout box.
+     *
+     * @param  array<string>  $lines
      */
     protected function successBox(string $title, array $lines = []): void
     {
@@ -412,6 +415,8 @@ trait HasBrandedOutput
 
     /**
      * Display an error callout box.
+     *
+     * @param  array<string>  $lines
      */
     protected function errorBox(string $title, array $lines = []): void
     {
@@ -420,6 +425,8 @@ trait HasBrandedOutput
 
     /**
      * Display a warning callout box.
+     *
+     * @param  array<string>  $lines
      */
     protected function warningBox(string $title, array $lines = []): void
     {
@@ -428,6 +435,8 @@ trait HasBrandedOutput
 
     /**
      * Display an info callout box.
+     *
+     * @param  array<string, string>  $items
      */
     protected function infoBox(array $items, int $width = 60): void
     {
@@ -436,6 +445,8 @@ trait HasBrandedOutput
 
     /**
      * Display a tip/hint callout box.
+     *
+     * @param  array<string>  $lines
      */
     protected function tipBox(string $title, array $lines = []): void
     {
@@ -444,16 +455,16 @@ trait HasBrandedOutput
 
     /**
      * Generic callout box with icon and color.
+     *
+     * @param  array<string>  $lines
      */
     protected function calloutBox(string $title, array $lines, string $color, string $icon): void
     {
         $this->newLine();
         $this->output->writeln("  <fg={$color}>{$icon} {$title}</>");
 
-        if (! empty($lines)) {
-            foreach ($lines as $line) {
-                $this->output->writeln("    <fg=gray>{$line}</>");
-            }
+        foreach ($lines as $line) {
+            $this->output->writeln("    <fg=gray>{$line}</>");
         }
     }
 
@@ -464,6 +475,8 @@ trait HasBrandedOutput
     /**
      * Display a bordered box with title and content.
      * Can handle both plain text lines and key-value pairs.
+     *
+     * @param  array<int|string, string>  $lines
      */
     protected function box(string $title, array $lines, int $width = 60, bool $isKeyValue = false): void
     {
@@ -510,6 +523,8 @@ trait HasBrandedOutput
 
     /**
      * Display a simple bordered panel.
+     *
+     * @param  array<string>  $lines
      */
     protected function panel(array $lines, int $width = 60): void
     {
@@ -521,8 +536,8 @@ trait HasBrandedOutput
         // Content lines
         foreach ($lines as $line) {
             // Strip ANSI codes to get real length
-            $cleanLine = preg_replace('/\x1b\[[0-9;]*m/', '', $line) ?? $line;
-            $lineLen = mb_strlen($cleanLine);
+            $cleanLine = preg_replace('/\x1b\[[0-9;]*m/', '', (string) $line) ?? $line;
+            $lineLen = mb_strlen((string) $cleanLine);
             $rightPad = max(0, $width - $lineLen - 4);
 
             $this->output->writeln(
@@ -545,12 +560,14 @@ trait HasBrandedOutput
      */
     protected function keyValue(string $key, string $value, int $keyWidth = 20): void
     {
-        $paddedKey = str_pad($key, $keyWidth);
+        $paddedKey = mb_str_pad($key, $keyWidth);
         $this->output->writeln("  <fg=gray>{$paddedKey}</> {$value}");
     }
 
     /**
      * Display multiple key-value pairs.
+     *
+     * @param  array<string, string|int>  $items
      */
     protected function keyValueList(array $items, int $keyWidth = 20): void
     {
@@ -637,13 +654,15 @@ trait HasBrandedOutput
     /**
      * Display a final success summary.
      * Use at the end of successful operations.
+     *
+     * @param  array<string>  $nextSteps
      */
     protected function completed(string $message, array $nextSteps = []): void
     {
         $this->newLine();
         $this->output->writeln("  {$this->badgeSuccess('SUCCESS')} {$message}");
 
-        if (! empty($nextSteps)) {
+        if ($nextSteps !== []) {
             $this->newLine();
             $this->output->writeln('  <fg=gray>Next steps:</>');
             foreach ($nextSteps as $step) {
@@ -657,13 +676,15 @@ trait HasBrandedOutput
     /**
      * Display a final failure summary.
      * Use at the end of failed operations.
+     *
+     * @param  array<string>  $suggestions
      */
     protected function failed(string $message, array $suggestions = []): void
     {
         $this->newLine();
         $this->output->writeln("  {$this->badgeError('FAILED')} {$message}");
 
-        if (! empty($suggestions)) {
+        if ($suggestions !== []) {
             $this->newLine();
             $this->output->writeln('  <fg=gray>Suggestions:</>');
             foreach ($suggestions as $suggestion) {

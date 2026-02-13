@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Debug;
 
 use Illuminate\Support\Facades\File;
-use RuntimeException;
 
 /**
  * Debug Log Service.
@@ -16,6 +15,7 @@ use RuntimeException;
 final class DebugLogService
 {
     private const int MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
+
     private const int MAX_LOG_FILES = 5;
 
     private static ?self $instance = null;
@@ -34,7 +34,7 @@ final class DebugLogService
 
     public static function getInstance(): self
     {
-        if (self::$instance === null) {
+        if (! self::$instance instanceof self) {
             self::$instance = new self();
         }
 
@@ -99,7 +99,7 @@ final class DebugLogService
     /**
      * Log a debug message.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function debug(string $message, array $data = []): void
     {
@@ -109,7 +109,7 @@ final class DebugLogService
     /**
      * Log an info message.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function info(string $message, array $data = []): void
     {
@@ -119,7 +119,7 @@ final class DebugLogService
     /**
      * Log a warning message.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function warning(string $message, array $data = []): void
     {
@@ -129,7 +129,7 @@ final class DebugLogService
     /**
      * Log an error message.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function error(string $message, array $data = []): void
     {
@@ -139,7 +139,7 @@ final class DebugLogService
     /**
      * Log a command execution.
      *
-     * @param array<string, mixed> $result
+     * @param  array<string, mixed>  $result
      */
     public function command(string $command, array $result = []): void
     {
@@ -185,7 +185,7 @@ final class DebugLogService
      */
     public function getLogsByLevel(string $level): array
     {
-        return array_filter($this->sessionLogs, fn ($log) => $log['level'] === strtoupper($level));
+        return array_filter($this->sessionLogs, fn (array $log): bool => $log['level'] === mb_strtoupper($level));
     }
 
     /**
@@ -195,7 +195,7 @@ final class DebugLogService
      */
     public function getErrors(): array
     {
-        return array_filter($this->sessionLogs, fn ($log) => in_array($log['level'], ['ERROR', 'WARNING']));
+        return array_filter($this->sessionLogs, fn (array $log): bool => in_array($log['level'], ['ERROR', 'WARNING'], true));
     }
 
     /**
@@ -232,7 +232,7 @@ final class DebugLogService
     {
         $home = getenv('HOME') ?: getenv('USERPROFILE') ?: '/tmp';
 
-        return rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti' . DIRECTORY_SEPARATOR . 'logs';
+        return mb_rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti' . DIRECTORY_SEPARATOR . 'logs';
     }
 
     /**
@@ -246,9 +246,50 @@ final class DebugLogService
     }
 
     /**
+     * Format logs for display.
+     *
+     * @param  array<int, array{timestamp: string, level: string, context: string, message: string, data: array<string, mixed>}>  $logs
+     */
+    public function formatLogsForDisplay(array $logs): string
+    {
+        $output = '';
+
+        foreach ($logs as $log) {
+            $levelColor = match ($log['level']) {
+                'ERROR' => "\033[31m",   // Red
+                'WARNING' => "\033[33m", // Yellow
+                'INFO' => "\033[32m",    // Green
+                'DEBUG' => "\033[36m",   // Cyan
+                'COMMAND' => "\033[35m", // Magenta
+                'PROCESS' => "\033[34m", // Blue
+                default => "\033[0m",    // Reset
+            };
+
+            $output .= sprintf(
+                "%s[%s] %s%s\033[0m [%s] %s\n",
+                $levelColor,
+                mb_substr($log['timestamp'], 11, 8), // Just time
+                mb_str_pad($log['level'], 7),
+                "\033[0m",
+                $log['context'],
+                $log['message']
+            );
+
+            foreach ($log['data'] as $key => $value) {
+                if (is_string($value) && mb_strlen($value) > 100) {
+                    $value = mb_substr($value, 0, 100) . '...';
+                }
+                $output .= sprintf("         %s: %s\n", $key, is_string($value) ? $value : json_encode($value));
+            }
+        }
+
+        return $output;
+    }
+
+    /**
      * Internal log method.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     private function log(string $level, string $message, array $data = []): void
     {
@@ -272,16 +313,15 @@ final class DebugLogService
     /**
      * Write log entry to file.
      *
-     * @param array{timestamp: string, level: string, context: string, message: string, data: array<string, mixed>} $entry
+     * @param  array{timestamp: string, level: string, context: string, message: string, data: array<string, mixed>}  $entry
      */
     private function writeToFile(array $entry): void
     {
         $logDir = $this->getGlobalLogPath();
 
-        if (! is_dir($logDir)) {
-            if (! @mkdir($logDir, 0755, true) && ! is_dir($logDir)) {
-                return; // Silently fail if can't create log dir
-            }
+        if (! is_dir($logDir) && (! @mkdir($logDir, 0755, true) && ! is_dir($logDir))) {
+            return;
+            // Silently fail if can't create log dir
         }
 
         $logFile = $logDir . '/tuti.log';
@@ -293,10 +333,10 @@ final class DebugLogService
         $line = sprintf(
             "[%s] %s [%s] %s%s\n",
             $entry['timestamp'],
-            str_pad($entry['level'], 7),
+            mb_str_pad($entry['level'], 7),
             $entry['context'],
             $entry['message'],
-            ! empty($entry['data']) ? ' ' . json_encode($entry['data'], JSON_UNESCAPED_SLASHES) : ''
+            empty($entry['data']) ? '' : ' ' . json_encode($entry['data'], JSON_UNESCAPED_SLASHES)
         );
 
         file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
@@ -334,56 +374,12 @@ final class DebugLogService
      */
     private function truncateOutput(string $output, int $maxLength = 2000): string
     {
-        $output = trim($output);
+        $output = mb_trim($output);
 
-        if (strlen($output) <= $maxLength) {
+        if (mb_strlen($output) <= $maxLength) {
             return $output;
         }
 
-        return substr($output, 0, $maxLength) . "\n... [truncated, " . strlen($output) . " total bytes]";
-    }
-
-    /**
-     * Format logs for display.
-     *
-     * @param array<int, array{timestamp: string, level: string, context: string, message: string, data: array<string, mixed>}> $logs
-     * @return string
-     */
-    public function formatLogsForDisplay(array $logs): string
-    {
-        $output = '';
-
-        foreach ($logs as $log) {
-            $levelColor = match ($log['level']) {
-                'ERROR' => "\033[31m",   // Red
-                'WARNING' => "\033[33m", // Yellow
-                'INFO' => "\033[32m",    // Green
-                'DEBUG' => "\033[36m",   // Cyan
-                'COMMAND' => "\033[35m", // Magenta
-                'PROCESS' => "\033[34m", // Blue
-                default => "\033[0m",    // Reset
-            };
-
-            $output .= sprintf(
-                "%s[%s] %s%s\033[0m [%s] %s\n",
-                $levelColor,
-                substr($log['timestamp'], 11, 8), // Just time
-                str_pad($log['level'], 7),
-                "\033[0m",
-                $log['context'],
-                $log['message']
-            );
-
-            if (! empty($log['data'])) {
-                foreach ($log['data'] as $key => $value) {
-                    if (is_string($value) && strlen($value) > 100) {
-                        $value = substr($value, 0, 100) . '...';
-                    }
-                    $output .= sprintf("         %s: %s\n", $key, is_string($value) ? $value : json_encode($value));
-                }
-            }
-        }
-
-        return $output;
+        return mb_substr($output, 0, $maxLength) . "\n... [truncated, " . mb_strlen($output, '8bit') . ' total bytes]';
     }
 }

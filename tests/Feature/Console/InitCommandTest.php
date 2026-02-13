@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `tuti init` command which initializes a new Tuti project.
  *
- * @see \App\Commands\InitCommand
+ * @see App\Commands\InitCommand
  */
 
 use App\Contracts\StackInstallerInterface;
@@ -20,48 +20,48 @@ use LaravelZero\Framework\Commands\Command;
 describe('InitCommand Registration', function (): void {
 
     it('is registered in the application', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
 
         expect($command)->toBeInstanceOf(Command::class);
     });
 
     it('has correct signature', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
 
         expect($command->getName())->toBe('init');
     });
 
     it('uses HasBrandedOutput trait', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
 
         $traits = class_uses_recursive($command);
 
-        expect($traits)->toContain(\App\Concerns\HasBrandedOutput::class);
+        expect($traits)->toContain(App\Concerns\HasBrandedOutput::class);
     });
 
     it('has project-name argument', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
         $definition = $command->getDefinition();
 
         expect($definition->hasArgument('project-name'))->toBeTrue();
     });
 
     it('has --stack option', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
         $definition = $command->getDefinition();
 
         expect($definition->hasOption('stack'))->toBeTrue();
     });
 
     it('has --force option', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
         $definition = $command->getDefinition();
 
         expect($definition->hasOption('force'))->toBeTrue();
     });
 
     it('has correct description', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
 
         expect($command->getDescription())->toBe('Initialize a new Tuti project');
     });
@@ -170,7 +170,7 @@ describe('InitCommand Options', function (): void {
     });
 
     it('accepts project-name as optional argument', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
         $definition = $command->getDefinition();
         $projectNameArgument = $definition->getArgument('project-name');
 
@@ -178,7 +178,7 @@ describe('InitCommand Options', function (): void {
     });
 
     it('stack option has no default value', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
         $definition = $command->getDefinition();
         $stackOption = $definition->getOption('stack');
 
@@ -186,7 +186,7 @@ describe('InitCommand Options', function (): void {
     });
 
     it('force option defaults to false', function (): void {
-        $command = $this->app->make(\App\Commands\InitCommand::class);
+        $command = $this->app->make(App\Commands\InitCommand::class);
         $definition = $command->getDefinition();
         $forceOption = $definition->getOption('force');
 

@@ -43,7 +43,7 @@ final readonly class StackComposeBuilderService
         $resolvedServices = $this->registry->resolveDependencies($selectedServices);
 
         // Build with stack overrides
-        return $this->build($resolvedServices, $projectConfig, $environment, $stackManifest, $stackPath);
+        return $this->build($resolvedServices, $projectConfig, $environment, $stackManifest);
     }
 
     /**
@@ -53,15 +53,13 @@ final readonly class StackComposeBuilderService
      * @param  array<string, string>  $projectConfig  Project configuration
      * @param  string  $environment  Environment (dev, staging, production)
      * @param  array<string, mixed>|null  $stackManifest  Optional stack manifest for overrides
-     * @param  string|null  $stackPath  Optional path to stack directory for stack-specific stubs
      * @return array<string, mixed> Composed docker-compose array
      */
     public function build(
         array $selectedServices,
         array $projectConfig,
         string $environment = 'dev',
-        ?array $stackManifest = null,
-        ?string $stackPath = null
+        ?array $stackManifest = null
     ): array {
         // Start with base structure
         $compose = $this->getBaseStructure($projectConfig);
@@ -73,8 +71,7 @@ final readonly class StackComposeBuilderService
                 $serviceKey,
                 $projectConfig,
                 $environment,
-                $stackManifest,
-                $stackPath
+                $stackManifest
             );
         }
 
@@ -136,7 +133,6 @@ final readonly class StackComposeBuilderService
      * @param  array<string, string>  $projectConfig  Project configuration
      * @param  string  $environment  Environment
      * @param  array<string, mixed>|null  $stackManifest  Stack manifest
-     * @param  string|null  $stackPath  Path to stack directory (unused, kept for compatibility)
      * @return array<string, mixed> Updated compose configuration
      */
     private function addService(
@@ -144,8 +140,7 @@ final readonly class StackComposeBuilderService
         string $serviceKey,
         array $projectConfig,
         string $environment,
-        ?array $stackManifest = null,
-        ?string $stackPath = null
+        ?array $stackManifest = null
     ): array {
         [$category, $serviceName] = $this->parseServiceKey($serviceKey);
 
@@ -288,7 +283,7 @@ final readonly class StackComposeBuilderService
 
         // Add service-specific configurations based on service name
         if ($serviceName === 'redis') {
-            $replacements = $this->addRedisReplacements($replacements, $environment, $stackOverrides);
+            return $this->addRedisReplacements($replacements, $environment);
         }
 
         return $replacements;
@@ -298,13 +293,11 @@ final readonly class StackComposeBuilderService
      * Add Redis-specific replacements based on environment
      *
      * @param  array<string, string>  $replacements
-     * @param  array<string, mixed>  $stackOverrides
      * @return array<string, string>
      */
     private function addRedisReplacements(
         array $replacements,
-        string $environment,
-        array $stackOverrides = []
+        string $environment
     ): array {
         // Set memory based on environment (can be overridden by stack)
         if (! isset($replacements['REDIS_MAX_MEMORY'])) {
@@ -396,7 +389,6 @@ final readonly class StackComposeBuilderService
 
         return $merged;
     }
-
 
     /**
      * Add volumes to compose configuration

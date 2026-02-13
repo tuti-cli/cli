@@ -22,21 +22,21 @@ use RuntimeException;
  *
  * Uses Docker to run Composer, so no local PHP/Composer installation is required.
  */
-final class LaravelStackInstaller implements StackInstallerInterface
+final readonly class LaravelStackInstaller implements StackInstallerInterface
 {
-    private const IDENTIFIER = 'laravel';
+    private const string IDENTIFIER = 'laravel';
 
-    private const SUPPORTED_IDENTIFIERS = [
+    private const array SUPPORTED_IDENTIFIERS = [
         'laravel',
         'laravel-stack',
     ];
 
     public function __construct(
-        private readonly StackLoaderService $stackLoader,
-        private readonly StackFilesCopierService $copierService,
-        private readonly StackRepositoryService $repositoryService,
-        private readonly DockerExecutorInterface $dockerExecutor,
-        private readonly InfrastructureManagerInterface $infrastructureManager,
+        private StackLoaderService $stackLoader,
+        private StackFilesCopierService $copierService,
+        private StackRepositoryService $repositoryService,
+        private DockerExecutorInterface $dockerExecutor,
+        private InfrastructureManagerInterface $infrastructureManager,
     ) {}
 
     public function getIdentifier(): string
@@ -98,7 +98,7 @@ final class LaravelStackInstaller implements StackInstallerInterface
         $this->ensureInfrastructureReady();
 
         // Create the project using Docker + Composer
-        $result = $this->createLaravelProject($projectPath, $projectName, $options);
+        $result = $this->createLaravelProject($projectPath, $options);
 
         if (! $result) {
             throw new RuntimeException('Failed to create Laravel project');
@@ -147,96 +147,6 @@ final class LaravelStackInstaller implements StackInstallerInterface
     }
 
     /**
-     * Ensure the global infrastructure (Traefik) is ready.
-     */
-    private function ensureInfrastructureReady(): void
-    {
-        if (! $this->infrastructureManager->ensureReady()) {
-            throw new RuntimeException(
-                'Failed to start global infrastructure. Please run "tuti install" first.'
-            );
-        }
-    }
-
-    /**
-     * Create a new Laravel project using Docker + Composer.
-     *
-     * @param  array<string, mixed>  $options
-     */
-    private function createLaravelProject(string $projectPath, string $projectName, array $options): bool
-    {
-        // Ensure project directory exists
-        if (! is_dir($projectPath)) {
-            if (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath)) {
-                throw new RuntimeException("Failed to create directory: {$projectPath}");
-            }
-        }
-
-        // Build the composer command
-        $composerCommand = $this->buildComposerCommand($options);
-
-        // Execute composer create-project via Docker
-        $result = $this->dockerExecutor->runComposer($composerCommand, $projectPath);
-
-        if (! $result->successful) {
-            throw new RuntimeException(
-                'Failed to create Laravel project: ' . $result->errorOutput
-            );
-        }
-
-        return true;
-    }
-
-    /**
-     * Build the composer create-project command.
-     *
-     * @param  array<string, mixed>  $options
-     */
-    private function buildComposerCommand(array $options): string
-    {
-        $package = 'laravel/laravel';
-        $version = $options['laravel_version'] ?? null;
-
-        $command = "create-project {$package}";
-
-        if ($version !== null) {
-            $command .= ":{$version}";
-        }
-
-        // Install in current directory (which is mounted as /app in container)
-        $command .= " .";
-
-        // Add options
-        $command .= ' --prefer-dist';
-        $command .= ' --no-interaction';
-
-        if (! empty($options['no_dev'])) {
-            $command .= ' --no-dev';
-        }
-
-        return $command;
-    }
-
-    /**
-     * Validate that fresh installation can proceed.
-     */
-    private function validateFreshInstallation(string $projectPath): void
-    {
-        if (is_dir($projectPath) && count(scandir($projectPath)) > 2) {
-            throw new RuntimeException(
-                "Directory {$projectPath} is not empty. Cannot create fresh Laravel project."
-            );
-        }
-
-        // Check if Docker is available (instead of local Composer)
-        if (! $this->dockerExecutor->isDockerAvailable()) {
-            throw new RuntimeException(
-                'Docker is not available. Please install Docker to create Laravel projects.'
-            );
-        }
-    }
-
-    /**
      * Generate Laravel APP_KEY using Docker.
      */
     public function generateAppKey(string $projectPath): ?string
@@ -255,18 +165,18 @@ final class LaravelStackInstaller implements StackInstallerInterface
         $lines = explode("\n", $output);
 
         foreach ($lines as $line) {
-            $line = trim($line);
+            $line = mb_trim($line);
             if (str_starts_with($line, 'base64:')) {
                 return $line;
             }
         }
 
         // Fallback: if no base64: prefix found, return the last non-empty line
-        $nonEmptyLines = array_filter($lines, fn($l) => !empty(trim($l)));
-        $lastLine = trim(end($nonEmptyLines));
+        $nonEmptyLines = array_filter($lines, fn ($l): bool => ! in_array(mb_trim($l), ['', '0'], true));
+        $lastLine = mb_trim(end($nonEmptyLines));
 
         // Only return if it looks like a base64 key
-        if (str_starts_with($lastLine, 'base64:') || strlen($lastLine) > 40) {
+        if (str_starts_with($lastLine, 'base64:') || mb_strlen($lastLine) > 40) {
             return $lastLine;
         }
 
@@ -301,5 +211,93 @@ final class LaravelStackInstaller implements StackInstallerInterface
         $result = $this->dockerExecutor->runNpm('install', $projectPath);
 
         return $result->successful;
+    }
+
+    /**
+     * Ensure the global infrastructure (Traefik) is ready.
+     */
+    private function ensureInfrastructureReady(): void
+    {
+        if (! $this->infrastructureManager->ensureReady()) {
+            throw new RuntimeException(
+                'Failed to start global infrastructure. Please run "tuti install" first.'
+            );
+        }
+    }
+
+    /**
+     * Create a new Laravel project using Docker + Composer.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    private function createLaravelProject(string $projectPath, array $options): bool
+    {
+        // Ensure project directory exists
+        if (! is_dir($projectPath) && (! mkdir($projectPath, 0755, true) && ! is_dir($projectPath))) {
+            throw new RuntimeException("Failed to create directory: {$projectPath}");
+        }
+
+        // Build the composer command
+        $composerCommand = $this->buildComposerCommand($options);
+
+        // Execute composer create-project via Docker
+        $result = $this->dockerExecutor->runComposer($composerCommand, $projectPath);
+
+        if (! $result->successful) {
+            throw new RuntimeException(
+                'Failed to create Laravel project: ' . $result->errorOutput
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Build the composer create-project command.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    private function buildComposerCommand(array $options): string
+    {
+        $package = 'laravel/laravel';
+        $version = $options['laravel_version'] ?? null;
+
+        $command = "create-project {$package}";
+
+        if ($version !== null) {
+            $command .= ":{$version}";
+        }
+
+        // Install in current directory (which is mounted as /app in container)
+        $command .= ' .';
+
+        // Add options
+        $command .= ' --prefer-dist';
+        $command .= ' --no-interaction';
+
+        if (! empty($options['no_dev'])) {
+            $command .= ' --no-dev';
+        }
+
+        return $command;
+    }
+
+    /**
+     * Validate that fresh installation can proceed.
+     */
+    private function validateFreshInstallation(string $projectPath): void
+    {
+        if (is_dir($projectPath) && count(scandir($projectPath)) > 2) {
+            throw new RuntimeException(
+                "Directory {$projectPath} is not empty. Cannot create fresh Laravel project."
+            );
+        }
+
+        // Check if Docker is available (instead of local Composer)
+        if (! $this->dockerExecutor->isDockerAvailable()) {
+            throw new RuntimeException(
+                'Docker is not available. Please install Docker to create Laravel projects.'
+            );
+        }
     }
 }

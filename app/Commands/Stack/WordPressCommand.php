@@ -48,12 +48,7 @@ final class WordPressCommand extends Command
         try {
             $mode = $this->getInstallationMode($installer);
 
-            if ($mode === null) {
-                $this->failure('Installation cancelled.');
-                return self::FAILURE;
-            }
-
-            if (! $this->preFlightChecks($directoryService, $mode)) {
+            if (! $this->preFlightChecks($directoryService)) {
                 return self::FAILURE;
             }
 
@@ -61,11 +56,13 @@ final class WordPressCommand extends Command
 
             if ($config === null) {
                 $this->failure('Configuration cancelled.');
+
                 return self::FAILURE;
             }
 
             if (! $this->confirmConfiguration($config)) {
                 $this->warning('Installation cancelled.');
+
                 return self::SUCCESS;
             }
 
@@ -91,7 +88,7 @@ final class WordPressCommand extends Command
         }
     }
 
-    private function getInstallationMode(WordPressStackInstaller $installer): ?string
+    private function getInstallationMode(WordPressStackInstaller $installer): string
     {
         $modeOption = $this->option('mode');
 
@@ -127,11 +124,12 @@ final class WordPressCommand extends Command
         );
     }
 
-    private function preFlightChecks(ProjectDirectoryService $directoryService, string $mode): bool
+    private function preFlightChecks(ProjectDirectoryService $directoryService): bool
     {
         if ($directoryService->exists() && ! $this->option('force')) {
             $this->failure('Project already initialized. ".tuti/" directory already exists.');
             $this->hint('Use --force to reinitialize (this will remove existing configuration)');
+
             return false;
         }
 
@@ -313,6 +311,7 @@ final class WordPressCommand extends Command
 
             if (count($serviceOptions) === 1) {
                 $defaults[] = "{$category}.{$serviceOptions[0]}";
+
                 continue;
             }
 
@@ -489,7 +488,7 @@ final class WordPressCommand extends Command
         }
 
         foreach ($config['selected_services'] as $serviceKey) {
-            [$category, $serviceName] = explode('.', $serviceKey);
+            [$category, $serviceName] = explode('.', (string) $serviceKey);
 
             // Configure for Redis cache
             if ($category === 'cache' && $serviceName === 'redis') {
@@ -520,7 +519,7 @@ final class WordPressCommand extends Command
         if (preg_match("/^{$key}=/m", $content)) {
             $content = preg_replace("/^{$key}=.*$/m", "{$key}={$escapedValue}", $content);
         } else {
-            $content = rtrim($content) . "\n{$key}={$escapedValue}\n";
+            $content = mb_rtrim($content) . "\n{$key}={$escapedValue}\n";
         }
 
         file_put_contents($envPath, $content);
