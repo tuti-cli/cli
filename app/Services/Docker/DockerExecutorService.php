@@ -76,6 +76,8 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
     /**
      * Run WP-CLI command inside a Docker container.
      *
+     * Uses project's WP-CLI service if available, otherwise falls back to temporary container.
+     *
      * @param  string  $command  The WP-CLI command to run
      * @param  string  $workDir  The working directory to mount
      * @param  array<string, string>  $env  Environment variables
@@ -86,60 +88,60 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         $this->ensureDockerAvailable();
         $this->ensureDirectoryExists($workDir);
 
-        $image = 'wordpress:cli-2-php8.3';
-
-        // Set default environment variables for WordPress
-        $env = array_merge([
-            'WORDPRESS_DB_HOST' => 'database',
-            'WORDPRESS_DB_NAME' => 'wordpress',
-            'WORDPRESS_DB_USER' => 'wordpress',
-            'WORDPRESS_DB_PASSWORD' => 'secret',
-            'WP_CLI_CACHE_DIR' => '/tmp/.wp-cli/cache',
-        ], $env);
-
-        // Build command parts safely using array syntax (no string interpolation)
-        $parts = [
-            'docker', 'run', '--rm', '-i',
-            '-v', "{$workDir}:/var/www/html",
-            '-w', '/var/www/html',
-        ];
-
-        // Add network if specified (for connecting to running containers like database)
-        if ($networkName !== null) {
-            $parts[] = '--network';
-            $parts[] = $networkName;
+        // Check if WP-CLI service is running in the project
+        if ($this->isWpCliServiceRunning($workDir)) {
+            return $this->execInWpCliService($command, $workDir, $env);
         }
 
-        // Add environment variables
-        foreach ($env as $key => $value) {
-            $parts[] = '-e';
-            $parts[] = "{$key}={$value}";
+        // Fall back to temporary container
+        return $this->runWpCliTemporary($command, $workDir, $env, $networkName);
+    }
+
+    /**
+     * Check if WP-CLI service is running in the project.
+     *
+     * Looks for docker-compose.yml with wpcli service definition and checks if container is running.
+     */
+    public function isWpCliServiceRunning(string $projectPath): bool
+    {
+        $composeFile = $projectPath . '/docker-compose.yml';
+        $composeDevFile = $projectPath . '/docker-compose.dev.yml';
+
+        // Check if docker-compose.yml exists
+        if (! file_exists($composeFile)) {
+            return false;
         }
 
-        // Add user mapping for file permissions (non-Windows only)
-        if (PHP_OS_FAMILY !== 'Windows') {
-            $uid = getmyuid();
-            $gid = getmygid();
-            if ($uid !== false && $gid !== false) {
-                $parts[] = '--user';
-                $parts[] = "{$uid}:{$gid}";
+        // Check if wpcli service is defined in compose file(s)
+        $composeContent = file_get_contents($composeFile);
+        if ($composeContent === false || ! str_contains($composeContent, 'wpcli:')) {
+            // Also check dev compose file
+            if (file_exists($composeDevFile)) {
+                $devContent = file_get_contents($composeDevFile);
+                if ($devContent === false || ! str_contains($devContent, 'wpcli:')) {
+                    return false;
+                }
+            } else {
+                return false;
             }
         }
 
-        // Add image and WP-CLI command
-        $parts[] = $image;
-        $parts[] = 'sh';
-        $parts[] = '-c';
-        $parts[] = "wp {$command}";
+        // Build docker compose command with available files
+        $parts = ['docker', 'compose', '-f', $composeFile];
+        if (file_exists($composeDevFile)) {
+            $parts[] = '-f';
+            $parts[] = $composeDevFile;
+        }
+        $parts = array_merge($parts, ['ps', '--services', '--filter', 'status=running']);
 
-        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
+        // Check if the wpcli container is actually running
+        $process = Process::run($parts);
 
-        return new DockerExecutionResult(
-            successful: $process->successful(),
-            output: $process->output(),
-            errorOutput: $process->errorOutput(),
-            exitCode: $process->exitCode() ?? 1,
-        );
+        if (! $process->successful()) {
+            return false;
+        }
+
+        return str_contains($process->output(), 'wpcli');
     }
 
     public function exec(
@@ -222,6 +224,113 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         $parts[] = 'sh';
         $parts[] = '-c';
         $parts[] = $command;
+
+        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
+
+        return new DockerExecutionResult(
+            successful: $process->successful(),
+            output: $process->output(),
+            errorOutput: $process->errorOutput(),
+            exitCode: $process->exitCode() ?? 1,
+        );
+    }
+
+    /**
+     * Execute WP-CLI command in the project's WP-CLI service container.
+     *
+     * @param  array<string, string>  $env
+     */
+    private function execInWpCliService(string $command, string $projectPath, array $env = []): DockerExecutionResult
+    {
+        $composeFile = $projectPath . '/docker-compose.yml';
+        $composeDevFile = $projectPath . '/docker-compose.dev.yml';
+
+        $parts = ['docker', 'compose', '-f', $composeFile];
+
+        // Add dev compose file if it exists
+        if (file_exists($composeDevFile)) {
+            $parts[] = '-f';
+            $parts[] = $composeDevFile;
+        }
+
+        $parts[] = 'exec';
+        $parts[] = '-T'; // Disable pseudo-TTY
+
+        // Add environment variables
+        foreach ($env as $key => $value) {
+            $parts[] = '-e';
+            $parts[] = "{$key}={$value}";
+        }
+
+        $parts[] = 'wpcli';
+        $parts[] = 'sh';
+        $parts[] = '-c';
+        $parts[] = "php -d memory_limit=512M /usr/local/bin/wp {$command}";
+
+        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
+
+        return new DockerExecutionResult(
+            successful: $process->successful(),
+            output: $process->output(),
+            errorOutput: $process->errorOutput(),
+            exitCode: $process->exitCode() ?? 1,
+        );
+    }
+
+    /**
+     * Run WP-CLI command in a temporary Docker container.
+     *
+     * Used when project's WP-CLI service is not available.
+     *
+     * @param  array<string, string>  $env
+     */
+    private function runWpCliTemporary(string $command, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
+    {
+        $image = 'wordpress:cli-2-php8.3';
+
+        // Set default environment variables for WordPress
+        $env = array_merge([
+            'WORDPRESS_DB_HOST' => 'database',
+            'WORDPRESS_DB_NAME' => 'wordpress',
+            'WORDPRESS_DB_USER' => 'wordpress',
+            'WORDPRESS_DB_PASSWORD' => 'secret',
+            'WP_CLI_CACHE_DIR' => '/tmp/.wp-cli/cache',
+        ], $env);
+
+        // Build command parts safely using array syntax (no string interpolation)
+        $parts = [
+            'docker', 'run', '--rm', '-i',
+            '-v', "{$workDir}:/var/www/html",
+            '-w', '/var/www/html',
+        ];
+
+        // Add network if specified (for connecting to running containers like database)
+        if ($networkName !== null) {
+            $parts[] = '--network';
+            $parts[] = $networkName;
+        }
+
+        // Add environment variables
+        foreach ($env as $key => $value) {
+            $parts[] = '-e';
+            $parts[] = "{$key}={$value}";
+        }
+
+        // Add user mapping for file permissions (non-Windows only)
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $uid = getmyuid();
+            $gid = getmygid();
+            if ($uid !== false && $gid !== false) {
+                $parts[] = '--user';
+                $parts[] = "{$uid}:{$gid}";
+            }
+        }
+
+        // Add image and WP-CLI command
+        $parts[] = $image;
+        $parts[] = 'sh';
+        $parts[] = '-c';
+        $parts[] = "php -d memory_limit=512M /usr/local/bin/wp {$command}";
 
         $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
 
