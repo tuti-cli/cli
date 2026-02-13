@@ -190,27 +190,47 @@ describe('runNpm', function (): void {
 
 describe('runWpCli', function (): void {
 
-    it('uses standalone container when no compose file exists', function (): void {
+    it('runs wp-cli via docker run with wordpress cli image', function (): void {
         fakeDockerAvailable();
 
         $this->service->runWpCli('core download', $this->tempDir);
 
-        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'wordpress:cli')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'wordpress:cli-2-php8.3')
             && str_contains(execCommandStr($process), 'wp core download'));
     });
 
-    it('uses docker compose when compose file exists', function (): void {
-        fakeDockerAvailable([
-            '*docker*compose*' => Process::result('wp output'),
-        ]);
-
-        mkdir($this->tempDir . '/.tuti', 0755, true);
-        file_put_contents($this->tempDir . '/.tuti/docker-compose.yml', 'version: "3.8"');
+    it('mounts working directory to /var/www/html', function (): void {
+        fakeDockerAvailable();
 
         $this->service->runWpCli('plugin list', $this->tempDir);
 
-        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'docker compose')
-            && str_contains(execCommandStr($process), 'wpcli'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), $this->tempDir . ':/var/www/html'));
+    });
+
+    it('connects to network when specified', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli('core install', $this->tempDir, [], 'myproject_dev_network');
+
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), '--network')
+            && str_contains(execCommandStr($process), 'myproject_dev_network'));
+    });
+
+    it('does not include network flag when not specified', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli('core download', $this->tempDir);
+
+        Process::assertRan(fn (object $process): bool => ! str_contains(execCommandStr($process), '--network'));
+    });
+
+    it('sets default wordpress database environment variables', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli('core install', $this->tempDir);
+
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'WORDPRESS_DB_HOST=database')
+            && str_contains(execCommandStr($process), 'WORDPRESS_DB_NAME=wordpress'));
     });
 });
 

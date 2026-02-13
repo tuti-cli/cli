@@ -73,21 +73,73 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         return $this->exec(self::DEFAULT_NODE_IMAGE, $fullCommand, $workDir, $env);
     }
 
-    public function runWpCli(string $command, string $workDir, array $env = []): DockerExecutionResult
+    /**
+     * Run WP-CLI command inside a Docker container.
+     *
+     * @param  string  $command  The WP-CLI command to run
+     * @param  string  $workDir  The working directory to mount
+     * @param  array<string, string>  $env  Environment variables
+     * @param  string|null  $networkName  Optional Docker network to connect to (for database access)
+     */
+    public function runWpCli(string $command, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
     {
         $this->ensureDockerAvailable();
         $this->ensureDirectoryExists($workDir);
 
-        // Check if we have a docker-compose setup with wpcli service
-        $composePath = $workDir . '/.tuti/docker-compose.yml';
+        $image = 'wordpress:cli-2-php8.3';
 
-        if (file_exists($composePath)) {
-            // Use docker compose run with the wpcli service
-            return $this->runWpCliViaCompose($command, $workDir, $env);
+        // Set default environment variables for WordPress
+        $env = array_merge([
+            'WORDPRESS_DB_HOST' => 'database',
+            'WORDPRESS_DB_NAME' => 'wordpress',
+            'WORDPRESS_DB_USER' => 'wordpress',
+            'WORDPRESS_DB_PASSWORD' => 'secret',
+            'WP_CLI_CACHE_DIR' => '/tmp/.wp-cli/cache',
+        ], $env);
+
+        // Build command parts safely using array syntax (no string interpolation)
+        $parts = [
+            'docker', 'run', '--rm', '-i',
+            '-v', "{$workDir}:/var/www/html",
+            '-w', '/var/www/html',
+        ];
+
+        // Add network if specified (for connecting to running containers like database)
+        if ($networkName !== null) {
+            $parts[] = '--network';
+            $parts[] = $networkName;
         }
 
-        // Fallback: Use standalone container for initial installation
-        return $this->runWpCliStandalone($command, $workDir, $env);
+        // Add environment variables
+        foreach ($env as $key => $value) {
+            $parts[] = '-e';
+            $parts[] = "{$key}={$value}";
+        }
+
+        // Add user mapping for file permissions (non-Windows only)
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $uid = getmyuid();
+            $gid = getmygid();
+            if ($uid !== false && $gid !== false) {
+                $parts[] = '--user';
+                $parts[] = "{$uid}:{$gid}";
+            }
+        }
+
+        // Add image and WP-CLI command
+        $parts[] = $image;
+        $parts[] = 'sh';
+        $parts[] = '-c';
+        $parts[] = "wp {$command}";
+
+        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
+
+        return new DockerExecutionResult(
+            successful: $process->successful(),
+            output: $process->output(),
+            errorOutput: $process->errorOutput(),
+            exitCode: $process->exitCode() ?? 1,
+        );
     }
 
     public function exec(
@@ -179,69 +231,6 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
             errorOutput: $process->errorOutput(),
             exitCode: $process->exitCode() ?? 1,
         );
-    }
-
-    /**
-     * Run WP-CLI via docker compose (when project is initialized).
-     *
-     * @param  array<string, string>  $env
-     */
-    private function runWpCliViaCompose(string $command, string $workDir, array $env): DockerExecutionResult
-    {
-        $composePath = $workDir . '/.tuti';
-
-        $parts = [
-            'docker', 'compose',
-            '-f', $composePath . '/docker-compose.yml',
-            '-f', $composePath . '/docker-compose.dev.yml',
-            '--profile', 'cli',
-            'run', '--rm',
-            '-w', '/var/www/html',
-        ];
-
-        // Add environment variables
-        foreach ($env as $key => $value) {
-            $parts[] = '-e';
-            $parts[] = "{$key}={$value}";
-        }
-
-        $parts[] = 'wpcli';
-        $parts[] = 'sh';
-        $parts[] = '-c';
-        $parts[] = "wp {$command}";
-
-        $process = Process::timeout(self::DEFAULT_TIMEOUT)
-            ->path($workDir)
-            ->run($parts);
-
-        return new DockerExecutionResult(
-            successful: $process->successful(),
-            output: $process->output(),
-            errorOutput: $process->errorOutput(),
-            exitCode: $process->exitCode() ?? 1,
-        );
-    }
-
-    /**
-     * Run WP-CLI via standalone container (for initial installation).
-     *
-     * @param  array<string, string>  $env
-     */
-    private function runWpCliStandalone(string $command, string $workDir, array $env): DockerExecutionResult
-    {
-        // Use official WordPress CLI image
-        // See: https://hub.docker.com/_/wordpress/tags?name=cli
-        $image = 'wordpress:cli-2-php8.3';
-
-        // Set WP-CLI cache directory to writable location
-        $env = array_merge([
-            'WP_CLI_CACHE_DIR' => '/tmp/.wp-cli/cache',
-        ], $env);
-
-        // Use php -d to set memory limit, then run wp command
-        $fullCommand = "php -d memory_limit=512M /usr/local/bin/wp {$command}";
-
-        return $this->exec($image, $fullCommand, $workDir, $env);
     }
 
     /**
