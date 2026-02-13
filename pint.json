@@ -1,6 +1,6 @@
 {
     "preset": "laravel",
-    "notPath`": [
+    "notPath": [
         "tests/TestCase.php",
         "wordpress-app",
         "laravel-app"
