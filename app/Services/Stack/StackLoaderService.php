@@ -149,6 +149,8 @@ final readonly class StackLoaderService
      */
     public function getStackName(array $stackManifest): string
     {
+        $this->validate($stackManifest);
+
         return $stackManifest['name'];
     }
 
@@ -159,6 +161,8 @@ final readonly class StackLoaderService
      */
     public function getStackType(array $stackManifest): string
     {
+        $this->validate($stackManifest);
+
         return $stackManifest['type'];
     }
 
@@ -169,6 +173,8 @@ final readonly class StackLoaderService
      */
     public function getFramework(array $stackManifest): string
     {
+        $this->validate($stackManifest);
+
         return $stackManifest['framework'];
     }
 
