@@ -45,8 +45,9 @@ interface DockerExecutorInterface
      * @param  string  $command  The WP-CLI command to run (e.g., "core download")
      * @param  string  $workDir  The working directory to mount
      * @param  array<string, string>  $env  Environment variables
+     * @param  string|null  $networkName  Optional Docker network to connect to (for database access)
      */
-    public function runWpCli(string $command, string $workDir, array $env = []): DockerExecutionResult;
+    public function runWpCli(string $command, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult;
 
     /**
      * Run a generic command inside a Docker container.

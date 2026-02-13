@@ -245,13 +245,13 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
 
     /**
      * Run WP-CLI command in the project.
-     * Uses docker run with proper network and volume mounts.
+     * Delegates to DockerExecutorService for safe command execution.
      *
-     * @param  bool  $useNetwork  Whether to connect to the project's Docker network
+     * @param  array<string, string>  $env  Additional environment variables
      */
-    public function runWpCli(string $projectPath, string $command, bool $useNetwork = true): bool
+    public function runWpCli(string $projectPath, string $command, array $env = []): bool
     {
-        // Get project name from .tuti/config.json or directory name
+        // Get project name from .tuti/config.json or directory name for network name
         $projectName = basename($projectPath);
         $configPath = $projectPath . '/.tuti/config.json';
 
@@ -260,41 +260,17 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
             $projectName = $config['project']['name'] ?? $projectName;
         }
 
-        // Build docker run command with network access to running containers
+        // Build network name (matches DockerComposeOrchestrator pattern)
         $networkName = "{$projectName}_dev_network";
-        $image = 'wordpress:cli-2-php8.3';
 
-        $dockerCommand = sprintf(
-            'docker run --rm -v "%s:/var/www/html" -w /var/www/html',
-            $projectPath
+        $result = $this->dockerExecutor->runWpCli(
+            $command,
+            $projectPath,
+            $env,
+            $networkName
         );
 
-        // Add network if requested (for commands that need database access)
-        if ($useNetwork) {
-            $dockerCommand .= sprintf(' --network %s', $networkName);
-        }
-
-        // Add environment variables for database connection
-        $dockerCommand .= ' -e WORDPRESS_DB_HOST=database';
-        $dockerCommand .= ' -e WORDPRESS_DB_NAME=wordpress';
-        $dockerCommand .= ' -e WORDPRESS_DB_USER=wordpress';
-        $dockerCommand .= ' -e WORDPRESS_DB_PASSWORD=secret';
-
-        // Add user mapping for file permissions
-        if (PHP_OS_FAMILY !== 'Windows') {
-            $uid = getmyuid();
-            $gid = getmygid();
-            if ($uid !== false && $gid !== false) {
-                $dockerCommand .= " --user {$uid}:{$gid}";
-            }
-        }
-
-        // Add image and WP-CLI command
-        $dockerCommand .= sprintf(' %s wp %s 2>&1', $image, $command);
-
-        exec($dockerCommand, $output, $exitCode);
-
-        return $exitCode === 0;
+        return $result->successful;
     }
 
     /**
