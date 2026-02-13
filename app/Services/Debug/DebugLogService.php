@@ -380,6 +380,6 @@ final class DebugLogService
             return $output;
         }
 
-        return mb_substr($output, 0, $maxLength) . "\n... [truncated, " . mb_strlen($output) . ' total bytes]';
+        return mb_substr($output, 0, $maxLength) . "\n... [truncated, " . mb_strlen($output, '8bit') . ' total bytes]';
     }
 }
