@@ -183,7 +183,18 @@ final class DoctorCommand extends Command
      */
     private function checkGlobalConfig(): array
     {
-        $home = getenv('HOME') ?: getenv('USERPROFILE');
+        $home = (string) (getenv('HOME') ?: getenv('USERPROFILE') ?: '');
+
+        if ($home === '') {
+            $this->line('  ❌ Cannot determine home directory');
+
+            return [
+                'status' => 'error',
+                'message' => 'Unable to determine home directory',
+                'hint' => 'Set the HOME or USERPROFILE environment variable',
+            ];
+        }
+
         $globalPath = mb_rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
 
         if (! is_dir($globalPath)) {
