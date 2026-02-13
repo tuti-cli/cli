@@ -9,8 +9,8 @@ declare(strict_types=1);
  * when loaded, processed, and combined. Uses real stubs instead of synthetic
  * test fixtures to catch issues with actual production files.
  *
- * @see \App\Services\Stack\StackComposeBuilderService
- * @see \App\Services\Stack\StackStubLoaderService
+ * @see StackComposeBuilderService
+ * @see StackStubLoaderService
  */
 
 use App\Services\Stack\StackComposeBuilderService;
@@ -327,8 +327,8 @@ describe('WordPress stack stubs produce valid YAML', function (): void {
 
         expect($parsed)->toBeArray();
         expect($parsed['services'])->toHaveKey('wpcli');
-        // wpcli uses profiles
-        expect($parsed['services']['wpcli']['profiles'])->toContain('cli');
+        // wpcli starts automatically (no profiles needed)
+        expect($parsed['services']['wpcli']['command'])->toBe(['tail', '-f', '/dev/null']);
     });
 });
 
@@ -583,7 +583,7 @@ describe('section-based stub parsing produces valid YAML', function (): void {
         expect($devParsed)->toHaveKey('horizon');
     });
 
-    it('parses wpcli stub with profiles', function (): void {
+    it('parses wpcli stub correctly', function (): void {
         $stubPath = $this->wordpressStackPath . '/services/cli/wpcli.stub';
 
         if (! file_exists($stubPath)) {
@@ -601,7 +601,9 @@ describe('section-based stub parsing produces valid YAML', function (): void {
 
         $parsed = Yaml::parse($baseYaml);
         expect($parsed)->toHaveKey('wpcli');
-        expect($parsed['wpcli']['profiles'])->toContain('cli');
+        // wpcli starts automatically (no profiles needed)
+        expect($parsed['wpcli'])->toHaveKey('command');
+        expect($parsed['wpcli']['command'])->toBe(['tail', '-f', '/dev/null']);
     });
 });
 

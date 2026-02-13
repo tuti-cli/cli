@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Tests the service that runs commands inside Docker containers
  * (composer, artisan, npm, wp-cli) without requiring them on the host.
  *
- * @see \App\Services\Docker\DockerExecutorService
+ * @see DockerExecutorService
  */
 
 use App\Contracts\DockerExecutionResult;
@@ -111,7 +111,7 @@ describe('runComposer', function (): void {
 
         $this->service->runComposer('install --no-dev', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'composer install --no-dev'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'composer install --no-dev'));
     });
 
     it('throws when Docker is unavailable', function (): void {
@@ -142,7 +142,7 @@ describe('runArtisan', function (): void {
 
         $this->service->runArtisan('migrate', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'php artisan migrate'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'php artisan migrate'));
     });
 
     it('returns failure when no artisan file exists', function (): void {
@@ -160,7 +160,7 @@ describe('runArtisan', function (): void {
 
         $this->service->runArtisan('key:generate', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'DISABLE_DEFAULT_CONFIG=true'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'DISABLE_DEFAULT_CONFIG=true'));
     });
 });
 
@@ -173,7 +173,7 @@ describe('runNpm', function (): void {
 
         $this->service->runNpm('install', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'npm install')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'npm install')
             && str_contains(execCommandStr($process), 'node:20-alpine'));
     });
 
@@ -190,27 +190,78 @@ describe('runNpm', function (): void {
 
 describe('runWpCli', function (): void {
 
-    it('uses standalone container when no compose file exists', function (): void {
+    it('runs wp-cli via docker run with wordpress cli image', function (): void {
         fakeDockerAvailable();
 
-        $this->service->runWpCli('core download', $this->tempDir);
+        $this->service->runWpCli(['core', 'download'], $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'wordpress:cli')
-            && str_contains(execCommandStr($process), 'wp core download'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'wordpress:cli-2-php8.3')
+            && str_contains(execCommandStr($process), '/usr/local/bin/wp')
+            && str_contains(execCommandStr($process), 'core')
+            && str_contains(execCommandStr($process), 'download'));
     });
 
-    it('uses docker compose when compose file exists', function (): void {
-        fakeDockerAvailable([
-            '*docker*compose*' => Process::result('wp output'),
-        ]);
+    it('mounts working directory to /var/www/html', function (): void {
+        fakeDockerAvailable();
 
-        mkdir($this->tempDir . '/.tuti', 0755, true);
-        file_put_contents($this->tempDir . '/.tuti/docker-compose.yml', 'version: "3.8"');
+        $this->service->runWpCli(['plugin', 'list'], $this->tempDir);
 
-        $this->service->runWpCli('plugin list', $this->tempDir);
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), $this->tempDir . ':/var/www/html'));
+    });
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'docker compose')
-            && str_contains(execCommandStr($process), 'wpcli'));
+    it('connects to network when specified', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli(['core', 'install'], $this->tempDir, [], 'myproject_dev_network');
+
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), '--network')
+            && str_contains(execCommandStr($process), 'myproject_dev_network'));
+    });
+
+    it('does not include network flag when not specified', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli(['core', 'download'], $this->tempDir);
+
+        Process::assertRan(fn (object $process): bool => ! str_contains(execCommandStr($process), '--network'));
+    });
+
+    it('sets default wordpress database environment variables', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli(['core', 'install'], $this->tempDir);
+
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'WORDPRESS_DB_HOST=database')
+            && str_contains(execCommandStr($process), 'WORDPRESS_DB_NAME=wordpress'));
+    });
+
+    it('uses php with increased memory limit', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli(['core', 'download'], $this->tempDir);
+
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'php')
+            && str_contains(execCommandStr($process), '-d')
+            && str_contains(execCommandStr($process), 'memory_limit=512M'));
+    });
+
+    it('passes arguments as separate array elements (no shell interpolation)', function (): void {
+        fakeDockerAvailable();
+
+        $this->service->runWpCli(['core', 'download', '--version=6.4', '--locale=en_US'], $this->tempDir);
+
+        $cmd = '';
+        Process::assertRan(function (object $process) use (&$cmd): bool {
+            $cmd = execCommandStr($process);
+
+            return true;
+        });
+
+        // Arguments should be separate, not interpolated into a shell string
+        expect($cmd)->toContain('core')
+            ->and($cmd)->toContain('download')
+            ->and($cmd)->toContain('--version=6.4')
+            ->and($cmd)->toContain('--locale=en_US');
     });
 });
 
@@ -223,7 +274,7 @@ describe('exec', function (): void {
 
         $this->service->exec('alpine:latest', 'echo hello', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'alpine:latest')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'alpine:latest')
             && str_contains(execCommandStr($process), 'echo hello'));
     });
 
@@ -232,7 +283,7 @@ describe('exec', function (): void {
 
         $this->service->exec('alpine', 'ls', $this->tempDir);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), $this->tempDir . ':/app'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), $this->tempDir . ':/app'));
     });
 
     it('passes environment variables', function (): void {
@@ -240,7 +291,7 @@ describe('exec', function (): void {
 
         $this->service->exec('alpine', 'env', $this->tempDir, ['FOO' => 'bar']);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'FOO=bar'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'FOO=bar'));
     });
 
     it('returns success result on successful execution', function (): void {
@@ -278,7 +329,7 @@ describe('pullImage', function (): void {
 
         expect($result->successful)->toBeTrue();
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'docker pull nginx:latest'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'docker pull nginx:latest'));
     });
 });
 
@@ -313,7 +364,7 @@ describe('execInContainer', function (): void {
 
         expect($result->successful)->toBeTrue();
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'docker exec')
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'docker exec')
             && str_contains(execCommandStr($process), 'myapp_dev_app')
             && str_contains(execCommandStr($process), 'php -v'));
     });
@@ -323,6 +374,6 @@ describe('execInContainer', function (): void {
 
         $this->service->execInContainer('myapp_dev_app', 'env', ['APP_ENV' => 'testing']);
 
-        Process::assertRan(fn ($process) => str_contains(execCommandStr($process), 'APP_ENV=testing'));
+        Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'APP_ENV=testing'));
     });
 });

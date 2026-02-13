@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 use App\Services\Stack\StackRegistryManagerService;
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->testDir = createTestDirectory();
     $this->registry = app(StackRegistryManagerService::class);
     $this->registry->loadForStack(base_path('stubs/stacks/laravel'));
 });
 
-afterEach(function () {
+afterEach(function (): void {
     cleanupTestDirectory($this->testDir);
 });
 
-describe('StackRegistryManagerService', function () {
-    it('can get horizon service', function () {
+describe('StackRegistryManagerService', function (): void {
+    it('can get horizon service', function (): void {
         $service = $this->registry->getService('workers', 'horizon');
 
         expect($service)
@@ -24,7 +24,7 @@ describe('StackRegistryManagerService', function () {
             ->and($service['depends_on'])->toContain('redis');
     });
 
-    it('can get scheduler service', function () {
+    it('can get scheduler service', function (): void {
         $service = $this->registry->getService('workers', 'scheduler');
 
         expect($service)
@@ -32,7 +32,7 @@ describe('StackRegistryManagerService', function () {
             ->and($service['name'])->toBe('Laravel Scheduler');
     });
 
-    it('returns horizon dependencies', function () {
+    it('returns horizon dependencies', function (): void {
         $dependencies = $this->registry->getServiceDependencies('workers', 'horizon');
 
         expect($dependencies)
@@ -40,13 +40,13 @@ describe('StackRegistryManagerService', function () {
             ->toContain('redis');
     });
 
-    it('returns empty array for services without dependencies', function () {
+    it('returns empty array for services without dependencies', function (): void {
         $dependencies = $this->registry->getServiceDependencies('workers', 'scheduler');
 
         expect($dependencies)->toBeArray()->toBeEmpty();
     });
 
-    it('resolves horizon dependencies to include redis', function () {
+    it('resolves horizon dependencies to include redis', function (): void {
         $selected = ['workers.horizon'];
         $resolved = $this->registry->resolveDependencies($selected);
 
@@ -61,15 +61,15 @@ describe('StackRegistryManagerService', function () {
         expect($redisIndex)->toBeLessThan($horizonIndex);
     });
 
-    it('does not duplicate services when resolving dependencies', function () {
+    it('does not duplicate services when resolving dependencies', function (): void {
         $selected = ['cache.redis', 'workers.horizon'];
         $resolved = $this->registry->resolveDependencies($selected);
 
-        $redisCount = count(array_filter($resolved, fn ($s) => $s === 'cache.redis'));
+        $redisCount = count(array_filter($resolved, fn ($s): bool => $s === 'cache.redis'));
         expect($redisCount)->toBe(1);
     });
 
-    it('handles services without dependencies', function () {
+    it('handles services without dependencies', function (): void {
         $selected = ['workers.scheduler', 'cache.redis'];
         $resolved = $this->registry->resolveDependencies($selected);
 

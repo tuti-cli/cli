@@ -6,6 +6,7 @@ namespace App\Services\Stack;
 
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
+use Exception;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -73,13 +74,13 @@ final readonly class StackInitializationService
         $this->metadataService->create($config);
 
         // 5. Process docker-compose files with variable substitution
-        $this->processDockerComposeFiles($projectName, $environment);
+        $this->processDockerComposeFiles($projectName);
 
         // 6. Append optional services to docker-compose.yml
         $this->appendOptionalServices($selectedServices, $projectName, $environment);
 
         // 7. Copy environment file template with project-specific values (for docker-compose)
-        $this->copyEnvironmentFile($stackPath, $environment, $projectName);
+        $this->copyEnvironmentFile($environment, $projectName);
 
         // 8. Update project's .env with Docker service settings (Laravel-specific)
         // Only apply for Laravel projects (detected by artisan file)
@@ -154,7 +155,7 @@ final readonly class StackInitializationService
     /**
      * Process docker-compose files with variable substitution.
      */
-    private function processDockerComposeFiles(string $projectName, string $environment): void
+    private function processDockerComposeFiles(string $projectName): void
     {
         $composeFile = tuti_path('docker-compose.yml');
 
@@ -212,10 +213,11 @@ final readonly class StackInitializationService
         // Filter to only optional services (cache, mail, workers, search, storage, etc.)
         $optionalServices = array_filter($selectedServices, function (string $serviceKey) use ($baseCategories): bool {
             [$category] = explode('.', $serviceKey);
+
             return ! in_array($category, $baseCategories, true);
         });
 
-        if (empty($optionalServices)) {
+        if ($optionalServices === []) {
             return;
         }
 
@@ -223,10 +225,6 @@ final readonly class StackInitializationService
 
         // Find insertion point: look for "# ====...Networks" or just "networks:" section
         $insertionPoint = $this->findServicesInsertionPoint($content);
-
-        if ($insertionPoint === false) {
-            return;
-        }
 
         $servicesToAppend = '';
         $volumesToAdd = [];
@@ -240,7 +238,7 @@ final readonly class StackInitializationService
             }
 
             // Skip if service already exists in compose
-            if (strpos($content, "  {$serviceName}:") !== false) {
+            if (mb_strpos($content, "  {$serviceName}:") !== false) {
                 continue;
             }
 
@@ -285,8 +283,10 @@ final readonly class StackInitializationService
                     // Load entire stub (legacy format)
                     $serviceYaml = $this->stubLoader->load($stubPath, $replacements);
                 }
-
-                if ($serviceYaml === null || trim($serviceYaml) === '') {
+                if ($serviceYaml === null) {
+                    continue;
+                }
+                if (mb_trim($serviceYaml) === '') {
                     continue;
                 }
 
@@ -300,7 +300,7 @@ final readonly class StackInitializationService
                         $volumesToAdd[$volume] = $projectName;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception) {
                 // Skip if stub loading fails - service won't be added
                 continue;
             }
@@ -311,10 +311,10 @@ final readonly class StackInitializationService
         }
 
         // Insert services before networks section
-        $newContent = substr($content, 0, $insertionPoint) . $servicesToAppend . "\n" . substr($content, $insertionPoint);
+        $newContent = mb_substr($content, 0, $insertionPoint) . $servicesToAppend . "\n" . mb_substr($content, $insertionPoint);
 
         // Add volumes if any
-        if (! empty($volumesToAdd)) {
+        if ($volumesToAdd !== []) {
             $newContent = $this->appendVolumesToCompose($newContent, $volumesToAdd);
         }
 
@@ -350,7 +350,7 @@ final readonly class StackInitializationService
             [$category, $serviceName] = explode('.', $serviceKey);
 
             // Skip if service already exists in dev compose
-            if (strpos($devContent, "  {$serviceName}:") !== false) {
+            if (mb_strpos($devContent, "  {$serviceName}:") !== false) {
                 continue;
             }
 
@@ -366,12 +366,12 @@ final readonly class StackInitializationService
                 if ($this->stubLoader->hasSections($stubPath)) {
                     $devSection = $this->stubLoader->loadSection($stubPath, 'dev', $replacements);
 
-                    if ($devSection !== null && trim($devSection) !== '') {
+                    if ($devSection !== null && mb_trim($devSection) !== '') {
                         $indentedYaml = $this->indentServiceYaml($devSection);
                         $devServicesToAppend .= "\n" . $indentedYaml;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception) {
                 // Skip if dev section loading fails
                 continue;
             }
@@ -384,12 +384,7 @@ final readonly class StackInitializationService
         // Find insertion point in dev compose (before networks or at end of services)
         $devInsertionPoint = $this->findServicesInsertionPoint($devContent);
 
-        if ($devInsertionPoint === false) {
-            // Append at end of file
-            $devContent = rtrim($devContent) . "\n" . $devServicesToAppend . "\n";
-        } else {
-            $devContent = substr($devContent, 0, $devInsertionPoint) . $devServicesToAppend . "\n" . substr($devContent, $devInsertionPoint);
-        }
+        $devContent = mb_substr($devContent, 0, $devInsertionPoint) . $devServicesToAppend . "\n" . mb_substr($devContent, $devInsertionPoint);
 
         $this->validateYaml($devContent, $devComposeFile);
         file_put_contents($devComposeFile, $devContent);
@@ -399,7 +394,7 @@ final readonly class StackInitializationService
      * Find the correct insertion point for services (before networks section).
      * Services should be inserted at the end of the services block, before the networks section.
      */
-    private function findServicesInsertionPoint(string $content): int|false
+    private function findServicesInsertionPoint(string $content): int
     {
         // Pattern 1: Look for the Networks section header with equals signs
         // The structure is:
@@ -410,30 +405,30 @@ final readonly class StackInitializationService
         $pattern1 = '/\n# =+\s*\n# Networks/i';
         if (preg_match($pattern1, $content, $matches, PREG_OFFSET_CAPTURE)) {
             // Return position of the newline before the header
-            return (int) $matches[0][1];
+            return $matches[0][1];
         }
 
         // Pattern 2: Look for standalone "networks:" at column 0 (top-level key)
         // Must NOT be indented (no spaces before it)
         $pattern2 = '/\nnetworks:\s*$/m';
         if (preg_match($pattern2, $content, $matches, PREG_OFFSET_CAPTURE)) {
-            return (int) $matches[0][1];
+            return $matches[0][1];
         }
 
         // Pattern 3: Find the volumes section as fallback (insert before volumes if no networks)
         $pattern3 = '/\n# =+\s*\n# Volumes/i';
         if (preg_match($pattern3, $content, $matches, PREG_OFFSET_CAPTURE)) {
-            return (int) $matches[0][1];
+            return $matches[0][1];
         }
 
         // Pattern 4: Look for volumes: key directly
         $pattern4 = '/\nvolumes:\s*$/m';
         if (preg_match($pattern4, $content, $matches, PREG_OFFSET_CAPTURE)) {
-            return (int) $matches[0][1];
+            return $matches[0][1];
         }
 
         // Last resort: append at the end of file
-        return strlen($content);
+        return mb_strlen($content);
     }
 
     /**
@@ -444,7 +439,7 @@ final readonly class StackInitializationService
     private function appendVolumesToCompose(string $content, array $volumes): string
     {
         // Find the volumes section
-        $volumesPos = strpos($content, "\nvolumes:");
+        $volumesPos = mb_strpos($content, "\nvolumes:");
         if ($volumesPos === false) {
             // No volumes section, add it at the end
             $volumeSection = "\nvolumes:\n";
@@ -452,22 +447,23 @@ final readonly class StackInitializationService
                 $volumeSection .= "  {$volumeName}:\n";
                 $volumeSection .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
             }
+
             return $content . $volumeSection;
 
         }
 
         // Find end of file and add new volumes
-        $volumesToInsert = "";
+        $volumesToInsert = '';
         foreach ($volumes as $volumeName => $projectName) {
             // Check if volume already exists
-            if (strpos($content, "  {$volumeName}:") === false) {
+            if (mb_strpos($content, "  {$volumeName}:") === false) {
                 $volumesToInsert .= "  {$volumeName}:\n";
                 $volumesToInsert .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
             }
         }
 
-        if ($volumesToInsert !== "") {
-            $content = rtrim($content) . "\n" . $volumesToInsert;
+        if ($volumesToInsert !== '') {
+            return mb_rtrim($content) . "\n" . $volumesToInsert;
         }
 
         return $content;
@@ -479,12 +475,13 @@ final readonly class StackInitializationService
      */
     private function indentServiceYaml(string $yaml): string
     {
-        $lines = explode("\n", trim($yaml));
+        $lines = explode("\n", mb_trim($yaml));
         $result = [];
 
         foreach ($lines as $line) {
             if ($line === '') {
                 $result[] = '';
+
                 continue;
             }
 
@@ -503,16 +500,14 @@ final readonly class StackInitializationService
         try {
             Yaml::parse($content);
         } catch (ParseException $e) {
-            throw new RuntimeException(
-                "Generated invalid YAML for {$filePath}: {$e->getMessage()}"
-            );
+            throw new RuntimeException("Generated invalid YAML for {$filePath}: {$e->getMessage()}", $e->getCode(), $e);
         }
     }
 
     /**
      * Copy environment file template to project root as .env
      */
-    private function copyEnvironmentFile(string $stackPath, string $environment, string $projectName = ''): void
+    private function copyEnvironmentFile(string $environment, string $projectName = ''): void
     {
         $projectRoot = $this->directoryService->getProjectRoot();
         $targetEnv = $projectRoot . '/.env';
@@ -521,6 +516,7 @@ final readonly class StackInitializationService
         // Just update it with Docker-specific variables
         if (file_exists($targetEnv)) {
             $this->appendTutiVariablesToEnv($targetEnv, $projectName);
+
             return;
         }
 
@@ -536,6 +532,7 @@ final readonly class StackInitializationService
         foreach ($templatePaths as $template) {
             if (file_exists($template)) {
                 $this->createEnvFromTemplate($template, $targetEnv, $projectName);
+
                 return;
             }
         }
@@ -553,6 +550,7 @@ final readonly class StackInitializationService
 
         if ($content === false) {
             $this->createMinimalEnvFile($targetPath, $projectName);
+
             return;
         }
 
@@ -572,7 +570,7 @@ final readonly class StackInitializationService
             ];
 
             foreach ($patterns as $pattern => $replace) {
-                $content = preg_replace($pattern, $replace, $content);
+                $content = preg_replace($pattern, $replace, (string) $content);
             }
         }
 
@@ -628,6 +626,7 @@ ENV;
         // Check if tuti section already exists
         if (str_contains($content, '# TUTI-CLI DOCKER CONFIGURATION')) {
             file_put_contents($envPath, $content);
+
             return; // Already has tuti variables, just save updated content
         }
 
@@ -676,8 +675,8 @@ EOT;
     {
         // First try shell command (most reliable for WSL and Linux)
         $output = $this->executeShellCommand('id -u');
-        if ($output !== null && is_numeric(trim($output))) {
-            return (int) trim($output);
+        if ($output !== null && is_numeric(mb_trim($output))) {
+            return (int) mb_trim($output);
         }
 
         // Fallback to posix_getuid() (available on Unix systems)
@@ -699,8 +698,8 @@ EOT;
     {
         // First try shell command (most reliable for WSL and Linux)
         $output = $this->executeShellCommand('id -g');
-        if ($output !== null && is_numeric(trim($output))) {
-            return (int) trim($output);
+        if ($output !== null && is_numeric(mb_trim($output))) {
+            return (int) mb_trim($output);
         }
 
         // Fallback to posix_getgid() (available on Unix systems)
@@ -739,24 +738,24 @@ EOT;
                 fclose($pipes[2]);
                 proc_close($process);
 
-                if ($output !== false && trim($output) !== '') {
-                    return trim($output);
+                if ($output !== false && mb_trim($output) !== '') {
+                    return mb_trim($output);
                 }
             }
         }
 
         // Method 2: shell_exec
         $output = @shell_exec($command . ' 2>/dev/null');
-        if ($output !== null && trim($output) !== '') {
-            return trim($output);
+        if ($output !== null && mb_trim($output) !== '') {
+            return mb_trim($output);
         }
 
         // Method 3: exec
         if (function_exists('exec')) {
             $result = [];
             @exec($command . ' 2>/dev/null', $result, $returnCode);
-            if ($returnCode === 0 && ! empty($result)) {
-                return trim($result[0]);
+            if ($returnCode === 0 && $result !== []) {
+                return mb_trim($result[0]);
             }
         }
 
@@ -787,7 +786,7 @@ EOT;
         ];
 
         foreach ($dbReplacements as $pattern => $replacement) {
-            $content = preg_replace($pattern, $replacement, $content);
+            $content = preg_replace($pattern, $replacement, (string) $content);
         }
 
         // Handle existing uncommented variables (with possible leading spaces)
@@ -800,19 +799,18 @@ EOT;
         ];
 
         foreach ($dbUpdates as $pattern => $replacement) {
-            $content = preg_replace($pattern, $replacement, $content);
+            $content = preg_replace($pattern, $replacement, (string) $content);
         }
 
         // Update Redis configuration for Docker container
-        $content = preg_replace('/^[\s]*#?[\s]*REDIS_HOST=.*/m', 'REDIS_HOST=redis', $content);
-        $content = preg_replace('/^[\s]*#?[\s]*REDIS_PASSWORD=.*/m', 'REDIS_PASSWORD=', $content);
+        $content = preg_replace('/^[\s]*#?[\s]*REDIS_HOST=.*/m', 'REDIS_HOST=redis', (string) $content);
+        $content = preg_replace('/^[\s]*#?[\s]*REDIS_PASSWORD=.*/m', 'REDIS_PASSWORD=', (string) $content);
 
         // Update Mail configuration for Mailpit in Docker
-        $content = preg_replace('/^[\s]*MAIL_HOST=.*/m', 'MAIL_HOST=mailpit', $content);
-        $content = preg_replace('/^[\s]*MAIL_PORT=.*/m', 'MAIL_PORT=1025', $content);
-        $content = preg_replace('/^[\s]*MAIL_MAILER=.*/m', 'MAIL_MAILER=smtp', $content);
+        $content = preg_replace('/^[\s]*MAIL_HOST=.*/m', 'MAIL_HOST=mailpit', (string) $content);
+        $content = preg_replace('/^[\s]*MAIL_PORT=.*/m', 'MAIL_PORT=1025', (string) $content);
 
-        return $content;
+        return preg_replace('/^[\s]*MAIL_MAILER=.*/m', 'MAIL_MAILER=smtp', (string) $content);
     }
 
     /**

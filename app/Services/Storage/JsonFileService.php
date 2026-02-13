@@ -83,6 +83,8 @@ final class JsonFileService
 
     /**
      * Resolve template variables in the content.
+     *
+     * @param  array<string, string>  $variables
      */
     private function resolveVariables(string $content, array $variables): string
     {

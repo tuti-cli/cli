@@ -27,18 +27,14 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Register Debug Service as singleton (shared instance)
-        $this->app->singleton(DebugLogService::class, function () {
-            return DebugLogService::getInstance();
-        });
+        $this->app->singleton(DebugLogService::class, fn (): DebugLogService => DebugLogService::getInstance());
 
         $this->app->bind(OrchestratorInterface::class, DockerComposeOrchestrator::class);
         $this->app->bind(StateManagerInterface::class, ProjectStateManagerService::class);
         $this->app->bind(DockerExecutorInterface::class, DockerExecutorService::class);
 
         // Register GlobalInfrastructureManager with the global tuti path
-        $this->app->singleton(InfrastructureManagerInterface::class, function ($app) {
-            return new GlobalInfrastructureManager($this->getGlobalTutiPath());
-        });
+        $this->app->singleton(InfrastructureManagerInterface::class, fn ($app): GlobalInfrastructureManager => new GlobalInfrastructureManager($this->getGlobalTutiPath()));
     }
 
     /**
@@ -60,7 +56,7 @@ final class AppServiceProvider extends ServiceProvider
                 : "/home/{$user}";
         }
 
-        return rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
+        return mb_rtrim($home, '/\\') . DIRECTORY_SEPARATOR . '.tuti';
     }
 
     /**

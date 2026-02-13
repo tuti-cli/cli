@@ -110,9 +110,10 @@ final class DebugCommand extends Command
             // Read from file
             $logLines = $debugService->readLogFile(null, $lines);
 
-            if (empty($logLines)) {
+            if ($logLines === []) {
                 $this->warning('No logs found');
                 $this->hint('Run "tuti debug enable" to start logging');
+
                 return self::SUCCESS;
             }
 
@@ -120,7 +121,7 @@ final class DebugCommand extends Command
             $this->newLine();
 
             foreach ($logLines as $line) {
-                if (empty(trim($line))) {
+                if (in_array(mb_trim($line), ['', '0'], true)) {
                     continue;
                 }
 
@@ -146,8 +147,9 @@ final class DebugCommand extends Command
             $logs = $debugService->getLogsByLevel($level);
         }
 
-        if (empty($logs)) {
+        if ($logs === []) {
             $this->warning('No logs found for this session');
+
             return self::SUCCESS;
         }
 
@@ -162,8 +164,9 @@ final class DebugCommand extends Command
 
         $errors = $debugService->getErrors();
 
-        if (empty($errors)) {
+        if ($errors === []) {
             $this->success('No errors found in current session');
+
             return self::SUCCESS;
         }
 
@@ -174,19 +177,17 @@ final class DebugCommand extends Command
             $this->line("<fg=red>[{$error['timestamp']}] [{$error['context']}]</>");
             $this->line("<fg=red>  {$error['message']}</>");
 
-            if (! empty($error['data'])) {
-                foreach ($error['data'] as $key => $value) {
-                    if ($key === 'stderr' || $key === 'error') {
-                        $this->line("<fg=yellow>  {$key}:</>");
-                        // Show error output line by line
-                        foreach (explode("\n", (string) $value) as $errorLine) {
-                            if (! empty(trim($errorLine))) {
-                                $this->line("<fg=yellow>    {$errorLine}</>");
-                            }
+            foreach ($error['data'] as $key => $value) {
+                if ($key === 'stderr' || $key === 'error') {
+                    $this->line("<fg=yellow>  {$key}:</>");
+                    // Show error output line by line
+                    foreach (explode("\n", (string) $value) as $errorLine) {
+                        if (! in_array(mb_trim($errorLine), ['', '0'], true)) {
+                            $this->line("<fg=yellow>    {$errorLine}</>");
                         }
-                    } else {
-                        $this->line("<fg=gray>  {$key}: " . (is_string($value) ? $value : json_encode($value)) . "</>");
                     }
+                } else {
+                    $this->line("<fg=gray>  {$key}: " . (is_string($value) ? $value : json_encode($value)) . '</>');
                 }
             }
             $this->newLine();

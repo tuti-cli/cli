@@ -44,6 +44,7 @@ final class RebuildCommand extends Command
                 $debugService->error('No .tuti directory found');
                 $this->failure('No tuti project found in current directory');
                 $this->hint('Run "tuti stack:laravel" to create a new project');
+
                 return self::FAILURE;
             }
 
@@ -55,7 +56,7 @@ final class RebuildCommand extends Command
 
             if (! $infrastructureManager->isRunning()) {
                 spin(
-                    fn () => $infrastructureManager->ensureReady(),
+                    fn (): bool => $infrastructureManager->ensureReady(),
                     'Starting Traefik infrastructure...'
                 );
                 $this->success('Infrastructure ready');
@@ -92,6 +93,7 @@ final class RebuildCommand extends Command
                 $debugService->error('docker-compose.yml not found', ['path' => $composeFile]);
                 $this->failure('docker-compose.yml not found at: ' . $composeFile);
                 $this->hint('Run "tuti stack:laravel" to reinitialize the project');
+
                 return self::FAILURE;
             }
 
@@ -159,7 +161,7 @@ final class RebuildCommand extends Command
                 // Stream output to user (default behavior)
                 $result = Process::path($tutiPath)
                     ->timeout(600) // 10 minutes for build
-                    ->run($buildCommand, function ($type, $buffer) {
+                    ->run($buildCommand, function ($type, $buffer): void {
                         // Stream output to user
                         echo $buffer;
                     });

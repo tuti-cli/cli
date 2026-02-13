@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `local:start` command which starts the local development environment.
  *
- * @see \App\Commands\Local\StartCommand
+ * @see StartCommand
  */
 
 use App\Commands\Local\StartCommand;
@@ -67,8 +67,8 @@ describe('LocalStartCommand', function (): void {
         $traits = class_uses_recursive($command);
 
         expect($traits)
-            ->toContain(\App\Concerns\HasBrandedOutput::class)
-            ->toContain(\App\Concerns\BuildsProjectUrls::class);
+            ->toContain(App\Concerns\HasBrandedOutput::class)
+            ->toContain(App\Concerns\BuildsProjectUrls::class);
     });
 
     it('has --skip-infra option', function (): void {

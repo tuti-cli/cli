@@ -52,7 +52,7 @@ final class StatusCommand extends Command
                 $state = $service['State'] ?? '?';
                 $stateDisplay = $state === 'running'
                     ? $this->badgeSuccess('RUNNING')
-                    : $this->badgeError(mb_strtoupper($state));
+                    : $this->badgeError(mb_strtoupper((string) $state));
 
                 $rows[] = [
                     $service['Name'] ?? '?',
