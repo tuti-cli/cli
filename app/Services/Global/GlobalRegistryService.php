@@ -59,7 +59,8 @@ final readonly class GlobalRegistryService
     {
         $registry = $this->load();
 
-        return $registry['projects'];
+        /** @phpstan-ignore-next-line  - Defensive fallback for corrupted/incomplete JSON data*/
+        return $registry['projects'] ?? [];
     }
 
     /**
