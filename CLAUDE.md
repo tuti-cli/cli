@@ -312,6 +312,28 @@ interface InfrastructureManagerInterface {
 - Validate file paths exist before passing to Process (use `file_exists()`, `is_dir()`)
 - Use `Process::path($dir)` for working directory — never `cd` in command strings
 
+## Git & Workflow
+
+### Commit Messages
+Use **Conventional Commits** format:
+- Format: `type(scope): subject`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- Examples:
+  - `feat(local): add port conflict detection`
+  - `fix(docker): resolve container naming issue`
+  - `docs(readme): update installation instructions`
+
+### Branch Strategy
+- `main` - stable releases only
+- `develop` - active development
+- `feature/*` - new features (e.g., `feature/redis-support`)
+- `fix/*` - bug fixes (e.g., `fix/port-conflict`)
+
+### Pull Request Requirements
+- All tests must pass (Github Actions)
+- Description explains **what** and **why**
+- Update documentation if needed
+- Follow Conventional Commits for PR title
 ## .claude Configuration
 
 ### Directory Structure
