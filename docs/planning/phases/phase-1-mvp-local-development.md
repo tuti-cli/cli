@@ -80,8 +80,8 @@ Fix known issues discovered during codebase analysis.
 Development/test commands should not ship in the production binary.
 
 **Deliverables:**
-- [ ] Remove or gate `test:registry`, `test:compose-builder`, `test:stack-loader`, `test:tuti-directory`, `test:stack-overrides` commands from production builds
-- [ ] Remove or gate `validate:quick` command
+- [x] Remove or gate `test:registry`, `test:compose-builder`, `test:stack-loader`, `test:tuti-directory`, `test:stack-overrides` commands from production builds
+- [x] Remove or gate `validate:quick` command
 - [ ] Remove or gate `ui:showcase` command
 - [ ] Configure `box.json` exclusions or use `APP_ENV` check in command registration
 

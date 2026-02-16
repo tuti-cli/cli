@@ -10,7 +10,7 @@
 1. **Never read**: `vendor/`, `builds/`, `.git/`, `composer.lock`, `*.phar`, `*.sqlite`
 2. **Use grep first**: Before reading files, use grep to find exact locations
 3. **Read targeted**: Read only specific line ranges, not entire files
-4. **Skip docs**: Don't read `.claude/docs/*` unless specifically asked
+
 5. **Trust CLAUDE.md**: This file contains all patterns - don't re-read source for conventions
 6. **Batch edits**: Group multiple changes per file into single edit operations
 7. **No redundant context**: Don't re-read files already in conversation
@@ -300,17 +300,97 @@ interface InfrastructureManagerInterface {
 - Validate file paths exist before passing to Process (use `file_exists()`, `is_dir()`)
 - Use `Process::path($dir)` for working directory — never `cd` in command strings
 
-## Additional Docs
+## .claude Configuration
 
-Detailed guidelines available in `.claude/docs/`:
-- `architecture.md` - Full architecture details
-- `coding-standards.md` - Detailed coding rules
-- `console-display.md` - HasBrandedOutput full method reference
-- `testing-guide.md` - Comprehensive testing patterns and templates
-- `docker-integration.md` - Docker patterns, Traefik, troubleshooting
-- `debug-system.md` - Debug logging system
-- `environment-variables.md` - Single .env file strategy
-- `stack-system.md` - Stack system internals
-- `commands.md` - Laravel Zero command patterns
-- `testing.md` - Pest testing patterns
-- `tuti-cli.md` - Project-specific guidelines (permissions, volumes, health checks)
+### Directory Structure
+```
+.claude/
+├── agents/              # Autonomous workers for complex tasks
+│   └── agent-creator/   # Builder for creating new agents
+└── skills/              # Knowledge and patterns
+```
+
+### Agents (Autonomous Workers)
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| `stack-architect` | Creates complete stack templates | New framework stacks |
+| `feature-architect` | Architecture decisions | Planning new features |
+| `test-engineer` | Achieves test coverage | Writing comprehensive tests |
+| `code-auditor` | Review and analysis | Code quality, security |
+| `deployment-engineer` | CI/CD and infrastructure | Deployment pipelines |
+
+### Skills (Knowledge & Patterns)
+
+| Skill | Purpose | When to Use |
+|-------|---------|-------------|
+| `php-zero-patterns` | Laravel Zero + PHP 8.4 patterns | Writing PHP code |
+| `docker-compose-patterns` | Docker Compose configurations | Docker files, service stubs |
+| `debugging-guide` | Debugging strategies | Troubleshooting issues |
+| `documentation-writer` | Writing documentation | README, docs, comments |
+| `write-tests` | Pest testing patterns | Writing tests |
+| `skill-creator` | Creating new skills | Building skills |
+
+### Agents vs Skills
+
+**Use Agents when:**
+- Task is complex and multi-step
+- Want autonomous execution
+- Task needs its own tool set
+- Example: "Create a new Drupal stack with Redis and Postgres"
+
+**Use Skills when:**
+- Providing knowledge and patterns
+- User wants to drive the work
+- Need reference material
+- Example: "Help me understand the service stub format"
+
+### Creating New Agents
+```bash
+python .claude/agents/agent-creator/scripts/init_agent.py my-agent --path .claude/agents
+python .claude/agents/agent-creator/scripts/validate_agent.py .claude/agents/my-agent.md
+python .claude/agents/agent-creator/scripts/package_agent.py .claude/agents/my-agent.md
+```
+
+### Creating New Skills
+```bash
+python .claude/skills/skill-creator/scripts/init_skill.py my-skill --path .claude/skills
+python .claude/skills/skill-creator/scripts/quick_validate.py .claude/skills/my-skill
+python .claude/skills/skill-creator/scripts/package_skill.py .claude/skills/my-skill
+```
+
+## Documentation Requirements
+
+**IMPORTANT: When adding new features or making changes to the codebase, you MUST:**
+
+1. **Update CLAUDE.md** if the change affects:
+   - Directory structure
+   - Naming conventions
+   - PHP standards or patterns
+   - Key interfaces
+   - Common tasks table
+   - Build process
+   - Docker integration patterns
+
+2. **Update related documentation** in `.claude/skills/` if the change affects:
+   - PHP patterns → `php-zero-patterns/SKILL.md`
+   - Docker configurations → `docker-compose-patterns/SKILL.md`
+   - Testing patterns → `write-tests/SKILL.md`
+   - Debugging procedures → `debugging-guide/SKILL.md`
+
+3. **Update command descriptions** if adding/modifying commands:
+   - Update `$description` property in command class
+   - Update relevant `.claude/commands/` file if exists
+
+4. **Update registry files** when adding:
+   - New stacks → `stubs/stacks/registry.json`
+   - New service stubs → `stubs/stacks/{stack}/services/registry.json`
+
+**Documentation checklist for new features:**
+- [ ] CLAUDE.md updated (if structural/pattern change)
+- [ ] Related skill file updated (if pattern change)
+- [ ] Command description clear and complete
+- [ ] Registry files updated (if applicable)
+- [ ] Tests include documentation of expected behavior
+
+
