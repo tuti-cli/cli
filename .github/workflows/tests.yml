@@ -2,20 +2,25 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - '*.x'
   pull_request:
-    branches: [main]
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-env:
-  PHP_VERSION: '8.4'
-
 jobs:
   tests:
-    name: Rector, Pint, PHPStan, Pest
+    name: PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        php: ['8.4']
 
     steps:
       - name: Checkout code
@@ -24,20 +29,24 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: mbstring, zip, phar, sodium
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, sodium
           tools: composer:v2
           coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
-          path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: php-${{ matrix.php }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: php-${{ matrix.php }}-composer-
 
       - name: Install dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+        run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Rector (dry-run)
         run: composer test:refactor
@@ -48,5 +57,34 @@ jobs:
       - name: PHPStan
         run: composer test:types
 
-      - name: Pest
+      - name: Pest Tests
         run: composer test:unit
+
+  # Build verification on main PHP version
+  build-verify:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, zip, phar, sodium
+          tools: composer:v2
+          ini-values: phar.readonly=0
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Build PHAR
+        run: php tuti app:build tuti.phar --build-version=dev-build
+
+      - name: Verify PHAR
+        run: |
+          php builds/tuti.phar --version
+          php builds/tuti.phar list
