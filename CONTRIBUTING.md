@@ -29,6 +29,28 @@ composer test:coverage
 php vendor/bin/pest tests/Unit/Services/ConfigServiceTest.php
 ```
 
+## Git & Workflow
+
+### Commit Messages
+Use **Conventional Commits** format:
+- Format: `type(scope): subject`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- Examples:
+  - `feat(local): add port conflict detection`
+  - `fix(docker): resolve container naming issue`
+  - `docs(readme): update installation instructions`
+
+### Branch Strategy
+- `main` - stable releases only
+- `develop` - active development
+- `feature/*` - new features (e.g., `feature/redis-support`)
+- `fix/*` - bug fixes (e.g., `fix/port-conflict`)
+
+### Pull Request Requirements
+- All tests must pass (Github Actions)
+- Description explains **what** and **why**
+- Update documentation if needed
+- Follow Conventional Commits for PR title
 ## Pull Request Process
 
 1. Update documentation if needed
