@@ -11,7 +11,7 @@ updates:
       timezone: "UTC"
     open-pull-requests-limit: 10
     reviewers:
-      - "YevheniiVolosiuk"
+      - "YevheniiVolosiuk"  # Replace with actual maintainers
     labels:
       - "dependencies"
       - "php"
@@ -19,24 +19,35 @@ updates:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
     groups:
-      laravel-zero:
-        patterns:
-          - "laravel-zero/*"
-          - "illuminate/*"
-      testing:
-        patterns:
-          - "pestphp/*"
-          - "phpstan/*"
-          - "larastan/*"
-          - "mockery/*"
-          - "fakerphp/*"
-      code-quality:
-        patterns:
-          - "laravel/pint"
-          - "rector/*"
-      symfony:
-        patterns:
-          - "symfony/*"
+        # Laravel Zero & Illuminate packages
+        laravel-zero:
+            patterns:
+            - "laravel-zero/*"
+            - "illuminate/*"
+        
+        # Testing tools
+        testing:
+            patterns:
+            - "pestphp/*"
+            - "phpstan/*"
+            - "larastan/*"
+            - "mockery/*"
+            - "fakerphp/*"
+        
+        # Code quality tools
+        code-quality:
+            patterns:
+            - "laravel/pint"
+            - "rector/*"
+        
+        # Symfony components
+        symfony:
+            patterns:
+            - "symfony/*"
+    ignore:
+      # Major version updates should be manual
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
