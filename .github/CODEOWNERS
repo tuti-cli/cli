@@ -1,0 +1,26 @@
+# Code Owners
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @yevhenii
+
+# Commands
+/app/Commands/ @yevhenii
+
+# Services
+/app/Services/ @yevhenii
+
+# Docker/Stack configurations
+/stubs/ @yevhenii
+
+# Documentation
+/CLAUDE.md @yevhenii
+/README.md @yevhenii
+/.claude/ @yevhenii
+
+# CI/CD
+/.github/ @yevhenii
+/Makefile @yevhenii
+
+# Testing
+/tests/ @yevhenii
