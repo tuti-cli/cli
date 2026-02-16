@@ -1,0 +1,117 @@
+[
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Something isn't working"
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "New feature or request"
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "Improvements or additions to documentation"
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Good for newcomers"
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Extra attention is needed"
+  },
+  {
+    "name": "priority: high",
+    "color": "b60205",
+    "description": "High priority issue"
+  },
+  {
+    "name": "priority: low",
+    "color": "cfd3d7",
+    "description": "Low priority issue"
+  },
+  {
+    "name": "status: needs triage",
+    "color": "fbca04",
+    "description": "Needs initial review"
+  },
+  {
+    "name": "status: needs reproduction",
+    "color": "d4c5f9",
+    "description": "Needs a reproduction step"
+  },
+  {
+    "name": "status: in progress",
+    "color": "1d76db",
+    "description": "Work is in progress"
+  },
+  {
+    "name": "status: blocked",
+    "color": "e11d21",
+    "description": "Blocked by something else"
+  },
+  {
+    "name": "status: needs review",
+    "color": "0e8a16",
+    "description": "Ready for review"
+  },
+  {
+    "name": "status: stale",
+    "color": "eeeeee",
+    "description": "No recent activity"
+  },
+  {
+    "name": "size: XS",
+    "color": "5D9CEC",
+    "description": "Extra small: 1-10 lines"
+  },
+  {
+    "name": "size: S",
+    "color": "5D9CEC",
+    "description": "Small: 11-50 lines"
+  },
+  {
+    "name": "size: M",
+    "color": "5D9CEC",
+    "description": "Medium: 51-200 lines"
+  },
+  {
+    "name": "size: L",
+    "color": "5D9CEC",
+    "description": "Large: 201-500 lines"
+  },
+  {
+    "name": "size: XL",
+    "color": "5D9CEC",
+    "description": "Extra large: 500+ lines"
+  },
+  {
+    "name": "dependencies",
+    "color": "0366d6",
+    "description": "Pull requests that update a dependency file"
+  },
+  {
+    "name": "php",
+    "color": "4f5b93",
+    "description": "PHP related changes"
+  },
+  {
+    "name": "docker",
+    "color": "0db7ed",
+    "description": "Docker related changes"
+  },
+  {
+    "name": "github-actions",
+    "color": "2088ff",
+    "description": "GitHub Actions related changes"
+  },
+  {
+    "name": "breaking change",
+    "color": "e11d21",
+    "description": "Breaking change requiring major version bump"
+  }
+]
