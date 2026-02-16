@@ -1,10 +1,5 @@
 version: 2
 
-registries:
-  packagist:
-    type: composer-repository
-    url: https://packagist.org
-
 updates:
   # PHP dependencies
   - package-ecosystem: "composer"
@@ -72,4 +67,3 @@ updates:
       actions:
         patterns:
           - "*"
-
