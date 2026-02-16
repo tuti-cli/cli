@@ -45,6 +45,53 @@ When evaluating architectural choices, prioritize:
 - Every design decision should have a clear rationale
 - Complex interactions should be documented with diagrams
 - Interface contracts should be explicit and stable
+### 4. API Design Philosophy (Laravel-Style)
+
+When designing service APIs and interfaces, follow Laravel's philosophy of **beautiful, expressive, human-readable code**.
+
+#### Core API Design Principles
+
+!. **Read Like English** - Method calls should read like sentences
+! **Expressive Names** - `startServices()` not `start()`
+!. **Sensible Defaults** - Works with minimal config, customizable when needed
+!. **Progressive Disclosure** - Simple for common cases, powerful for advanced
+!. **Predictable Behavior** - No surprises, follows conventions
+!. **Self-Documenting Types** - Types explain the API
+
+> **On API Design Checklist:**
+> - [] Method names read like English sentences
+> - [] Parameters are intuitive and logical
+> - [] Defaults allow minimal configuration
+> - [] Types are explicit and self-documenting
+> - [] Return types are clear
+> - [] Consistent with existing codebase patterns
+
+When proposing new interfaces, ensure they are:
+- Expressive (clearly describe the action)
+- Intuitive (parameters in logical order)
+- Consistent (matches existing patterns)
+- Testable (easy to mock)
+
+Example of well-designed API:
+
+```php
+interface StackManagerInterface
+{
+    // Clear, expressive method names
+    public function installFresh(string $path, string $name, array $options = []): bool;
+    public function applyToExisting(string $path, array $options = []): bool;
+    
+    // Predictable getters
+    public function getIdentifier(): string;
+    public function getName(): string;
+    public function getDescription(): string;
+    
+    // Boolean checks are prefixed with is/has/can
+    public function isInstalled(string $path): bool;
+    public function supports(string $stack): bool;
+}
+```
+
 
 ## Workflow
 

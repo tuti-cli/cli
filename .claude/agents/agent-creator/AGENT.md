@@ -65,7 +65,7 @@ Give agents only the tools they need:
 | Model | Best For |
 |-------|----------|
 | `glm-5` | Complex reasoning, architecture, planning |
-| `glm-4` | Fast execution, simple tasks |
+| `glm-4.7` | Fast execution, simple tasks |
 
 ### 4. Structured Output
 

@@ -304,6 +304,43 @@ enum Theme: string
 }
 ```
 
+# API Design Patterns
+
+Follow Laravel-style API design for human-readable, expressive code.
+
+### Method Naming
+
+- Use verbs: installFresh, startServices, enableService
+- Be specific: enableService() not enable()
+- Boolean checks: isInstalled(), hasFeature(), supports()
+- Getters: getName(), getIdentifier(), getDescription()
+
+### Parameter Design
+
+- Required params first, optional last
+- Use sensible defaults: array $options = []
+- Named arguments for clarity (PHP 8+)
+
+### Good vs Bad
+
+```php
+// Good - reads like a sentence
+$stack->installFresh($path, $name, $options);
+$docker->startServices(['app', 'postgres']);
+
+// Bad - unclear, technical
+$stack->exec('install', ['mode' => 'fresh']);
+$docker->run('start', 'services');
+```
+
+```php
+// Good - sensible defaults
+$docker->start();                    // Uses defaults
+$docker->start(detach: true);        // Override when needed
+
+// Bad - requires everything upfront
+$docker->start(services: [], detach: false, build: false);
+```
 ## Common Mistakes to Avoid
 
 | ❌ Wrong | ✅ Correct |
