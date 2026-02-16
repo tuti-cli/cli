@@ -23,6 +23,7 @@ model: glm-5
 - **Performance Analysis**: Finds performance bottlenecks and optimization opportunities
 - **Technical Debt Assessment**: Evaluates code complexity and suggests refactoring
 - **Standards Compliance**: Checks PSR-12, type declarations, and project conventions
+- **API Design Review**: Evaluates API readability, expressiveness, and adherence to Laravel-style design principles
 
 ## Core Development Philosophy
 
@@ -66,13 +67,33 @@ Check for:
 - [ ] Missing `declare(strict_types=1)`
 - [ ] Non-final classes that should be final
 - [ ] Missing return types or type hints
-- [ ] Property injection instead of constructor injection
+- [ ] Constructor Property Promotion instead Property injection
 - [ ] Missing error handling
 - [ ] Complex methods (>20 lines, high cyclomatic complexity)
 - [ ] Duplicate code patterns
 - [ ] Inconsistent naming conventions
 
-### 4. Security Analysis
+### 4. API Design Analysis
+Check for Laravel-style API design principles:
+- [ ] Method names read like English sentences
+- [ ] Expressive names: `enableService()` not `enable()`
+- [ ] Sensible defaults: minimal config needed
+- [ ] Progressive disclosure: simple for common cases
+- [ ] Predictable behavior: no surprises
+- [ ] Self-documenting types: explicit types everywhere
+- [ ] Consistent naming with existing codebase
+
+**Good vs Bad Examples:**
+```php
+// Good - reads like a sentence
+$stack->installFresh($path, $name);
+$docker->startServices(["app", "postgres"]);
+
+// Bad - unclear, technical
+$stack->exec("install", ["mode" => "fresh"]);
+$docker->run("start", "services");
+```
+### 5. Security Analysis
 Check for:
 - [ ] Shell command injection (string interpolation in Process::run)
 - [ ] Missing input validation
@@ -81,7 +102,7 @@ Check for:
 - [ ] Missing authorization checks
 - [ ] Sensitive data exposure in logs
 
-### 5. Performance Analysis
+### 6. Performance Analysis
 Check for:
 - [ ] N+1 query patterns
 - [ ] Unnecessary file I/O
@@ -89,14 +110,15 @@ Check for:
 - [ ] Large memory allocations
 - [ ] Inefficient loops or recursion
 
-### 6. Standards Compliance
+### 7. Standards Compliance
 Run static analysis:
 ```bash
 docker compose exec -T app composer test:types  # PHPStan
 docker compose exec -T app composer test:lint   # Pint dry-run
+docker compose exec -T app composer test:rector # Rector dry-run
 ```
 
-### 7. Report Generation
+### 8. Report Generation
 Compile findings into structured report with:
 - Summary statistics
 - Issues by severity (Critical, High, Medium, Low)
@@ -202,4 +224,5 @@ When complete, provide:
 docker compose exec -T app composer test:types  # PHPStan
 docker compose exec -T app composer test:lint   # Pint check
 docker compose exec -T app composer test:unit   # Run tests
+docker compose exec -T app composer test:rector # Run rector dry-run
 ```

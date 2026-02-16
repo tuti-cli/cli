@@ -47,6 +47,18 @@ docker compose exec -T app ./vendor/bin/pest --filter "test name"  # Run single 
 - Trailing commas in multiline arrays
 - Return early, avoid else/elseif
 
+## API Design Principles (Laravel-Style)
+
+When designing service APIs and interfaces, follow Laravel philosophy: beautiful, expressive, human-readable code.
+
+### Core Principles
+
+1. Read Like English - Method calls should read like sentences
+2. Expressive Names - Use verbs that clearly describe the action
+3. Sensible Defaults - Works with minimal config, customizable when needed
+4. Progressive Disclosure - Simple for common cases, powerful for advanced
+5. Predictable Behavior - No surprises, follows conventions
+6. Self-Documenting Types - Types explain the API
 ## Class Patterns
 
 ```php
@@ -378,11 +390,7 @@ python .claude/skills/skill-creator/scripts/package_skill.py .claude/skills/my-s
    - Testing patterns → `write-tests/SKILL.md`
    - Debugging procedures → `debugging-guide/SKILL.md`
 
-3. **Update command descriptions** if adding/modifying commands:
-   - Update `$description` property in command class
-   - Update relevant `.claude/commands/` file if exists
-
-4. **Update registry files** when adding:
+3. **Update registry files** when adding:
    - New stacks → `stubs/stacks/registry.json`
    - New service stubs → `stubs/stacks/{stack}/services/registry.json`
 
