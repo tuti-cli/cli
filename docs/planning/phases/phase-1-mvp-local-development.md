@@ -37,7 +37,7 @@ Increase test coverage from ~5 test files to comprehensive coverage across all c
 - [ ] Feature tests for all user-facing commands (target: >80% coverage)
   - [x] `install` command
   - [x] `doctor` command
-  - [ ] `stack:laravel` command
+  - [x] `stack:laravel` command
   - [ ] `stack:wordpress` command
   - [x] `local:start`, `local:stop`, `local:status`, `local:logs`, `local:rebuild`
   - [x] `infra:start`, `infra:stop`, `infra:restart`, `infra:status`
