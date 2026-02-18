@@ -67,6 +67,27 @@ interface DockerExecutorInterface
     ): DockerExecutionResult;
 
     /**
+     * Run an interactive command inside a Docker container with TTY support.
+     *
+     * This method passes through STDIN/STDOUT/STDERR for interactive prompts.
+     * Use for commands like `laravel new` that require user interaction.
+     *
+     * @param  string  $image  Docker image to use
+     * @param  array<int, string>  $command  Command and arguments as array
+     * @param  string  $workDir  Working directory to mount
+     * @param  array<string, string>  $env  Environment variables
+     * @param  array<string, string>  $volumes  Additional volume mounts (host => container)
+     * @return int Exit code from the command
+     */
+    public function runInteractive(
+        string $image,
+        array $command,
+        string $workDir,
+        array $env = [],
+        array $volumes = []
+    ): int;
+
+    /**
      * Check if Docker daemon is running.
      */
     public function isDockerAvailable(): bool;

@@ -12,6 +12,7 @@ use App\Services\Debug\DebugLogService;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use App\Services\Project\ProjectStateManagerService;
+use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
 use Throwable;
 
@@ -23,7 +24,8 @@ final class StartCommand extends Command
     use HasBrandedOutput;
 
     protected $signature = 'local:start
-                          {--skip-infra : Skip infrastructure check}';
+                          {--skip-infra : Skip infrastructure check}
+                          {--migrate : Run database migrations}';
 
     protected $description = 'Start the local development environment';
 
@@ -112,7 +114,12 @@ final class StartCommand extends Command
 
             $this->success('Containers started');
 
-            // 5. Display access URLs based on selected services
+            // 5. Run migrations if requested (opt-in since migrations run during installation)
+            if ($this->option('migrate')) {
+                $this->runMigrations($root, $projectName, $debugService);
+            }
+
+            // 6. Display access URLs based on selected services
             $projectDomain = $projectName . '.local.test';
             $urls = $this->buildProjectUrls($config, $projectDomain);
 
@@ -163,6 +170,41 @@ final class StartCommand extends Command
             }
 
             return self::FAILURE;
+        }
+    }
+
+    /**
+     * Run database migrations for Laravel projects.
+     */
+    private function runMigrations(string $projectRoot, string $projectName, DebugLogService $debugService): void
+    {
+        // Only for Laravel projects
+        if (! file_exists($projectRoot . '/artisan')) {
+            return;
+        }
+
+        $this->note('Running database migrations...');
+
+        // Container name: {project}_{env}_app
+        $containerName = "{$projectName}_dev_app";
+
+        // Run migrations (db is already ready via docker-compose healthchecks)
+        $result = Process::timeout(120)->run([
+            'docker',
+            'exec',
+            $containerName,
+            'php',
+            'artisan',
+            'migrate',
+            '--force',
+        ]);
+
+        if ($result->successful()) {
+            $this->success('Database migrations completed');
+            $debugService->info('Migrations ran successfully');
+        } else {
+            $debugService->warning('Migration had issues', ['output' => $result->errorOutput()]);
+            $this->note('Migrations completed with notices');
         }
     }
 }

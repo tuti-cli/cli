@@ -6,11 +6,17 @@ namespace App\Commands\Stack;
 
 use App\Concerns\BuildsProjectUrls;
 use App\Concerns\HasBrandedOutput;
+use App\Contracts\InfrastructureManagerInterface;
+use App\Domain\Project\Project;
 use App\Services\Project\ProjectDirectoryService;
+use App\Services\Project\ProjectMetadataService;
+use App\Services\Project\ProjectStateManagerService;
 use App\Services\Stack\Installers\LaravelStackInstaller;
 use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRegistryManagerService;
+use App\Services\Support\HostsFileService;
+use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
 use Throwable;
 
@@ -31,7 +37,9 @@ final class LaravelCommand extends Command
                           {--path= : Path for fresh installation (defaults to current directory)}
                           {--services=* : Pre-select services}
                           {--laravel-version= : Specific Laravel version to install}
-                          {--force : Force initialization even if .tuti exists}';
+                          {--force : Force initialization even if .tuti exists}
+                          {--skip-start : Skip starting containers after installation}
+                          {--skip-migrate : Skip database migrations}';
 
     protected $description = 'Initialize a Laravel project with Docker stack';
 
@@ -40,7 +48,11 @@ final class LaravelCommand extends Command
         StackRegistryManagerService $registry,
         StackLoaderService $stackLoader,
         ProjectDirectoryService $directoryService,
-        StackInitializationService $initService
+        StackInitializationService $initService,
+        ProjectMetadataService $metaService,
+        ProjectStateManagerService $stateManager,
+        InfrastructureManagerInterface $infrastructureManager,
+        HostsFileService $hostsFileService
     ): int {
         $this->brandedHeader('Laravel Stack Installation');
 
@@ -65,8 +77,8 @@ final class LaravelCommand extends Command
                 return self::SUCCESS;
             }
 
-            $this->executeInstallation($installer, $initService, $config);
-            $this->displayNextSteps($config);
+            $hostsAdded = $this->executeInstallation($installer, $initService, $metaService, $stateManager, $infrastructureManager, $hostsFileService, $config);
+            $this->displayNextSteps($config, $hostsAdded);
 
             return self::SUCCESS;
 
@@ -358,33 +370,43 @@ final class LaravelCommand extends Command
 
     /**
      * @param  array<string, mixed>  $config
+     * @return bool Whether hosts file entry was added
      */
     private function executeInstallation(
         LaravelStackInstaller $installer,
         StackInitializationService $initService,
+        ProjectMetadataService $metaService,
+        ProjectStateManagerService $stateManager,
+        InfrastructureManagerInterface $infrastructureManager,
+        HostsFileService $hostsFileService,
         array $config
-    ): void {
+    ): bool {
+        $hostsAdded = false;
+
         if ($config['mode'] === 'fresh') {
-            $this->note('Creating Laravel project via Docker...');
+            $this->note('Creating Laravel project via Laravel installer...');
             $this->hint('This may take a few minutes on first run (downloading PHP image)');
+            $this->hint('Laravel will prompt you to select your desired stack (React, Vue, API, etc.)');
+            $this->newLine();
 
-            spin(
-                function () use ($installer, $config): void {
-                    $options = [];
+            // Extract database selection from services for Laravel installer flag
+            $selectedDatabase = $this->extractDatabaseFromServices($config['selected_services']);
 
-                    if ($config['laravel_version'] !== null) {
-                        $options['laravel_version'] = $config['laravel_version'];
-                    }
+            $options = [
+                'interactive' => ! $this->option('no-interaction'),
+                'no_interaction' => $this->option('no-interaction'),
+                'prefer_dist' => true,
+                'database' => $selectedDatabase,
+            ];
 
-                    $options['prefer_dist'] = true;
+            if ($config['laravel_version'] !== null) {
+                $options['laravel_version'] = $config['laravel_version'];
+            }
 
-                    $installer->installFresh(
-                        $config['project_path'],
-                        $config['project_name'],
-                        $options
-                    );
-                },
-                'Creating Laravel project (composer create-project via Docker)...'
+            $installer->installFresh(
+                $config['project_path'],
+                $config['project_name'],
+                $options
             );
 
             $this->success('Laravel project created');
@@ -408,23 +430,177 @@ final class LaravelCommand extends Command
 
         $this->success('Stack initialized');
 
-        // Generate APP_KEY if fresh installation
-        if ($config['mode'] === 'fresh') {
-            $this->note('Generating APP_KEY via Docker...');
-            $appKey = $installer->generateAppKey($config['project_path']);
-
-            if ($appKey !== null && str_starts_with($appKey, 'base64:')) {
-                $this->success('APP_KEY generated successfully');
-                $this->line('  ' . mb_substr($appKey, 0, 30) . '...');
-                $this->updateEnvValue($config['project_path'], 'APP_KEY', $appKey);
-            } else {
-                $this->warning('Could not generate APP_KEY automatically');
-                $this->hint('Run manually: php artisan key:generate');
-            }
-        }
+        // Note: APP_KEY generation removed - Laravel installer already generates it
 
         // Configure .env for selected services
         $this->configureEnvForServices($config);
+
+        // Start containers and run migrations (unless skipped)
+        if (! $this->option('skip-start')) {
+            $hostsAdded = $this->startContainersAndMigrate(
+                $config,
+                $metaService,
+                $stateManager,
+                $infrastructureManager,
+                $hostsFileService
+            );
+        }
+
+        return $hostsAdded;
+    }
+
+    /**
+     * Extract database service key from selected services.
+     *
+     * @param  array<int, string>  $selectedServices
+     */
+    private function extractDatabaseFromServices(array $selectedServices): ?string
+    {
+        foreach ($selectedServices as $service) {
+            if (str_starts_with($service, 'databases.')) {
+                return $service;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Start containers and run migrations after installation.
+     *
+     * @param  array<string, mixed>  $config
+     * @return bool Whether hosts file entry was added
+     */
+    private function startContainersAndMigrate(
+        array $config,
+        ProjectMetadataService $metaService,
+        ProjectStateManagerService $stateManager,
+        InfrastructureManagerInterface $infrastructureManager,
+        HostsFileService $hostsFileService
+    ): bool {
+        $this->section('Starting Project');
+
+        // Ensure infrastructure is ready
+        $this->note('Checking infrastructure...');
+        if (! $infrastructureManager->isRunning()) {
+            spin(
+                fn (): bool => $infrastructureManager->ensureReady(),
+                'Starting Traefik infrastructure...'
+            );
+        }
+        $this->success('Infrastructure ready');
+
+        // Create project object
+        $projectRoot = $config['project_path'];
+        $projectConfig = $metaService->load();
+        $project = new Project($projectRoot, $projectConfig);
+
+        // Start containers
+        $this->note('Starting containers...');
+        try {
+            $stateManager->start($project);
+            $this->success('Containers started');
+        } catch (Throwable $e) {
+            $this->warning('Failed to start containers: ' . $e->getMessage());
+            $this->hint('Run "tuti local:start" manually to start the project');
+
+            return false;
+        }
+
+        // Run migrations (unless skipped)
+        if (! $this->option('skip-migrate')) {
+            $this->runMigrations($projectRoot, $config['project_name']);
+        }
+
+        // Handle hosts file management
+        return $this->handleHostsFile($hostsFileService, $config['project_name']);
+    }
+
+    /**
+     * Handle adding project domain to /etc/hosts.
+     *
+     * @return bool Whether hosts file entry was added (or already exists)
+     */
+    private function handleHostsFile(HostsFileService $hostsFileService, string $projectName): bool
+    {
+        $domain = $projectName . '.local.test';
+
+        // Check if entry already exists
+        if ($hostsFileService->entryExists($domain)) {
+            $this->success("Domain {$domain} already in /etc/hosts");
+
+            return true;
+        }
+
+        // Check if we can potentially modify hosts file
+        if (! $hostsFileService->canModifyHosts()) {
+            $this->warning('Cannot modify /etc/hosts automatically');
+            $this->hint('Add manually: ' . $hostsFileService->buildEntry($domain));
+
+            return false;
+        }
+
+        // Ask user if they want to add to hosts file
+        if ($this->option('no-interaction')) {
+            return false;
+        }
+
+        $this->newLine();
+        $addHosts = confirm(
+            label: "Add https://{$domain} to /etc/hosts automatically?",
+            hint: 'This requires sudo privileges'
+        );
+
+        if (! $addHosts) {
+            $this->hint('Add manually: ' . $hostsFileService->buildEntry($domain));
+
+            return false;
+        }
+
+        // Try to add entry
+        if ($hostsFileService->addEntry($domain)) {
+            $this->success("Domain {$domain} added to /etc/hosts");
+
+            return true;
+        }
+
+        $this->warning('Failed to add domain to /etc/hosts (sudo required)');
+        $this->hint('Add manually: ' . $hostsFileService->buildEntry($domain));
+
+        return false;
+    }
+
+    /**
+     * Run database migrations for Laravel projects.
+     */
+    private function runMigrations(string $projectRoot, string $projectName): void
+    {
+        if (! file_exists($projectRoot . '/artisan')) {
+            return;
+        }
+
+        $this->note('Running database migrations...');
+
+        // Container name: {project}_{env}_app
+        $containerName = "{$projectName}_dev_app";
+
+        // Run migrations
+        $result = Process::timeout(120)->run([
+            'docker',
+            'exec',
+            $containerName,
+            'php',
+            'artisan',
+            'migrate',
+            '--force',
+        ]);
+
+        if ($result->successful()) {
+            $this->success('Database migrations completed');
+        } else {
+            $this->warning('Migrations had issues');
+            $this->hint('Run manually: docker exec ' . $containerName . ' php artisan migrate');
+        }
     }
 
     /**
@@ -535,7 +711,7 @@ final class LaravelCommand extends Command
     /**
      * @param  array<string, mixed>  $config
      */
-    private function displayNextSteps(array $config): void
+    private function displayNextSteps(array $config, bool $hostsAdded): void
     {
         $this->section('Project Structure');
 
@@ -551,20 +727,31 @@ final class LaravelCommand extends Command
         $this->subItem('environments/');
 
         $projectDomain = $config['project_name'] . '.local.test';
+        $isRunning = ! $this->option('skip-start');
 
+        // Build next steps based on whether project is running and hosts were added
         $nextSteps = [];
 
         if ($config['mode'] === 'fresh') {
             $nextSteps[] = "cd {$config['project_name']}";
         }
 
-        $nextSteps = array_merge($nextSteps, [
-            'Add to /etc/hosts: 127.0.0.1 ' . $projectDomain,
-            'tuti local:start',
-            'Visit: https://' . $projectDomain,
-        ]);
+        if (! $isRunning) {
+            $nextSteps[] = 'tuti local:start';
+        }
 
-        $this->completed('Laravel stack installed successfully!', $nextSteps);
+        // Only show hosts step if not already added
+        if (! $hostsAdded) {
+            $nextSteps[] = 'Add to /etc/hosts: 127.0.0.1 ' . $projectDomain;
+        }
+
+        $nextSteps[] = 'Visit: https://' . $projectDomain;
+
+        if ($isRunning) {
+            $this->completed('Laravel stack installed and running!', $nextSteps);
+        } else {
+            $this->completed('Laravel stack installed successfully!', $nextSteps);
+        }
 
         // Build dynamic URLs based on selected services
         $urls = $this->buildProjectUrlsFromServices($config['selected_services'], $projectDomain);
@@ -572,6 +759,10 @@ final class LaravelCommand extends Command
         $this->newLine();
         $this->box('Project URLs', $urls, 60, true);
 
-        $this->hint('Use "tuti local:status" to check running services');
+        if ($isRunning) {
+            $this->hint('Use "tuti local:status" to check running services');
+        } else {
+            $this->hint('Run "tuti local:start" to start the project');
+        }
     }
 }

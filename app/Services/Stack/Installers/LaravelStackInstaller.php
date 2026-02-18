@@ -97,8 +97,16 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
         // Ensure infrastructure is ready (Traefik)
         $this->ensureInfrastructureReady();
 
-        // Create the project using Docker + Composer
-        $result = $this->createLaravelProject($projectPath, $options);
+        // Check if we should use interactive Laravel installer
+        $useInteractive = $options['interactive'] ?? true;
+
+        if ($useInteractive && ! ($options['no_interaction'] ?? false)) {
+            // Use Laravel installer with interactive prompts
+            $result = $this->createLaravelProjectInteractive($projectPath, $options);
+        } else {
+            // Fallback to composer create-project (non-interactive)
+            $result = $this->createLaravelProject($projectPath, $options);
+        }
 
         if (! $result) {
             throw new RuntimeException('Failed to create Laravel project');
@@ -250,6 +258,112 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
         }
 
         return true;
+    }
+
+    /**
+     * Create a new Laravel project using the Laravel installer with interactive prompts.
+     *
+     * This allows users to select stacks (React, Vue, API-only, etc.) through
+     * Laravel's native interactive prompts.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    private function createLaravelProjectInteractive(string $projectPath, array $options): bool
+    {
+        // Extract project name and parent directory
+        $projectName = basename($projectPath);
+        $parentDir = dirname($projectPath);
+
+        // Ensure parent directory exists
+        if (! is_dir($parentDir) && (! mkdir($parentDir, 0755, true) && ! is_dir($parentDir))) {
+            throw new RuntimeException("Failed to create directory: {$parentDir}");
+        }
+
+        // Use PHP image with composer to run Laravel installer
+        $image = $this->dockerExecutor->getPhpImage('8.4');
+
+        // Set COMPOSER_HOME to a known path
+        $composerHome = '/tmp/.composer';
+
+        // Map Tuti database selection to Laravel installer database flag
+        $databaseFlag = $this->buildDatabaseFlag($options['database'] ?? null);
+
+        // Build command to run Laravel installer:
+        // 1. Create composer home directory
+        // 2. Install laravel/installer globally to a known path
+        // 3. Run laravel new with the full path to the binary and database flag
+        $command = [
+            'sh',
+            '-c',
+            sprintf(
+                'mkdir -p %s && ' .
+                'COMPOSER_HOME=%s composer global require laravel/installer --no-interaction 2>/dev/null && ' .
+                '%s/vendor/bin/laravel new %s%s',
+                escapeshellarg($composerHome),
+                escapeshellarg($composerHome),
+                escapeshellarg($composerHome),
+                escapeshellarg($projectName),
+                $databaseFlag
+            ),
+        ];
+
+        // Environment variables for composer
+        $env = [
+            'COMPOSER_HOME' => $composerHome,
+            'COMPOSER_ALLOW_SUPERUSER' => '1',
+        ];
+
+        // Run with TTY support for interactive prompts
+        $exitCode = $this->dockerExecutor->runInteractive(
+            $image,
+            $command,
+            $parentDir,
+            $env,
+            []
+        );
+
+        if ($exitCode !== 0) {
+            // Check if project was still created (laravel new might fail on final steps)
+            if (file_exists($projectPath . '/artisan')) {
+                // Project exists, consider it a success
+                return true;
+            }
+
+            throw new RuntimeException(
+                "Failed to create Laravel project (exit code: {$exitCode})"
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Build the --database flag for Laravel installer based on Tuti database selection.
+     *
+     * Maps Tuti's database service names to Laravel installer database values:
+     * - databases.postgres → pgsql
+     * - databases.mysql → mysql
+     * - databases.mariadb → mariadb
+     */
+    private function buildDatabaseFlag(?string $tutiDatabase): string
+    {
+        if ($tutiDatabase === null) {
+            return '';
+        }
+
+        $map = [
+            'databases.postgres' => 'pgsql',
+            'databases.mysql' => 'mysql',
+            'databases.mariadb' => 'mariadb',
+        ];
+
+        $laravelDb = $map[$tutiDatabase] ?? null;
+
+        if ($laravelDb === null) {
+            return '';
+        }
+
+        return " --database={$laravelDb}";
     }
 
     /**
