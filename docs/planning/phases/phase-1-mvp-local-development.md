@@ -82,8 +82,8 @@ Development/test commands should not ship in the production binary.
 **Deliverables:**
 - [x] Remove or gate `test:registry`, `test:compose-builder`, `test:stack-loader`, `test:tuti-directory`, `test:stack-overrides` commands from production builds
 - [x] Remove or gate `validate:quick` command
-- [ ] Remove or gate `ui:showcase` command
-- [ ] Configure `box.json` exclusions or use `APP_ENV` check in command registration
+- [x] Remove or gate `ui:showcase` command
+- [x] Configure `box.json` exclusions or use `APP_ENV` check in command registration
 
 ### 1.5 Documentation (Priority: Medium)
 

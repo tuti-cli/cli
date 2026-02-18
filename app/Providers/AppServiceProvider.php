@@ -42,7 +42,7 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function getGlobalTutiPath(): string
     {
-        $home = getenv('HOME') ?: getenv('USERPROFILE');
+        $home = env('HOME') ?: env('USERPROFILE');
 
         if (empty($home) && function_exists('posix_getpwuid') && function_exists('posix_getuid')) {
             $userInfo = posix_getpwuid(posix_getuid());
@@ -50,7 +50,7 @@ final class AppServiceProvider extends ServiceProvider
         }
 
         if (empty($home)) {
-            $user = getenv('USER') ?: getenv('USERNAME');
+            $user = env('USER') ?: env('USERNAME');
             $home = PHP_OS_FAMILY === 'Windows'
                 ? "C:\\Users\\{$user}"
                 : "/home/{$user}";
