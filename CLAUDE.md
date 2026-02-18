@@ -47,6 +47,31 @@ docker compose exec -T app ./vendor/bin/pest --filter "test name"  # Run single 
 - Trailing commas in multiline arrays
 - Return early, avoid else/elseif
 
+## Dev-Only Commands
+
+Commands intended only for development should be excluded in production via `config/commands.php`:
+
+```php
+// config/commands.php
+use App\Commands\MyDevCommand;
+
+return [
+    // ...
+    'remove' => [
+        // Remove dev commands in production environment
+        ...(!app()->isLocal() ? [
+            MyDevCommand::class,
+        ] : []),
+    ],
+];
+```
+
+These commands will:
+- Be available in development (`APP_ENV=local`)
+- Be completely removed in production (not registered at all)
+- Not appear in `php tuti list` in production
+- Return "Command not found" if called in production
+
 ## API Design Principles (Laravel-Style)
 
 When designing service APIs and interfaces, follow Laravel philosophy: beautiful, expressive, human-readable code.
@@ -288,6 +313,7 @@ interface InfrastructureManagerInterface {
 | Task | Files to modify |
 |------|----------------|
 | Add CLI command | `app/Commands/{Category}/Command.php` |
+| Add dev-only command | `app/Commands/{Category}/Command.php` + add to `config/commands.php` `'remove'` array with `!app()->isLocal()` check |
 | Add service class | `app/Services/{Domain}/Service.php` + bind in `app/Providers/AppServiceProvider.php` |
 | Add framework stack | `stubs/stacks/{name}/` + `app/Services/Stack/Installers/{Name}StackInstaller.php` + `app/Commands/Stack/{Name}Command.php` + `stubs/stacks/registry.json` + register in `app/Providers/StackServiceProvider.php` |
 | Add service stub | `stubs/stacks/{stack}/services/{category}/{name}.stub` + `stubs/stacks/{stack}/services/registry.json` |
