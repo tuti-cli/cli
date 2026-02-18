@@ -5,8 +5,10 @@ declare(strict_types=1);
 /**
  * DevCommands Feature Tests
  *
- * Tests that development-only commands (UIShowcaseCommand, DebugCommand)
+ * Tests that development-only commands (UIShowcaseCommand)
  * are available in local environment.
+ *
+ * Note: DebugCommand is available in ALL environments for user debugging.
  *
  * IMPORTANT: Production environment removal is configured in config/commands.php
  * using env('APP_ENV') check. This happens at config load time during bootstrap,
@@ -16,7 +18,6 @@ declare(strict_types=1);
  * @see tests/Feature/Console/DevCommandsTest.php
  */
 
-use App\Commands\DebugCommand;
 use App\Commands\UIShowcaseCommand;
 use Illuminate\Contracts\Console\Kernel;
 use LaravelZero\Framework\Commands\Command;
@@ -32,29 +33,15 @@ describe('DevCommands in local environment', function (): void {
         expect($command->getName())->toBe('ui:showcase');
     });
 
-    it('registers DebugCommand', function (): void {
-        $command = $this->app->make(DebugCommand::class);
-
-        expect($command)->toBeInstanceOf(Command::class);
-        expect($command->getName())->toBe('debug');
-    });
-
-    it('includes dev commands in command list', function (): void {
+    it('includes ui:showcase command in command list', function (): void {
         $kernel = $this->app->make(Kernel::class);
         $commands = $kernel->all();
 
-        expect($commands)
-            ->toHaveKey('ui:showcase')
-            ->toHaveKey('debug');
+        expect($commands)->toHaveKey('ui:showcase');
     });
 
     it('can run ui:showcase command', function (): void {
         $this->artisan('ui:showcase')
-            ->assertSuccessful();
-    });
-
-    it('can run debug command with status action', function (): void {
-        $this->artisan('debug', ['action' => 'status'])
             ->assertSuccessful();
     });
 
@@ -89,8 +76,7 @@ describe('config/commands.php configuration', function (): void {
         // Verify the config file contains the conditional removal logic
         expect($configFile)
             ->toContain("env('APP_ENV') !== 'local'")
-            ->toContain(UIShowcaseCommand::class)
-            ->toContain(DebugCommand::class);
+            ->toContain(UIShowcaseCommand::class);
     });
 
 });
@@ -130,15 +116,17 @@ describe('environment detection', function (): void {
 /**
  * MANUAL TESTING REQUIRED
  *
- * The dev commands removal in production cannot be fully tested via unit tests
+ * The ui:showcase command removal in production cannot be fully tested via unit tests
  * because config files are loaded during bootstrap before we can change the environment.
+ *
+ * Note: DebugCommand is always available for user debugging in all environments.
  *
  * To verify production behavior, run these manual tests:
  *
  * 1. Test in production environment:
  *    ```bash
- *    APP_ENV=production php tuti list | grep -E "(ui:showcase|debug)"
- *    # Should NOT show these commands
+ *    APP_ENV=production php tuti list | grep "ui:showcase"
+ *    # Should NOT show this command
  *
  *    APP_ENV=production php tuti ui:showcase
  *    # Should error: Command "ui:showcase" is not defined.
@@ -148,7 +136,7 @@ describe('environment detection', function (): void {
  *    ```bash
  *    make build-phar
  *    php builds/tuti list
- *    # Should NOT show ui:showcase or debug
+ *    # Should NOT show ui:showcase
  *
  *    php builds/tuti ui:showcase
  *    # Should error: Command "ui:showcase" is not defined.
@@ -156,10 +144,9 @@ describe('environment detection', function (): void {
  *
  * 3. Test in local development:
  *    ```bash
- *    php tuti list | grep -E "(ui:showcase|debug)"
- *    # SHOULD show both commands
+ *    php tuti list | grep "ui:showcase"
+ *    # SHOULD show the command
  *
  *    php tuti ui:showcase    # Should work
- *    php tuti debug status   # Should work
  *    ```
  */

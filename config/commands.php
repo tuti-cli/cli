@@ -93,7 +93,6 @@ return [
         // LaravelZero\Framework\Commands\BuildCommand::class,  // KEEP THIS AVAILABLE!
         // LaravelZero\Framework\Commands\InstallCommand::class,
         LaravelZero\Framework\Commands\RenameCommand::class,
-        LaravelZero\Framework\Commands\StubPublishCommand::class,
         LaravelZero\Framework\Commands\MakeCommand::class,
 
     ],
