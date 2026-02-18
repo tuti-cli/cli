@@ -1,0 +1,25 @@
+# @section: base
+node:
+  image: node:${NODE_VERSION:-20}-alpine
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_node
+  working_dir: /var/www/html
+  volumes:
+    - ..:/var/www/html
+    - node_cache:/root/.npm
+  networks:
+    - {{NETWORK_NAME}}
+  restart: "no"
+  command: ["node", "--version"]
+
+# @section: dev
+node:
+  container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_node
+  # Node container doesn't need exposed ports - it's used for builds only
+
+# @section: volumes
+node_cache:
+  name: {{PROJECT_NAME}}_${APP_ENV:-dev}_node_cache
+
+# @section: env
+NODE_VERSION=20
+NODE_PACKAGE_MANAGER=npm

@@ -168,6 +168,9 @@ final class LaravelCommand extends Command
             $config['project_name'] = $this->getProjectName();
             $config['project_path'] = $this->getProjectPath($config['project_name']);
             $config['laravel_version'] = $this->option('laravel-version');
+
+            // Gather Laravel-specific options (starter kit, testing, etc.)
+            $config['laravel_options'] = $this->gatherLaravelOptions();
         } else {
             $config['project_name'] = $this->getProjectName(basename(getcwd()));
             $config['project_path'] = getcwd();
@@ -181,7 +184,13 @@ final class LaravelCommand extends Command
 
         $this->displayStackInfo($manifest);
 
-        $config['selected_services'] = $this->selectServices($registry, $stackLoader, $manifest);
+        // Pass Laravel options to service selection for database defaults
+        $config['selected_services'] = $this->selectServices(
+            $registry,
+            $stackLoader,
+            $manifest,
+            $config['laravel_options'] ?? []
+        );
 
         if (empty($config['selected_services'])) {
             return null;
@@ -249,6 +258,109 @@ final class LaravelCommand extends Command
     }
 
     /**
+     * Gather Laravel-specific options for fresh installations.
+     *
+     * Prompts for starter kit, authentication, testing framework, boost, and package manager.
+     *
+     * @return array<string, mixed>
+     */
+    private function gatherLaravelOptions(): array
+    {
+        if ($this->option('no-interaction')) {
+            return [
+                'starter_kit' => 'none',
+                'testing' => 'pest',
+                'boost' => false,
+                'package_manager' => 'npm',
+            ];
+        }
+
+        $options = [];
+
+        // Starter kit selection
+        $options['starter_kit'] = select(
+            label: 'Which starter kit would you like to install?',
+            options: [
+                'none' => 'None (API-only)',
+                'react' => 'React',
+                'vue' => 'Vue',
+                'livewire' => 'Livewire',
+                'svelte' => 'Svelte',
+            ],
+            default: 'none'
+        );
+
+        // Authentication - only if starter kit is selected
+        if ($options['starter_kit'] !== 'none') {
+            $options['authentication'] = select(
+                label: 'Which authentication provider?',
+                options: [
+                    'laravel' => "Laravel's built-in authentication",
+                    'workos' => 'WorkOS',
+                    'none' => 'No authentication',
+                ],
+                default: 'laravel'
+            );
+
+            // Livewire single-file option
+            if ($options['starter_kit'] === 'livewire' && $options['authentication'] === 'laravel') {
+                $options['livewire_single_file'] = confirm(
+                    label: 'Use single-file Livewire components?',
+                    default: true
+                );
+            }
+        }
+
+        // Testing framework
+        $options['testing'] = select(
+            label: 'Which testing framework?',
+            options: [
+                'pest' => 'Pest',
+                'phpunit' => 'PHPUnit',
+            ],
+            default: 'pest'
+        );
+
+        // Laravel Boost
+        $options['boost'] = confirm(
+            label: 'Install Laravel Boost?',
+            default: false,
+            hint: 'Provides performance optimizations and developer experience improvements'
+        );
+
+        // Package manager
+        $options['package_manager'] = select(
+            label: 'Which Node package manager?',
+            options: [
+                'npm' => 'npm',
+                'pnpm' => 'pnpm',
+                'bun' => 'Bun',
+            ],
+            default: $this->detectPackageManager()
+        );
+
+        return $options;
+    }
+
+    /**
+     * Detect the preferred package manager from lock files in current directory.
+     */
+    private function detectPackageManager(): string
+    {
+        $cwd = getcwd();
+
+        if (file_exists($cwd . '/bun.lockb')) {
+            return 'bun';
+        }
+
+        if (file_exists($cwd . '/pnpm-lock.yaml')) {
+            return 'pnpm';
+        }
+
+        return 'npm';
+    }
+
+    /**
      * @param  array<string, mixed>  $manifest
      */
     private function displayStackInfo(array $manifest): void
@@ -263,12 +375,14 @@ final class LaravelCommand extends Command
 
     /**
      * @param  array<string, mixed>  $manifest
+     * @param  array<string, mixed>  $laravelOptions
      * @return array<int, string>
      */
     private function selectServices(
         StackRegistryManagerService $registry,
         StackLoaderService $stackLoader,
-        array $manifest
+        array $manifest,
+        array $laravelOptions = []
     ): array {
         $preSelected = $this->option('services');
 
@@ -283,8 +397,21 @@ final class LaravelCommand extends Command
         $defaults = [];
         $required = $stackLoader->getRequiredServices($manifest);
 
+        // Special handling for database selection in Laravel
+        // SQLite is the default and simplest option
+        $selectedDatabase = $this->selectDatabase($laravelOptions);
+
         foreach ($required as $key => $config) {
             $category = $config['category'];
+
+            // Skip database category - we already handled it
+            if ($category === 'databases') {
+                // Add the selected database (including SQLite for consistency)
+                $defaults[] = $selectedDatabase;
+
+                continue;
+            }
+
             $serviceOptions = $config['options'];
             $defaultOption = $config['default'];
 
@@ -309,6 +436,7 @@ final class LaravelCommand extends Command
             $defaults[] = "{$category}.{$selected}";
         }
 
+        // Show optional services (Redis, Mailpit, etc.) - always show regardless of database choice
         $optional = $stackLoader->getOptionalServices($manifest);
         $optionalChoices = [];
         $optionalDefaults = [];
@@ -338,7 +466,37 @@ final class LaravelCommand extends Command
             $defaults = array_merge($defaults, $selectedOptional);
         }
 
+        // Add node service if starter kit is selected (for frontend builds)
+        $starterKit = $laravelOptions['starter_kit'] ?? 'none';
+        if ($starterKit !== 'none') {
+            $defaults[] = 'node.node';
+        }
+
         return array_values(array_unique($defaults));
+    }
+
+    /**
+     * Select database type with SQLite as the recommended default.
+     *
+     * @param  array<string, mixed>  $laravelOptions
+     */
+    private function selectDatabase(array $laravelOptions): string
+    {
+        if ($this->option('no-interaction')) {
+            return 'databases.sqlite';
+        }
+
+        return select(
+            label: 'Which database will your application use?',
+            options: [
+                'databases.sqlite' => 'SQLite (Recommended for development)',
+                'databases.postgres' => 'PostgreSQL',
+                'databases.mysql' => 'MySQL',
+                'databases.mariadb' => 'MariaDB',
+            ],
+            default: 'databases.sqlite',
+            hint: 'SQLite is the simplest option - no extra container needed'
+        );
     }
 
     /**
@@ -382,34 +540,74 @@ final class LaravelCommand extends Command
         array $config
     ): bool {
         $hostsAdded = false;
+        $laravelOptions = $config['laravel_options'] ?? [];
 
         if ($config['mode'] === 'fresh') {
-            $this->note('Creating Laravel project via Laravel installer...');
+            $this->note('Creating Laravel project...');
             $this->hint('This may take a few minutes on first run (downloading PHP image)');
-            $this->hint('Laravel will prompt you to select your desired stack (React, Vue, API, etc.)');
             $this->newLine();
 
-            // Extract database selection from services for Laravel installer flag
+            // Extract database selection from services
             $selectedDatabase = $this->extractDatabaseFromServices($config['selected_services']);
 
+            // Build options including starter kit configuration
             $options = [
-                'interactive' => ! $this->option('no-interaction'),
-                'no_interaction' => $this->option('no-interaction'),
+                'interactive' => false, // We're using composer create-project, not Laravel installer
+                'no_interaction' => true,
                 'prefer_dist' => true,
                 'database' => $selectedDatabase,
+                // Pass Laravel options to installer
+                'starter_kit' => $laravelOptions['starter_kit'] ?? 'none',
+                'authentication' => $laravelOptions['authentication'] ?? 'laravel',
+                'livewire_single_file' => $laravelOptions['livewire_single_file'] ?? false,
             ];
 
             if ($config['laravel_version'] !== null) {
                 $options['laravel_version'] = $config['laravel_version'];
             }
 
-            $installer->installFresh(
-                $config['project_path'],
-                $config['project_name'],
-                $options
+            // Create Laravel project - Laravel's scripts handle key:generate and migrate
+            spin(
+                fn (): bool => $installer->installFresh(
+                    $config['project_path'],
+                    $config['project_name'],
+                    $options
+                ),
+                'Creating Laravel project...'
             );
 
             $this->success('Laravel project created');
+
+            // Install Pest if selected
+            if (($laravelOptions['testing'] ?? 'phpunit') === 'pest') {
+                $this->note('Installing Pest...');
+                spin(
+                    fn (): bool => $installer->installPest($config['project_path']),
+                    'Installing Pest with drift conversion...'
+                );
+                $this->success('Pest installed');
+            }
+
+            // Install Boost if selected
+            if ($laravelOptions['boost'] ?? false) {
+                $this->note('Installing Laravel Boost...');
+                spin(
+                    fn (): bool => $installer->installBoost($config['project_path']),
+                    'Installing Laravel Boost...'
+                );
+                $this->success('Laravel Boost installed');
+            }
+
+            // Configure .env for Docker database (if not SQLite)
+            if ($selectedDatabase !== null && $selectedDatabase !== 'databases.sqlite') {
+                $this->note('Configuring Docker database...');
+                $installer->configureDefaultDatabaseConnection(
+                    $config['project_path'],
+                    $selectedDatabase,
+                    $config['project_name']
+                );
+                $this->success('Database configured');
+            }
 
             // Install additional packages if needed (e.g., Horizon)
             $this->installRequiredPackages($installer, $config);
@@ -430,9 +628,7 @@ final class LaravelCommand extends Command
 
         $this->success('Stack initialized');
 
-        // Note: APP_KEY generation removed - Laravel installer already generates it
-
-        // Configure .env for selected services
+        // Configure .env for selected services (Redis, etc.)
         $this->configureEnvForServices($config);
 
         // Start containers and run migrations (unless skipped)
@@ -442,7 +638,8 @@ final class LaravelCommand extends Command
                 $metaService,
                 $stateManager,
                 $infrastructureManager,
-                $hostsFileService
+                $hostsFileService,
+                $laravelOptions
             );
         }
 
@@ -469,6 +666,7 @@ final class LaravelCommand extends Command
      * Start containers and run migrations after installation.
      *
      * @param  array<string, mixed>  $config
+     * @param  array<string, mixed>  $laravelOptions
      * @return bool Whether hosts file entry was added
      */
     private function startContainersAndMigrate(
@@ -476,7 +674,8 @@ final class LaravelCommand extends Command
         ProjectMetadataService $metaService,
         ProjectStateManagerService $stateManager,
         InfrastructureManagerInterface $infrastructureManager,
-        HostsFileService $hostsFileService
+        HostsFileService $hostsFileService,
+        array $laravelOptions = []
     ): bool {
         $this->section('Starting Project');
 
@@ -507,13 +706,84 @@ final class LaravelCommand extends Command
             return false;
         }
 
-        // Run migrations (unless skipped)
-        if (! $this->option('skip-migrate')) {
+        // Run migrations (unless skipped) - only if not using SQLite (SQLite already migrated during create-project)
+        $selectedDatabase = $this->extractDatabaseFromServices($config['selected_services']);
+        if (! $this->option('skip-migrate') && $selectedDatabase !== null && $selectedDatabase !== 'databases.sqlite') {
             $this->runMigrations($projectRoot, $config['project_name']);
+        }
+
+        // Run npm install/build if starter kit was selected
+        $starterKit = $laravelOptions['starter_kit'] ?? 'none';
+        if ($starterKit !== 'none') {
+            $this->note('Installing npm dependencies...');
+            $packageManager = $laravelOptions['package_manager'] ?? 'npm';
+            $this->runNpmBuild($projectRoot, $config['project_name'], $packageManager);
         }
 
         // Handle hosts file management
         return $this->handleHostsFile($hostsFileService, $config['project_name']);
+    }
+
+    /**
+     * Run npm install and build using the node container.
+     */
+    private function runNpmBuild(string $projectRoot, string $projectName, string $packageManager): void
+    {
+        // Install pnpm or bun if selected (runs in node container)
+        if ($packageManager !== 'npm') {
+            Process::path($projectRoot)->run([
+                'docker',
+                'compose',
+                'run',
+                '--rm',
+                'node',
+                'sh',
+                '-c',
+                "npm install -g {$packageManager}",
+            ]);
+        }
+
+        // Run npm install using docker compose run node
+        $installCmd = $packageManager === 'npm' ? 'npm install' : "{$packageManager} install";
+        $installResult = Process::path($projectRoot)->timeout(300)->run([
+            'docker',
+            'compose',
+            'run',
+            '--rm',
+            'node',
+            'sh',
+            '-c',
+            $installCmd,
+        ]);
+
+        if ($installResult->successful()) {
+            $this->success('npm dependencies installed');
+        } else {
+            $this->warning('npm install had issues');
+            $this->hint("Run manually: docker compose run --rm node {$installCmd}");
+
+            return;
+        }
+
+        // Run build using docker compose run node
+        $buildCmd = $packageManager === 'npm' ? 'npm run build' : "{$packageManager} run build";
+        $buildResult = Process::path($projectRoot)->timeout(300)->run([
+            'docker',
+            'compose',
+            'run',
+            '--rm',
+            'node',
+            'sh',
+            '-c',
+            $buildCmd,
+        ]);
+
+        if ($buildResult->successful()) {
+            $this->success('Assets built');
+        } else {
+            $this->warning('npm build had issues');
+            $this->hint("Run manually: docker compose run --rm node {$buildCmd}");
+        }
     }
 
     /**
