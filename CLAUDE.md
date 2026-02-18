@@ -143,7 +143,7 @@ app/
 ├── Enums/                # PHP enums (Theme)
 ├── Infrastructure/       # Implementations (DockerComposeOrchestrator)
 ├── Providers/            # AppServiceProvider, StackServiceProvider,
-│                         #   ProjectServiceProvider, DotenvServiceProvider
+│                         #   ProjectServiceProvider
 ├── Services/
 │   ├── Context/          # WorkingDirectoryService
 │   ├── Debug/            # DebugLogService (singleton)
