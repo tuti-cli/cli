@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Tests the `tuti stack:laravel` command which initializes a Laravel project with Docker stack.
  *
- * @see App\Commands\Stack\LaravelCommand
+ * @see LaravelCommand
  */
 
 use App\Commands\Stack\LaravelCommand;
