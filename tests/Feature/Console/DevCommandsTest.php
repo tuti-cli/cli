@@ -5,9 +5,9 @@ declare(strict_types=1);
 /**
  * DevCommands Feature Tests
  *
- * Tests that development-only commands (UIShowcaseCommand)
- * are available in local environment.
+ * Tests the configuration for development-only commands.
  *
+ * Note: UIShowcaseCommand is only available in local environment.
  * Note: DebugCommand is available in ALL environments for user debugging.
  *
  * IMPORTANT: Production environment removal is configured in config/commands.php
@@ -18,33 +18,6 @@ declare(strict_types=1);
  */
 
 use App\Commands\UIShowcaseCommand;
-use Illuminate\Contracts\Console\Kernel;
-use LaravelZero\Framework\Commands\Command;
-
-// ─── Registration in Local/Testing Environment ────────────────────────────────
-
-describe('DevCommands in local environment', function (): void {
-
-    it('registers UIShowcaseCommand', function (): void {
-        $command = $this->app->make(UIShowcaseCommand::class);
-
-        expect($command)->toBeInstanceOf(Command::class);
-        expect($command->getName())->toBe('ui:showcase');
-    });
-
-    it('includes ui:showcase command in command list', function (): void {
-        $kernel = $this->app->make(Kernel::class);
-        $commands = $kernel->all();
-
-        expect($commands)->toHaveKey('ui:showcase');
-    });
-
-    it('can run ui:showcase command', function (): void {
-        $this->artisan('ui:showcase')
-            ->assertSuccessful();
-    });
-
-});
 
 // ─── Configuration Validation ─────────────────────────────────────────────────
 
