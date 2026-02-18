@@ -12,10 +12,9 @@ declare(strict_types=1);
  *
  * IMPORTANT: Production environment removal is configured in config/commands.php
  * using env('APP_ENV') check. This happens at config load time during bootstrap,
- * so it cannot be easily tested via unit tests. Manual testing is required.
+ * so command execution cannot be tested in CI (testing env). Manual testing is required.
  *
  * @see config/commands.php
- * @see tests/Feature/Console/DevCommandsTest.php
  */
 
 use App\Commands\UIShowcaseCommand;
@@ -54,23 +53,12 @@ describe('config/commands.php configuration', function (): void {
     it('has remove array configured', function (): void {
         $config = config('commands');
 
-        expect($config)->toHaveKey('remove');
-        expect($config['remove'])->toBeArray();
+        expect($config)
+            ->toHaveKey('remove')
+            ->and($config['remove'])->toBeArray();
     });
 
-    it('remove array is empty in local/testing environment', function (): void {
-        // Config is loaded at bootstrap time with current environment
-        // In testing, env('APP_ENV') is 'testing', which is not 'local'
-        // so dev commands might be in remove array depending on environment
-        $config = require base_path('config/commands.php');
-
-        // In local environment (APP_ENV=local), remove array should be empty
-        // In testing environment (APP_ENV=testing), remove array will contain dev commands
-        // This is expected behavior - testing env is treated like production
-        expect($config['remove'])->toBeArray();
-    });
-
-    it('contains correct conditional logic in remove array', function (): void {
+    it('contains conditional removal logic for dev commands', function (): void {
         $configFile = file_get_contents(base_path('config/commands.php'));
 
         // Verify the config file contains the conditional removal logic
