@@ -6,6 +6,10 @@ namespace App\Services\Stack;
 
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
+use App\Services\Support\EnvFileService;
+use App\Services\Support\EnvHandlers\BedrockEnvHandler;
+use App\Services\Support\EnvHandlers\LaravelEnvHandler;
+use App\Services\Support\EnvHandlers\WordPressEnvHandler;
 use Exception;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -20,6 +24,7 @@ use Symfony\Component\Yaml\Yaml;
  * 2. Stack file copying
  * 3. Docker Compose generation
  * 4. Metadata creation
+ * 5. Environment file configuration (delegated to stack-specific handlers)
  *
  * Following clean architecture, this service coordinates multiple infrastructure
  * services to complete the stack initialization workflow.
@@ -32,7 +37,11 @@ final readonly class StackInitializationService
         private StackFilesCopierService $copierService,
         private StackLoaderService $stackLoader,
         private StackStubLoaderService $stubLoader,
-        private StackRegistryManagerService $registryManager
+        private StackRegistryManagerService $registryManager,
+        private EnvFileService $envService,
+        private LaravelEnvHandler $laravelEnvHandler,
+        private BedrockEnvHandler $bedrockEnvHandler,
+        private WordPressEnvHandler $wordPressEnvHandler,
     ) {}
 
     /**
@@ -79,14 +88,10 @@ final readonly class StackInitializationService
         // 6. Append optional services to docker-compose.yml
         $this->appendOptionalServices($selectedServices, $projectName, $environment);
 
-        // 7. Copy environment file template with project-specific values (for docker-compose)
-        $this->copyEnvironmentFile($environment, $projectName);
+        // 7. Configure environment file (delegated to stack-specific handlers)
+        $this->configureEnvironmentFile($environment, $projectName, $selectedServices);
 
-        // 8. Update project's .env with Docker service settings (Laravel-specific)
-        // Only apply for Laravel projects (detected by artisan file)
-        $this->updateProjectEnv($projectName, $selectedServices);
-
-        // 9. Validate initialization
+        // 8. Validate initialization
         if (! $this->directoryService->validate()) {
             throw new RuntimeException('Stack initialization validation failed');
         }
@@ -95,61 +100,145 @@ final readonly class StackInitializationService
     }
 
     /**
-     * Update project's .env file with Docker service connection settings.
-     * Only applies Laravel-specific settings if it's a Laravel project.
+     * Configure environment file for the project.
+     * Delegates to stack-specific handlers based on project type detection.
      *
      * @param  array<int, string>  $selectedServices
      */
-    private function updateProjectEnv(string $projectName, array $selectedServices): void
+    private function configureEnvironmentFile(string $environment, string $projectName, array $selectedServices): void
     {
         $projectRoot = $this->directoryService->getProjectRoot();
-        $envFile = $projectRoot . '/.env';
 
-        if (! file_exists($envFile)) {
+        // Detect project type and delegate to appropriate handler
+        if ($this->laravelEnvHandler->detect($projectRoot)) {
+            $this->laravelEnvHandler->configure($projectRoot, $projectName, [
+                'has_redis' => in_array('cache.redis', $selectedServices, true),
+                'php_version' => '8.4',
+            ]);
+
             return;
         }
 
-        // Detect if this is a Laravel project (has artisan file)
-        $isLaravel = file_exists($projectRoot . '/artisan');
+        if ($this->bedrockEnvHandler->detect($projectRoot)) {
+            $this->bedrockEnvHandler->configure($projectRoot, $projectName, [
+                'php_version' => '8.3',
+            ]);
 
-        if (! $isLaravel) {
-            // For non-Laravel projects (WordPress), don't override database settings
-            // The .env template already has correct values
             return;
         }
 
-        // Laravel-specific .env updates
-        $content = file_get_contents($envFile);
+        if ($this->wordPressEnvHandler->detect($projectRoot)) {
+            $this->wordPressEnvHandler->configure($projectRoot, $projectName);
 
-        // Check if Redis is selected
-        $hasRedis = in_array('cache.redis', $selectedServices, true);
+            return;
+        }
 
-        // Update database settings to use Docker postgres (Laravel default)
-        $replacements = [
-            '/^DB_CONNECTION=.*$/m' => 'DB_CONNECTION=pgsql',
-            '/^DB_HOST=.*$/m' => 'DB_HOST=postgres',
-            '/^DB_PORT=.*$/m' => 'DB_PORT=5432',
-            '/^DB_DATABASE=.*$/m' => 'DB_DATABASE=laravel',
-            '/^DB_USERNAME=.*$/m' => 'DB_USERNAME=laravel',
-            '/^DB_PASSWORD=.*$/m' => 'DB_PASSWORD=secret',
-            // Update app URL
-            '/^APP_URL=.*$/m' => "APP_URL=https://{$projectName}.local.test",
+        // Fallback: create .env from template for unknown project types
+        $this->createEnvFromTemplateFallback($environment, $projectName);
+    }
+
+    /**
+     * Create .env file from template as fallback for unknown project types.
+     */
+    private function createEnvFromTemplateFallback(string $environment, string $projectName): void
+    {
+        $projectRoot = $this->directoryService->getProjectRoot();
+
+        // Check if .env already exists
+        if ($this->envService->exists($projectRoot)) {
+            // Just append Tuti section
+            $this->envService->appendTutiSection($projectRoot, $projectName);
+
+            return;
+        }
+
+        // Try to create from template
+        $tutiEnvPath = $this->directoryService->getTutiPath('environments');
+        $templatePaths = [
+            "{$tutiEnvPath}/.env.{$environment}.example",
+            "{$tutiEnvPath}/.env.dev.example",
+            "{$tutiEnvPath}/.env.example",
         ];
 
-        // Add Redis settings only if Redis is selected
-        if ($hasRedis) {
-            $replacements['/^REDIS_HOST=.*$/m'] = 'REDIS_HOST=redis';
-            $replacements['/^REDIS_PASSWORD=.*$/m'] = 'REDIS_PASSWORD=';
-            $replacements['/^CACHE_STORE=.*$/m'] = 'CACHE_STORE=redis';
-            $replacements['/^SESSION_DRIVER=.*$/m'] = 'SESSION_DRIVER=redis';
-            $replacements['/^QUEUE_CONNECTION=.*$/m'] = 'QUEUE_CONNECTION=redis';
+        foreach ($templatePaths as $templatePath) {
+            if (file_exists($templatePath)) {
+                $this->createEnvFromTemplate($templatePath, $projectRoot, $projectName);
+
+                return;
+            }
         }
 
-        foreach ($replacements as $pattern => $replacement) {
-            $content = preg_replace($pattern, $replacement, $content);
+        // Last resort: create minimal .env
+        $this->createMinimalEnvFile($projectRoot, $projectName);
+    }
+
+    /**
+     * Create .env file from template with project-specific replacements.
+     */
+    private function createEnvFromTemplate(string $templatePath, string $directory, string $projectName): void
+    {
+        $content = file_get_contents($templatePath);
+
+        if ($content === false) {
+            $this->createMinimalEnvFile($directory, $projectName);
+
+            return;
         }
 
-        file_put_contents($envFile, $content);
+        if ($projectName !== '') {
+            $appDomain = $projectName . '.local.test';
+            $userId = $this->envService->read($directory) ? 1000 : 1000; // Placeholder, will be set by EnvFileService
+            $groupId = $userId;
+
+            // Use regex patterns to match any default value
+            $patterns = [
+                '/^PROJECT_NAME=.*$/m' => "PROJECT_NAME={$projectName}",
+                '/^APP_DOMAIN=.*$/m' => "APP_DOMAIN={$appDomain}",
+                '/^APP_URL=.*$/m' => "APP_URL=https://{$appDomain}",
+                '/^APP_NAME=.*$/m' => "APP_NAME={$projectName}",
+            ];
+
+            foreach ($patterns as $pattern => $replace) {
+                $content = preg_replace($pattern, $replace, (string) $content);
+            }
+        }
+
+        $this->envService->write($directory, (string) $content);
+
+        // Append Tuti section
+        $this->envService->appendTutiSection($directory, $projectName);
+    }
+
+    /**
+     * Create a minimal .env file when no template is available.
+     */
+    private function createMinimalEnvFile(string $directory, string $projectName): void
+    {
+        $appDomain = $projectName . '.local.test';
+
+        $content = <<<ENV
+# ============================================================================
+# TUTI-CLI DEVELOPMENT ENVIRONMENT
+# ============================================================================
+
+# Project Configuration
+PROJECT_NAME={$projectName}
+APP_ENV=dev
+APP_DOMAIN={$appDomain}
+
+# Database Configuration
+DB_HOST=database
+DB_PORT=3306
+DB_DATABASE=wordpress
+DB_USERNAME=wordpress
+DB_PASSWORD=secret
+
+ENV;
+
+        $this->envService->write($directory, $content);
+
+        // Append Tuti section
+        $this->envService->appendTutiSection($directory, $projectName);
     }
 
     /**
@@ -502,315 +591,6 @@ final readonly class StackInitializationService
         } catch (ParseException $e) {
             throw new RuntimeException("Generated invalid YAML for {$filePath}: {$e->getMessage()}", $e->getCode(), $e);
         }
-    }
-
-    /**
-     * Copy environment file template to project root as .env
-     */
-    private function copyEnvironmentFile(string $environment, string $projectName = ''): void
-    {
-        $projectRoot = $this->directoryService->getProjectRoot();
-        $targetEnv = $projectRoot . '/.env';
-
-        // For Laravel, .env already exists after composer create-project
-        // Just update it with Docker-specific variables
-        if (file_exists($targetEnv)) {
-            $this->appendTutiVariablesToEnv($targetEnv, $projectName);
-
-            return;
-        }
-
-        // For WordPress and other stacks, create .env from template
-        // First, check the copied template in .tuti/environments/
-        $tutiEnvPath = $this->directoryService->getTutiPath('environments');
-        $templatePaths = [
-            "{$tutiEnvPath}/.env.{$environment}.example",
-            "{$tutiEnvPath}/.env.dev.example",
-            "{$tutiEnvPath}/.env.example",
-        ];
-
-        foreach ($templatePaths as $template) {
-            if (file_exists($template)) {
-                $this->createEnvFromTemplate($template, $targetEnv, $projectName);
-
-                return;
-            }
-        }
-
-        // Fallback: create minimal .env file
-        $this->createMinimalEnvFile($targetEnv, $projectName);
-    }
-
-    /**
-     * Create .env file from template with project-specific replacements.
-     */
-    private function createEnvFromTemplate(string $templatePath, string $targetPath, string $projectName): void
-    {
-        $content = file_get_contents($templatePath);
-
-        if ($content === false) {
-            $this->createMinimalEnvFile($targetPath, $projectName);
-
-            return;
-        }
-
-        if ($projectName !== '') {
-            $appDomain = $projectName . '.local.test';
-            $userId = $this->getCurrentUserId();
-            $groupId = $this->getCurrentGroupId();
-
-            // Use regex patterns to match any default value
-            $patterns = [
-                '/^PROJECT_NAME=.*$/m' => "PROJECT_NAME={$projectName}",
-                '/^APP_DOMAIN=.*$/m' => "APP_DOMAIN={$appDomain}",
-                '/^APP_URL=.*$/m' => "APP_URL=https://{$appDomain}",
-                '/^APP_NAME=.*$/m' => "APP_NAME={$projectName}",
-                '/^DOCKER_USER_ID=.*$/m' => "DOCKER_USER_ID={$userId}",
-                '/^DOCKER_GROUP_ID=.*$/m' => "DOCKER_GROUP_ID={$groupId}",
-            ];
-
-            foreach ($patterns as $pattern => $replace) {
-                $content = preg_replace($pattern, $replace, (string) $content);
-            }
-        }
-
-        file_put_contents($targetPath, $content);
-    }
-
-    /**
-     * Create a minimal .env file when no template is available.
-     */
-    private function createMinimalEnvFile(string $targetEnv, string $projectName): void
-    {
-        $appDomain = $projectName . '.local.test';
-        $userId = $this->getCurrentUserId();
-        $groupId = $this->getCurrentGroupId();
-
-        $content = <<<ENV
-# ============================================================================
-# TUTI-CLI DEVELOPMENT ENVIRONMENT
-# ============================================================================
-
-# Project Configuration
-PROJECT_NAME={$projectName}
-APP_ENV=dev
-APP_DOMAIN={$appDomain}
-
-# Docker Build Configuration
-DOCKER_USER_ID={$userId}
-DOCKER_GROUP_ID={$groupId}
-
-# Database Configuration
-DB_HOST=database
-DB_PORT=3306
-DB_DATABASE=wordpress
-DB_USERNAME=wordpress
-DB_PASSWORD=secret
-
-ENV;
-
-        file_put_contents($targetEnv, $content);
-    }
-
-    /**
-     * Append tuti-specific variables to existing Laravel .env.
-     */
-    private function appendTutiVariablesToEnv(string $envPath, string $projectName): void
-    {
-        $content = file_get_contents($envPath);
-        $appDomain = $projectName . '.local.test';
-
-        // First, update Docker-specific service hostnames in existing variables
-        $content = $this->updateDockerServiceVariables($content, $appDomain);
-
-        // Check if tuti section already exists
-        if (str_contains($content, '# TUTI-CLI DOCKER CONFIGURATION')) {
-            file_put_contents($envPath, $content);
-
-            return; // Already has tuti variables, just save updated content
-        }
-
-        // Get current user's UID and GID for Docker file permissions
-        $userId = $this->getCurrentUserId();
-        $groupId = $this->getCurrentGroupId();
-
-        // Prepare tuti-specific variables
-        $tutiVars = <<<EOT
-
-
-# ============================================================================
-# 🐳 TUTI-CLI DOCKER CONFIGURATION
-# ============================================================================
-# The following variables are used by Docker Compose for container setup.
-# These are managed by tuti-cli and should not be changed manually unless
-# you know what you're doing.
-# ============================================================================
-
-# ----------------------------------------------------------------------------
-# Project Configuration
-# ----------------------------------------------------------------------------
-PROJECT_NAME={$projectName}
-APP_DOMAIN={$appDomain}
-
-# ----------------------------------------------------------------------------
-# Docker Build Configuration
-# ----------------------------------------------------------------------------
-PHP_VERSION=8.4
-PHP_VARIANT=fpm-nginx
-BUILD_TARGET=development
-
-# Docker User/Group IDs (auto-detected from current user)
-DOCKER_USER_ID={$userId}
-DOCKER_GROUP_ID={$groupId}
-EOT;
-
-        // Append to the file
-        file_put_contents($envPath, $content . $tutiVars);
-    }
-
-    /**
-     * Get current user's UID.
-     */
-    private function getCurrentUserId(): int
-    {
-        // First try shell command (most reliable for WSL and Linux)
-        $output = $this->executeShellCommand('id -u');
-        if ($output !== null && is_numeric(mb_trim($output))) {
-            return (int) mb_trim($output);
-        }
-
-        // Fallback to posix_getuid() (available on Unix systems)
-        if (function_exists('posix_getuid')) {
-            $uid = posix_getuid();
-            if ($uid > 0) {
-                return $uid;
-            }
-        }
-
-        // Default fallback for Windows or if detection fails
-        return 1000;
-    }
-
-    /**
-     * Get current user's GID.
-     */
-    private function getCurrentGroupId(): int
-    {
-        // First try shell command (most reliable for WSL and Linux)
-        $output = $this->executeShellCommand('id -g');
-        if ($output !== null && is_numeric(mb_trim($output))) {
-            return (int) mb_trim($output);
-        }
-
-        // Fallback to posix_getgid() (available on Unix systems)
-        if (function_exists('posix_getgid')) {
-            $gid = posix_getgid();
-            if ($gid > 0) {
-                return $gid;
-            }
-        }
-
-        // Default fallback for Windows or if detection fails
-        return 1000;
-    }
-
-    /**
-     * Execute a shell command and return output.
-     */
-    private function executeShellCommand(string $command): ?string
-    {
-        // Try different execution methods for compatibility
-        $output = null;
-
-        // Method 1: proc_open (most reliable)
-        if (function_exists('proc_open')) {
-            $descriptors = [
-                0 => ['pipe', 'r'],
-                1 => ['pipe', 'w'],
-                2 => ['pipe', 'w'],
-            ];
-
-            $process = @proc_open($command, $descriptors, $pipes);
-            if (is_resource($process)) {
-                fclose($pipes[0]);
-                $output = stream_get_contents($pipes[1]);
-                fclose($pipes[1]);
-                fclose($pipes[2]);
-                proc_close($process);
-
-                if ($output !== false && mb_trim($output) !== '') {
-                    return mb_trim($output);
-                }
-            }
-        }
-
-        // Method 2: shell_exec
-        $output = @shell_exec($command . ' 2>/dev/null');
-        if ($output !== null && mb_trim($output) !== '') {
-            return mb_trim($output);
-        }
-
-        // Method 3: exec
-        if (function_exists('exec')) {
-            $result = [];
-            @exec($command . ' 2>/dev/null', $result, $returnCode);
-            if ($returnCode === 0 && $result !== []) {
-                return mb_trim($result[0]);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Update environment variables to use Docker service names.
-     */
-    private function updateDockerServiceVariables(string $content, string $appDomain): string
-    {
-        // Update APP_URL to use local domain
-        $content = preg_replace(
-            '/^APP_URL=.*/m',
-            "APP_URL=https://{$appDomain}",
-            $content
-        );
-
-        // Update database configuration for PostgreSQL Docker container
-        // Handle commented, uncommented, and malformed variables
-        $dbReplacements = [
-            // Handle commented variables with optional spaces (common in fresh Laravel installs)
-            '/^[\s]*#[\s]*DB_HOST=.*/m' => 'DB_HOST=postgres',
-            '/^[\s]*#[\s]*DB_PORT=.*/m' => 'DB_PORT=5432',
-            '/^[\s]*#[\s]*DB_DATABASE=.*/m' => 'DB_DATABASE=laravel',
-            '/^[\s]*#[\s]*DB_USERNAME=.*/m' => 'DB_USERNAME=laravel',
-            '/^[\s]*#[\s]*DB_PASSWORD=.*/m' => 'DB_PASSWORD=secret',
-        ];
-
-        foreach ($dbReplacements as $pattern => $replacement) {
-            $content = preg_replace($pattern, $replacement, (string) $content);
-        }
-
-        // Handle existing uncommented variables (with possible leading spaces)
-        $dbUpdates = [
-            '/^[\s]*DB_HOST=.*/m' => 'DB_HOST=postgres',
-            '/^[\s]*DB_PORT=.*/m' => 'DB_PORT=5432',
-            '/^[\s]*DB_DATABASE=.*/m' => 'DB_DATABASE=laravel',
-            '/^[\s]*DB_USERNAME=.*/m' => 'DB_USERNAME=laravel',
-            '/^[\s]*DB_PASSWORD=.*/m' => 'DB_PASSWORD=secret',
-        ];
-
-        foreach ($dbUpdates as $pattern => $replacement) {
-            $content = preg_replace($pattern, $replacement, (string) $content);
-        }
-
-        // Update Redis configuration for Docker container
-        $content = preg_replace('/^[\s]*#?[\s]*REDIS_HOST=.*/m', 'REDIS_HOST=redis', (string) $content);
-        $content = preg_replace('/^[\s]*#?[\s]*REDIS_PASSWORD=.*/m', 'REDIS_PASSWORD=', (string) $content);
-
-        // Update Mail configuration for Mailpit in Docker
-        $content = preg_replace('/^[\s]*MAIL_HOST=.*/m', 'MAIL_HOST=mailpit', (string) $content);
-        $content = preg_replace('/^[\s]*MAIL_PORT=.*/m', 'MAIL_PORT=1025', (string) $content);
-
-        return preg_replace('/^[\s]*MAIL_MAILER=.*/m', 'MAIL_MAILER=smtp', (string) $content);
     }
 
     /**

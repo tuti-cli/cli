@@ -37,6 +37,40 @@ function createLaravelTestProject(string $projectName = 'test-project'): string
     mkdir($dir . '/bootstrap', 0755, true);
     file_put_contents($dir . '/bootstrap/app.php', '<?php // Laravel app file');
 
+    // Create a basic .env file (Laravel projects always have .env)
+    file_put_contents($dir . '/.env', <<<ENV
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=root
+DB_PASSWORD=
+
+CACHE_DRIVER=file
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+SESSION_DRIVER=file
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="\${APP_NAME}"
+
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+ENV);
+
     return $dir;
 }
 
@@ -135,6 +169,20 @@ describe('StackLaravelCommand Registration', function (): void {
         $definition = $command->getDefinition();
 
         expect($definition->hasOption('force'))->toBeTrue();
+    });
+
+    it('has --skip-start option', function (): void {
+        $command = $this->app->make(LaravelCommand::class);
+        $definition = $command->getDefinition();
+
+        expect($definition->hasOption('skip-start'))->toBeTrue();
+    });
+
+    it('has --skip-migrate option', function (): void {
+        $command = $this->app->make(LaravelCommand::class);
+        $definition = $command->getDefinition();
+
+        expect($definition->hasOption('skip-migrate'))->toBeTrue();
     });
 
     it('has correct description', function (): void {

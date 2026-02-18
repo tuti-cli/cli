@@ -166,6 +166,28 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         );
     }
 
+    public function runInteractive(
+        string $image,
+        array $command,
+        string $workDir,
+        array $env = [],
+        array $volumes = []
+    ): int {
+        $this->ensureDockerAvailable();
+        $this->ensureDirectoryExists($workDir);
+
+        $dockerCommand = $this->buildInteractiveDockerCommand($image, $command, $workDir, $env, $volumes);
+
+        // Use passthru for interactive TTY support
+        // This is necessary because Laravel's Process facade doesn't support TTY
+        $commandString = implode(' ', array_map('escapeshellarg', $dockerCommand));
+
+        // phpcs:ignore -- passthru is required for TTY support
+        passthru($commandString, $exitCode);
+
+        return $exitCode;
+    }
+
     public function isDockerAvailable(): bool
     {
         $process = Process::run(['docker', 'info']);
@@ -405,6 +427,64 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         $parts[] = 'sh';
         $parts[] = '-c';
         $parts[] = $command;
+
+        return $parts;
+    }
+
+    /**
+     * Build an interactive docker run command with TTY support.
+     *
+     * @param  array<int, string>  $command
+     * @param  array<string, string>  $env
+     * @param  array<string, string>  $volumes
+     * @return array<int, string>
+     */
+    private function buildInteractiveDockerCommand(
+        string $image,
+        array $command,
+        string $workDir,
+        array $env,
+        array $volumes
+    ): array {
+        $parts = [
+            'docker',
+            'run',
+            '--rm',
+            '--interactive',             // Keep STDIN open
+            '--tty',                     // Allocate a pseudo-TTY
+            '-v', "{$workDir}:/app",
+            '-w', '/app',
+        ];
+
+        // Add environment variables
+        foreach ($env as $key => $value) {
+            $parts[] = '-e';
+            $parts[] = "{$key}={$value}";
+        }
+
+        // Add additional volumes
+        foreach ($volumes as $hostPath => $containerPath) {
+            $parts[] = '-v';
+            $parts[] = "{$hostPath}:{$containerPath}";
+        }
+
+        // Run as current user to avoid permission issues
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $uid = getmyuid();
+            $gid = getmygid();
+            if ($uid !== false && $gid !== false) {
+                $parts[] = '--user';
+                $parts[] = "{$uid}:{$gid}";
+            }
+        }
+
+        // Add image and command
+        $parts[] = $image;
+
+        // Add command arguments directly (not wrapped in sh -c)
+        foreach ($command as $arg) {
+            $parts[] = $arg;
+        }
 
         return $parts;
     }

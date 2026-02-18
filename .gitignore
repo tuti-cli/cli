@@ -11,6 +11,8 @@ stacks/*
 # TUTI default domains
 laravel-app/*
 wordpress-app/*
+wordpress-badrock/*
+wordpress-badrock/.*
 
 # Ideas
 /.idea

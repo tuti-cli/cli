@@ -20,8 +20,11 @@
 # so we need to include all necessary variables here.
 # -----------------------------------------------------------------------------
 x-app-env-dev: &app-env-dev
-  # Apache Document Root - WordPress uses root, not /public
-  APACHE_DOCUMENT_ROOT: /var/www/html
+  # Apache Document Root
+  # - Standard WordPress: /var/www/html
+  # - Bedrock: /var/www/html/web
+  # Set APACHE_DOCUMENT_ROOT in .env for your installation type
+  APACHE_DOCUMENT_ROOT: ${APACHE_DOCUMENT_ROOT:-/var/www/html}
 
   # User/Group IDs - Match host user for file permissions
   PUID: ${DOCKER_USER_ID:-1000}
@@ -42,16 +45,6 @@ x-app-env-dev: &app-env-dev
   # WordPress URL Configuration
   WORDPRESS_HOME: https://${APP_DOMAIN:-wordpress.local.test}
   WORDPRESS_SITEURL: https://${APP_DOMAIN:-wordpress.local.test}
-
-  # WordPress Salt Keys (generated during installation)
-  WORDPRESS_AUTH_KEY: ${WP_AUTH_KEY:-put-your-unique-phrase-here}
-  WORDPRESS_SECURE_AUTH_KEY: ${WP_SECURE_AUTH_KEY:-put-your-unique-phrase-here}
-  WORDPRESS_LOGGED_IN_KEY: ${WP_LOGGED_IN_KEY:-put-your-unique-phrase-here}
-  WORDPRESS_NONCE_KEY: ${WP_NONCE_KEY:-put-your-unique-phrase-here}
-  WORDPRESS_AUTH_SALT: ${WP_AUTH_SALT:-put-your-unique-phrase-here}
-  WORDPRESS_SECURE_AUTH_SALT: ${WP_SECURE_AUTH_SALT:-put-your-unique-phrase-here}
-  WORDPRESS_LOGGED_IN_SALT: ${WP_LOGGED_IN_SALT:-put-your-unique-phrase-here}
-  WORDPRESS_NONCE_SALT: ${WP_NONCE_SALT:-put-your-unique-phrase-here}
 
   # PHP Settings - Development (disable caching, enable errors)
   PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-512M}

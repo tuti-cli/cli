@@ -13,6 +13,11 @@ use App\Services\Debug\DebugLogService;
 use App\Services\Docker\DockerExecutorService;
 use App\Services\Infrastructure\GlobalInfrastructureManager;
 use App\Services\Project\ProjectStateManagerService;
+use App\Services\Support\EnvFileService;
+use App\Services\Support\EnvHandlers\BedrockEnvHandler;
+use App\Services\Support\EnvHandlers\LaravelEnvHandler;
+use App\Services\Support\EnvHandlers\WordPressEnvHandler;
+use App\Services\Support\HostsFileService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
@@ -35,6 +40,15 @@ final class AppServiceProvider extends ServiceProvider
 
         // Register GlobalInfrastructureManager with the global tuti path
         $this->app->singleton(InfrastructureManagerInterface::class, fn ($app): GlobalInfrastructureManager => new GlobalInfrastructureManager($this->getGlobalTutiPath()));
+
+        // Register EnvFileService and handlers
+        $this->app->singleton(EnvFileService::class);
+        $this->app->singleton(LaravelEnvHandler::class);
+        $this->app->singleton(BedrockEnvHandler::class);
+        $this->app->singleton(WordPressEnvHandler::class);
+
+        // Register HostsFileService for /etc/hosts management
+        $this->app->singleton(HostsFileService::class);
     }
 
     /**
