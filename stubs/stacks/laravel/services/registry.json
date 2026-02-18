@@ -179,6 +179,20 @@
                 "required_variables": []
             }
         },
+        "node": {
+            "node": {
+                "name": "Node.js",
+                "description": "Node.js container for npm/pnpm/bun builds",
+                "stub": "node/node.stub",
+                "volumes": ["node_cache"],
+                "ports": {},
+                "default_variables": {
+                    "NODE_VERSION": "20",
+                    "NODE_PACKAGE_MANAGER": "npm"
+                },
+                "required_variables": []
+            }
+        },
         "workers": {
             "scheduler": {
                 "name": "Laravel Scheduler",

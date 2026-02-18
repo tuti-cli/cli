@@ -96,6 +96,30 @@ function createFakeDockerResult(bool $successful = true, string $output = 'OK', 
     );
 }
 
+/**
+ * Create a fully mocked Docker executor with all required methods.
+ */
+function createMockDockerExecutor(): Mockery\MockInterface
+{
+    $mock = Mockery::mock(App\Contracts\DockerExecutorInterface::class);
+    $mock->shouldReceive('isDockerAvailable')->andReturn(true);
+    $mock->shouldReceive('getPhpImage')->andReturn('serversideup/php:8.4-fpm-nginx');
+    $mock->shouldReceive('runComposer')->andReturn(
+        createFakeDockerResult(true, 'OK', '')
+    );
+    $mock->shouldReceive('runArtisan')->andReturn(
+        createFakeDockerResult(true, 'base64:test', '')
+    );
+    $mock->shouldReceive('runNpm')->andReturn(
+        createFakeDockerResult(true, 'OK', '')
+    );
+    $mock->shouldReceive('exec')->andReturn(
+        createFakeDockerResult(true, 'OK', '')
+    );
+
+    return $mock;
+}
+
 // ─── Registration ───────────────────────────────────────────────────────
 
 describe('StackLaravelCommand Registration', function (): void {
@@ -506,15 +530,8 @@ describe('StackLaravelCommand Integration', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor (interface can be mocked)
-        $this->mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $this->mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $this->mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $this->mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:abcdefghijklmnopqrstuvwxyz1234567890', '')
-        );
+        // Mock Docker executor with all required methods
+        $this->mockDockerExecutor = createMockDockerExecutor();
         $this->app->instance(DockerExecutorInterface::class, $this->mockDockerExecutor);
     });
 
@@ -630,16 +647,8 @@ describe('StackLaravelCommand Mode Option', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -682,19 +691,8 @@ describe('StackLaravelCommand Services Option', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $mockDockerExecutor->shouldReceive('runNpm')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -754,15 +752,8 @@ describe('StackLaravelCommand Force Reinitialization', function (): void {
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
         // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -1031,14 +1022,12 @@ describe('StackLaravelCommand Error Handling', function (): void {
     });
 
     it('displays error message when installation fails', function (): void {
-        // Mock Docker executor to fail
+        // Mock Docker executor to fail - create failing mock directly
         $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
         $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
+        $mockDockerExecutor->shouldReceive('getPhpImage')->andReturn('serversideup/php:8.4-fpm-nginx');
         $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
             createFakeDockerResult(false, '', 'Composer failed')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
         );
         $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
 
@@ -1052,14 +1041,12 @@ describe('StackLaravelCommand Error Handling', function (): void {
     });
 
     it('displays helpful hints on failure', function (): void {
-        // Mock Docker executor to fail
+        // Mock Docker executor to fail - create failing mock directly
         $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
         $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
+        $mockDockerExecutor->shouldReceive('getPhpImage')->andReturn('serversideup/php:8.4-fpm-nginx');
         $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
             createFakeDockerResult(false, '', 'Docker error')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
         );
         $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
 
@@ -1088,16 +1075,8 @@ describe('StackLaravelCommand Environment Option', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -1169,16 +1148,8 @@ describe('StackLaravelCommand Laravel Version Integration', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -1212,16 +1183,8 @@ describe('StackLaravelCommand Path Option Integration', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -1261,16 +1224,8 @@ describe('StackLaravelCommand Docker Compose Content', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -1375,16 +1330,8 @@ describe('StackLaravelCommand Env File Configuration', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -1465,16 +1412,8 @@ describe('StackLaravelCommand Project URLs Display', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
@@ -1531,16 +1470,8 @@ describe('StackLaravelCommand Config.json Structure', function (): void {
         $this->fakeInfra->setRunning(true);
         $this->app->instance(InfrastructureManagerInterface::class, $this->fakeInfra);
 
-        // Mock Docker executor
-        $mockDockerExecutor = Mockery::mock(DockerExecutorInterface::class);
-        $mockDockerExecutor->shouldReceive('isDockerAvailable')->andReturn(true);
-        $mockDockerExecutor->shouldReceive('runComposer')->andReturn(
-            createFakeDockerResult(true, 'OK', '')
-        );
-        $mockDockerExecutor->shouldReceive('runArtisan')->andReturn(
-            createFakeDockerResult(true, 'base64:test', '')
-        );
-        $this->app->instance(DockerExecutorInterface::class, $mockDockerExecutor);
+        // Mock Docker executor with all required methods
+        $this->app->instance(DockerExecutorInterface::class, createMockDockerExecutor());
     });
 
     afterEach(function (): void {
