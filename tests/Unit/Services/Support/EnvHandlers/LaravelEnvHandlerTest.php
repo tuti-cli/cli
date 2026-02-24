@@ -73,7 +73,7 @@ describe('configure', function (): void {
     it('updates database settings to use PostgreSQL Docker container', function (): void {
         file_put_contents($this->testDir . '/artisan', '#!/usr/bin/env php');
 
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -109,7 +109,7 @@ ENV;
     it('updates mail settings for Mailpit', function (): void {
         file_put_contents($this->testDir . '/artisan', '#!/usr/bin/env php');
 
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.mailtrap.io
 MAIL_PORT=2525
@@ -138,7 +138,7 @@ ENV;
         file_put_contents($this->testDir . '/artisan', '#!/usr/bin/env php');
 
         // Include all the variables that will be updated
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 CACHE_STORE=file
 SESSION_DRIVER=file
 QUEUE_CONNECTION=database
@@ -184,7 +184,7 @@ ENV;
         $this->handler->configure($this->testDir, 'my-laravel');
 
         $content = file_get_contents($this->testDir . '/.env');
-        $tutiCount = substr_count($content, 'TUTI-CLI DOCKER CONFIGURATION');
+        $tutiCount = mb_substr_count($content, 'TUTI-CLI DOCKER CONFIGURATION');
         expect($tutiCount)->toBe(1);
     });
 
@@ -192,7 +192,7 @@ ENV;
         file_put_contents($this->testDir . '/artisan', '#!/usr/bin/env php');
 
         // Fresh Laravel .env often has commented DB_* vars
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 APP_NAME=Laravel
 # DB_HOST=127.0.0.1
 # DB_PORT=3306
@@ -210,7 +210,7 @@ ENV;
     it('defaults to SQLite when no database is selected', function (): void {
         file_put_contents($this->testDir . '/artisan', '#!/usr/bin/env php');
 
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -231,7 +231,7 @@ ENV;
     it('configures mysql when mysql database is selected', function (): void {
         file_put_contents($this->testDir . '/artisan', '#!/usr/bin/env php');
 
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 DB_CONNECTION=sqlite
 DB_HOST=127.0.0.1
 DB_PORT=3306

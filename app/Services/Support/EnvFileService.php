@@ -13,22 +13,6 @@ final readonly class EnvFileService
     private const string TUTI_SECTION_MARKER = 'TUTI-CLI DOCKER CONFIGURATION';
 
     /**
-     * Get the full path to .env file in a directory.
-     */
-    private function getEnvPath(string $directory): string
-    {
-        return rtrim($directory, '/') . '/.env';
-    }
-
-    /**
-     * Get the full path to .env.example file in a directory.
-     */
-    private function getExamplePath(string $directory): string
-    {
-        return rtrim($directory, '/') . '/.env.example';
-    }
-
-    /**
      * Check if .env file exists.
      */
     public function exists(string $directory): bool
@@ -151,6 +135,22 @@ final readonly class EnvFileService
         $tutiSection = $this->buildTutiSection($projectName, $options);
 
         return $this->write($directory, $content . $tutiSection);
+    }
+
+    /**
+     * Get the full path to .env file in a directory.
+     */
+    private function getEnvPath(string $directory): string
+    {
+        return mb_rtrim($directory, '/') . '/.env';
+    }
+
+    /**
+     * Get the full path to .env.example file in a directory.
+     */
+    private function getExamplePath(string $directory): string
+    {
+        return mb_rtrim($directory, '/') . '/.env.example';
     }
 
     /**

@@ -38,7 +38,7 @@ function createLaravelTestProject(string $projectName = 'test-project'): string
     file_put_contents($dir . '/bootstrap/app.php', '<?php // Laravel app file');
 
     // Create a basic .env file (Laravel projects always have .env)
-    file_put_contents($dir . '/.env', <<<ENV
+    file_put_contents($dir . '/.env', <<<'ENV'
 APP_NAME=Laravel
 APP_ENV=local
 APP_KEY=
@@ -64,7 +64,7 @@ MAIL_USERNAME=null
 MAIL_PASSWORD=null
 MAIL_ENCRYPTION=null
 MAIL_FROM_ADDRESS="hello@example.com"
-MAIL_FROM_NAME="\${APP_NAME}"
+MAIL_FROM_NAME="${APP_NAME}"
 
 REDIS_HOST=127.0.0.1
 REDIS_PASSWORD=null
@@ -101,7 +101,7 @@ function createFakeDockerResult(bool $successful = true, string $output = 'OK', 
  */
 function createMockDockerExecutor(): Mockery\MockInterface
 {
-    $mock = Mockery::mock(App\Contracts\DockerExecutorInterface::class);
+    $mock = Mockery::mock(DockerExecutorInterface::class);
     $mock->shouldReceive('isDockerAvailable')->andReturn(true);
     $mock->shouldReceive('getPhpImage')->andReturn('serversideup/php:8.4-fpm-nginx');
     $mock->shouldReceive('runComposer')->andReturn(

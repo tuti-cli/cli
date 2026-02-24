@@ -10,7 +10,6 @@ use App\Contracts\StackInstallerInterface;
 use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRepositoryService;
-use Illuminate\Support\Facades\Process;
 use RuntimeException;
 
 /**
@@ -361,48 +360,6 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
     }
 
     /**
-     * Comment out database configuration for SQLite.
-     */
-    private function commentDatabaseConfigurationForSqlite(string $directory): void
-    {
-        $defaults = ['DB_HOST=127.0.0.1', 'DB_PORT=3306', 'DB_DATABASE=laravel', 'DB_USERNAME=root', 'DB_PASSWORD='];
-
-        $commented = array_map(static fn ($d): string => "# {$d}", $defaults);
-
-        $envPath = $directory . '/.env';
-        $envExamplePath = $directory . '/.env.example';
-
-        if (file_exists($envPath)) {
-            $this->replaceInFile($defaults, $commented, $envPath);
-        }
-
-        if (file_exists($envExamplePath)) {
-            $this->replaceInFile($defaults, $commented, $envExamplePath);
-        }
-    }
-
-    /**
-     * Uncomment database configuration for non-SQLite databases.
-     */
-    private function uncommentDatabaseConfiguration(string $directory): void
-    {
-        $commented = ['# DB_HOST=127.0.0.1', '# DB_PORT=3306', '# DB_DATABASE=laravel', '# DB_USERNAME=root', '# DB_PASSWORD='];
-
-        $uncommented = array_map(static fn ($d): string => mb_substr($d, 2), $commented);
-
-        $envPath = $directory . '/.env';
-        $envExamplePath = $directory . '/.env.example';
-
-        if (file_exists($envPath)) {
-            $this->replaceInFile($commented, $uncommented, $envPath);
-        }
-
-        if (file_exists($envExamplePath)) {
-            $this->replaceInFile($commented, $uncommented, $envExamplePath);
-        }
-    }
-
-    /**
      * Install Pest testing framework with drift conversion.
      */
     public function installPest(string $projectPath): bool
@@ -471,6 +428,48 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
         $artisanResult = $this->dockerExecutor->runArtisan('boost:install', $projectPath);
 
         return $artisanResult->successful;
+    }
+
+    /**
+     * Comment out database configuration for SQLite.
+     */
+    private function commentDatabaseConfigurationForSqlite(string $directory): void
+    {
+        $defaults = ['DB_HOST=127.0.0.1', 'DB_PORT=3306', 'DB_DATABASE=laravel', 'DB_USERNAME=root', 'DB_PASSWORD='];
+
+        $commented = array_map(static fn ($d): string => "# {$d}", $defaults);
+
+        $envPath = $directory . '/.env';
+        $envExamplePath = $directory . '/.env.example';
+
+        if (file_exists($envPath)) {
+            $this->replaceInFile($defaults, $commented, $envPath);
+        }
+
+        if (file_exists($envExamplePath)) {
+            $this->replaceInFile($defaults, $commented, $envExamplePath);
+        }
+    }
+
+    /**
+     * Uncomment database configuration for non-SQLite databases.
+     */
+    private function uncommentDatabaseConfiguration(string $directory): void
+    {
+        $commented = ['# DB_HOST=127.0.0.1', '# DB_PORT=3306', '# DB_DATABASE=laravel', '# DB_USERNAME=root', '# DB_PASSWORD='];
+
+        $uncommented = array_map(static fn ($d): string => mb_substr($d, 2), $commented);
+
+        $envPath = $directory . '/.env';
+        $envExamplePath = $directory . '/.env.example';
+
+        if (file_exists($envPath)) {
+            $this->replaceInFile($commented, $uncommented, $envPath);
+        }
+
+        if (file_exists($envExamplePath)) {
+            $this->replaceInFile($commented, $uncommented, $envExamplePath);
+        }
     }
 
     /**

@@ -21,7 +21,7 @@ final readonly class WordPressEnvHandler
      */
     public function detect(string $directory): bool
     {
-        $directory = rtrim($directory, '/');
+        $directory = mb_rtrim($directory, '/');
 
         // Has wp-config.php or wp-config-sample.php but not Bedrock structure
         $hasWpConfig = file_exists($directory . '/wp-config.php')

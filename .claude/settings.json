@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Edit(app/**)",
+      "Edit(stubs/**)",
+      "Edit(tests/**)",
+      "Edit(.claude/**)",
+      "Edit(config/**)",
+      "Edit(routes/**)",
+      "Write(app/**)",
+      "Write(stubs/**)",
+      "Write(tests/**)",
+      "Write(.claude/**)",
+      "Bash(docker compose *)",
+      "Bash(docker *)",
+      "Bash(make *)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(composer lint*)",
+      "Bash(composer refactor*)",
+      "Bash(composer test:types*)",
+      "Bash(composer test:unit*)",
+      "Bash(composer test:lint*)",
+      "Bash(composer test:refactor*)",
+      "Bash(composer test*)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "composer test:lint 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
