@@ -152,7 +152,7 @@ final readonly class StackInitializationService
     {
         foreach ($selectedServices as $service) {
             if (str_starts_with($service, 'databases.')) {
-                return substr($service, strlen('databases.'));
+                return mb_substr($service, mb_strlen('databases.'));
             }
         }
 

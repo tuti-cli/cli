@@ -53,3 +53,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Worktrees root
+../tuti-wt/

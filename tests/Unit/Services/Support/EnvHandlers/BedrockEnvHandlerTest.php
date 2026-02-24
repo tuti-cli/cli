@@ -79,7 +79,7 @@ describe('configure', function (): void {
         file_put_contents($this->testDir . '/config/application.php', '<?php');
         file_put_contents($this->testDir . '/web/wp-config.php', '<?php');
 
-        $bedrockExample = <<<ENV
+        $bedrockExample = <<<'ENV'
 DB_NAME=
 DB_USER=
 DB_PASSWORD=
@@ -99,7 +99,7 @@ ENV;
         file_put_contents($this->testDir . '/config/application.php', '<?php');
         file_put_contents($this->testDir . '/web/wp-config.php', '<?php');
 
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 DB_NAME=old_db
 DB_USER=old_user
 DB_PASSWORD=old_pass
@@ -123,7 +123,7 @@ ENV;
         file_put_contents($this->testDir . '/web/wp-config.php', '<?php');
 
         // Bedrock's .env.example has DB_HOST commented out
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 # DB_HOST='localhost'
 DB_NAME=database_name
 DB_USER=database_user
@@ -134,7 +134,7 @@ ENV;
 
         $content = file_get_contents($this->testDir . '/.env');
         expect($content)->toContain('DB_HOST=database');
-        expect($content)->not->toContain("# DB_HOST");
+        expect($content)->not->toContain('# DB_HOST');
     });
 
     it('updates WP_HOME and WP_SITEURL with project domain', function (): void {
@@ -143,7 +143,7 @@ ENV;
         file_put_contents($this->testDir . '/config/application.php', '<?php');
         file_put_contents($this->testDir . '/web/wp-config.php', '<?php');
 
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 WP_HOME=http://localhost
 WP_SITEURL=http://localhost/wp
 ENV;
@@ -178,7 +178,7 @@ ENV;
         file_put_contents($this->testDir . '/web/wp-config.php', '<?php');
 
         // This is how Bedrock's .env.example looks with 'generateme' placeholders
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 AUTH_KEY='generateme'
 SECURE_AUTH_KEY='generateme'
 LOGGED_IN_KEY='generateme'
@@ -210,7 +210,7 @@ ENV;
         file_put_contents($this->testDir . '/config/application.php', '<?php');
         file_put_contents($this->testDir . '/web/wp-config.php', '<?php');
 
-        $envContent = <<<ENV
+        $envContent = <<<'ENV'
 AUTH_KEY=
 SECURE_AUTH_KEY=
 LOGGED_IN_KEY=
@@ -260,7 +260,7 @@ ENV;
         $this->handler->configure($this->testDir, 'my-bedrock');
 
         $content = file_get_contents($this->testDir . '/.env');
-        $tutiCount = substr_count($content, 'TUTI-CLI DOCKER CONFIGURATION');
+        $tutiCount = mb_substr_count($content, 'TUTI-CLI DOCKER CONFIGURATION');
         expect($tutiCount)->toBe(1);
     });
 
@@ -288,7 +288,7 @@ describe('full bedrock setup', function (): void {
         file_put_contents($this->testDir . '/web/wp-config.php', '<?php');
 
         // Typical Bedrock .env.example content
-        $bedrockExample = <<<ENV
+        $bedrockExample = <<<'ENV'
 # Bedrock configuration
 DB_NAME=
 DB_USER=

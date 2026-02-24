@@ -20,7 +20,7 @@ final readonly class LaravelEnvHandler
      */
     public function detect(string $directory): bool
     {
-        return file_exists(rtrim($directory, '/') . '/artisan');
+        return file_exists(mb_rtrim($directory, '/') . '/artisan');
     }
 
     /**

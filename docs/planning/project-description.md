@@ -209,8 +209,8 @@ Tuti CLI is in **active pre-release development**. Local development features ar
 
 See:
 - [`docs/phases/`](phases/) - Development roadmap and phase breakdown
-- [`docs/user-stories.md`](user-stories.md) - Feature requirements and acceptance criteria
-- [`docs/tuti-cli-discovery.md`](tuti-cli-discovery.md) - Full business discovery document
+- [`docs/user-stories.md`](user-story.md) - Feature requirements and acceptance criteria
+- [`docs/tuti-cli-discovery.md`](project-discovery.md) - Full business discovery document
 
 ---
 

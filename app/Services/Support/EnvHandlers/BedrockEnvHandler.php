@@ -27,7 +27,7 @@ final readonly class BedrockEnvHandler
      */
     public function detect(string $directory): bool
     {
-        $directory = rtrim($directory, '/');
+        $directory = mb_rtrim($directory, '/');
 
         return file_exists($directory . '/config/application.php')
             && file_exists($directory . '/web/wp-config.php');
