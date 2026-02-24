@@ -22,7 +22,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🔍 Needs Reproduction\n\nThis issue requires a reproduction step. Please provide:\n\n1. Your Tuti CLI version (\`tuti --version\`)\n2. Your PHP version (\`php -v\`)\n3. Your operating system\n4. Step-by-step instructions to reproduce\n5. Expected vs actual behavior\n6. Any relevant logs or screenshots\n\nWithout a reproduction, this issue may be closed after 7 days.\n\n---\n_This is an automated response._`
+              body: `## Needs Reproduction\n\nThis issue requires a reproduction step. Please provide:\n\n1. Your Tuti CLI version (\`tuti --version\`)\n2. Your PHP version (\`php -v\`)\n3. Your operating system\n4. Step-by-step instructions to reproduce\n5. Expected vs actual behavior\n6. Any relevant logs or screenshots\n\nWithout a reproduction, this issue may be closed after 7 days.\n\n---\n_This is an automated response._`
             })
 
       - name: Add comment for good first issue
@@ -34,7 +34,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🎯 Good First Issue\n\nThis issue has been marked as suitable for new contributors!\n\n### Getting Started:\n1. Comment below to claim this issue\n2. Fork the repository\n3. Create a feature branch: \`git checkout -b fix/issue-description\`\n4. Read our [Contributing Guide](../blob/main/CONTRIBUTING.md)\n5. Run tests locally: \`composer test:unit\`\n\n### Need Help?\n- Check our [documentation](../blob/main/CLAUDE.md)\n- Ask questions in the issue comments\n\n---\n_This is an automated response._`
+              body: `## Good First Issue\n\nThis issue has been marked as suitable for new contributors!\n\n### Getting Started:\n1. Comment below to claim this issue\n2. Fork the repository\n3. Create a feature branch: \`git checkout -b fix/issue-description\`\n4. Read our [Contributing Guide](../blob/main/CONTRIBUTING.md)\n5. Run tests locally: \`composer test:unit\`\n\n### Need Help?\n- Check our [documentation](../blob/main/CLAUDE.md)\n- Ask questions in the issue comments\n\n---\n_This is an automated response._`
             })
 
   auto-close-stale:
@@ -50,5 +50,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## ⚠️ Stale Issue\n\nThis issue has been automatically marked as stale due to inactivity.\n\n- If this is still relevant, please comment with updated information\n- This issue will be closed in 7 days without activity\n\n---\n_This is an automated response._`
+              body: `## Stale Issue\n\nThis issue has been automatically marked as stale due to inactivity.\n\n- If this is still relevant, please comment with updated information\n- This issue will be closed in 7 days without activity\n\n---\n_This is an automated response._`
             })

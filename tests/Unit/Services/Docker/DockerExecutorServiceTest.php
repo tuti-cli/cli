@@ -377,3 +377,36 @@ describe('execInContainer', function (): void {
         Process::assertRan(fn (object $process): bool => str_contains(execCommandStr($process), 'APP_ENV=testing'));
     });
 });
+
+// ─── runInteractive() ────────────────────────────────────────────────────
+// Note: runInteractive uses passthru() which cannot be mocked with Process::fake()
+// These tests verify the method exists and validates input parameters
+
+describe('runInteractive', function (): void {
+
+    it('throws when Docker is unavailable', function (): void {
+        fakeDockerUnavailable();
+
+        expect(fn () => $this->service->runInteractive(
+            'alpine:latest',
+            ['echo', 'hello'],
+            $this->tempDir
+        ))->toThrow(RuntimeException::class, 'Docker is not available');
+    });
+
+    it('creates directory if it does not exist', function (): void {
+        // We can't actually test the interactive execution, but we can verify
+        // that the directory creation logic works
+        fakeDockerAvailable();
+        $newDir = $this->tempDir . '/new-interactive-project';
+
+        // The method will fail at passthru but directory should be created first
+        try {
+            $this->service->runInteractive('alpine', ['ls'], $newDir);
+        } catch (Throwable) {
+            // Expected - passthru will fail in test environment
+        }
+
+        expect($newDir)->toBeDirectory();
+    });
+});

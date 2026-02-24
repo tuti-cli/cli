@@ -2,11 +2,11 @@
 
 Thank you for considering contributing to Tuti CLI! This document provides guidelines and instructions for contributing.
 
-## 📜 Code of Conduct
+## Code of Conduct
 
 This project adheres to a code of conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
 
-## 🤔 How Can I Contribute?
+## How Can I Contribute?
 
 ### Reporting Bugs
 
@@ -42,7 +42,7 @@ Use the [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md).
 5. **Update documentation** if needed
 6. **Submit a pull request**
 
-## 🛠️ Development Setup
+## Development Setup
 
 ### Prerequisites
 
@@ -84,7 +84,7 @@ docker compose exec -T app composer test
 docker compose exec -T app ./vendor/bin/pest --filter "test name"
 ```
 
-## 📏 Coding Standards
+## Coding Standards
 
 ### PHP Standards
 
@@ -164,7 +164,7 @@ Process::run(['docker', 'info']);
 Process::run("docker info {$arg}");
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Test Structure
 
@@ -211,7 +211,7 @@ composer test:refactor     # Rector check (dry-run)
 composer test:coverage     # Pest with coverage
 ```
 
-## 📝 Commit Messages
+## Commit Messages
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -244,14 +244,14 @@ docs(readme): update installation instructions
 test(local): add tests for start command
 ```
 
-## 🌿 Branch Strategy
+## Branch Strategy
 
 - `main` - Stable releases only
 - `develop` - Active development (if used)
 - `feature/*` - New features (e.g., `feature/redis-support`)
 - `fix/*` - Bug fixes (e.g., `fix/port-conflict`)
 
-## ✅ Pull Request Checklist
+## Pull Request Checklist
 
 Before submitting your PR, ensure:
 
@@ -262,7 +262,7 @@ Before submitting your PR, ensure:
 - [ ] Commit messages follow Conventional Commits
 - [ ] PR title follows Conventional Commits
 
-## 🙏 Recognition
+## Recognition
 
 Contributors are recognized in our release notes. Thank you for making Tuti CLI better!
 
