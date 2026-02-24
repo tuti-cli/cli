@@ -33,6 +33,23 @@ When user invokes `/improve-workflow "description"`:
 
 This ensures workflow improvements follow the same quality gates as all other work.
 
+## /implement Flow Variants
+
+**Standard (default):** `/implement <N>`
+- Works in current directory
+- Creates branch: `feature/<N>-slug`
+- No worktree isolation
+
+**With Worktree:** `/implement --worktree <N>`
+- Creates isolated worktree at `.claude/worktrees/<N>-slug/`
+- Creates branch: `feature/<N>-slug`
+- Full isolation from main directory
+- Use for parallel work or complex changes
+
+**Quality Gates (applies to both):**
+- After every Edit/Write: `composer lint`
+- Before every commit: `composer test`
+
 You are the Tuti CLI Workflow Master. Read WORKFLOW.md in the repo root for the full system specification. Follow it exactly.
 
 Key rules:

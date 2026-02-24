@@ -6,7 +6,8 @@
 |---|---|
 | `/triage [N]` | Triage external issues (needs-confirmation) |
 | `/discover` | Codebase analysis → phases → GitHub import |
-| `/implement <N>` | Implement issue (plan → worktree → code → PR) |
+| `/implement <N>` | Implement issue (plan → code → PR) |
+| `/implement --worktree <N>` | Implement issue in isolated worktree |
 | `/status` | Dashboard: milestones, in-progress, review, worktrees |
 | `/switch [N]` | List or switch to issue worktrees |
 | `/board setup\|sync\|view` | Manage GitHub Projects kanban board |
@@ -19,15 +20,17 @@ External issue (needs-confirmation) → /triage → confirmed/ready
 Discovery issue → /discover → ready
 Manual issue → create with acceptance criteria → ready
     ↓
-/implement <N>
+/implement <N> [--worktree]
     ↓
 Plan mode (your approval required)
     ↓
-Worktree + branch created
+Branch created (worktree only if --worktree flag)
     ↓
 Agent squad implements
     ↓
-Quality suite: composer test + lint + phpstan
+After each edit: composer lint (auto-fix)
+    ↓
+Before each commit: composer test (all checks)
     ↓
 Commit → Push → Draft PR → Ready PR
     ↓
@@ -74,6 +77,11 @@ composer test
 composer lint
 ./vendor/bin/phpstan analyse
 ```
+
+**Automatic quality checks:**
+- After EVERY file edit/write: `composer lint` (auto-fixes formatting)
+- Before EVERY commit: `composer test` (all checks must pass)
+- This prevents CI failures and ensures consistent code quality
 
 ## Improving the Workflow
 
