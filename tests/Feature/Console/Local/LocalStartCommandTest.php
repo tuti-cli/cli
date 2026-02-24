@@ -78,6 +78,21 @@ describe('LocalStartCommand', function (): void {
         expect($definition->hasOption('skip-infra'))->toBeTrue();
     });
 
+    it('has --migrate option', function (): void {
+        $command = $this->app->make(StartCommand::class);
+        $definition = $command->getDefinition();
+
+        expect($definition->hasOption('migrate'))->toBeTrue();
+    });
+
+    it('migrate option defaults to false', function (): void {
+        $command = $this->app->make(StartCommand::class);
+        $definition = $command->getDefinition();
+        $migrateOption = $definition->getOption('migrate');
+
+        expect($migrateOption->getDefault())->toBeFalse();
+    });
+
     it('has correct description', function (): void {
         $command = $this->app->make(StartCommand::class);
 

@@ -1,0 +1,7 @@
+# improve-workflow
+Improve the workflow system itself using the same plan → approve → PR process.
+
+**Usage:** `/improve-workflow "description of change"`
+
+Invoke `tuti-workflow-master`:
+> "Workflow self-improvement: $ARGUMENTS. If no argument, ask what to change. Then: identify affected files (tuti-workflow-master.md, WORKFLOW.md, command files), create a type:chore status:ready issue titled 'workflow: <description>', run implementation plan mode showing exactly which lines change in which files, wait for approval, edit the files keeping tuti-workflow-master.md and WORKFLOW.md in sync, commit as chore(workflow): <description> (#N), create PR."

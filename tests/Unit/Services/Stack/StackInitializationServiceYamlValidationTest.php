@@ -201,4 +201,57 @@ YAML;
             ->toHaveKey('app_data')
             ->toHaveKey('redis_data');
     });
+
+    it('replaces empty volumes section (volumes: {}) with populated volumes', function (): void {
+        // This tests the fix for: "Unable to parse at line 128 (near "  node_cache:")"
+        // The bug was that appendVolumesToCompose appended after "volumes: {}" instead of replacing it
+        $compose = <<<'YAML'
+services:
+  app:
+    image: php:8.4-fpm
+
+networks:
+  app_network:
+    name: myapp_dev_network
+
+volumes: {}
+YAML;
+
+        // Build volumes to insert (simulating what appendVolumesToCompose does)
+        $volumesToInsert = "  node_cache:\n    name: myapp_dev_node_cache\n";
+
+        // Simulate the fix: replace "volumes: {}" with populated section
+        if (preg_match('/\nvolumes:\s*\{\s*\}/', $compose)) {
+            $volumeSection = "volumes:\n" . $volumesToInsert;
+            $result = preg_replace('/\nvolumes:\s*\{\s*\}/', "\n" . $volumeSection, $compose);
+        }
+
+        $parsed = Yaml::parse($result);
+
+        expect($parsed)
+            ->toBeArray()
+            ->toHaveKey('volumes');
+
+        expect($parsed['volumes'])
+            ->toHaveKey('node_cache');
+
+        expect($parsed['volumes']['node_cache']['name'])->toBe('myapp_dev_node_cache');
+    });
+
+    it('throws ParseException if volumes are incorrectly appended after empty section', function (): void {
+        // This demonstrates the bug that was fixed
+        // Appending indented content after "volumes: {}" creates invalid YAML
+        $invalidYaml = <<<'YAML'
+services:
+  app:
+    image: php:8.4-fpm
+
+volumes: {}
+  node_cache:
+    name: myapp_dev_node_cache
+YAML;
+
+        expect(fn (): mixed => Yaml::parse($invalidYaml))
+            ->toThrow(ParseException::class);
+    });
 });

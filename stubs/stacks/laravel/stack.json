@@ -32,6 +32,12 @@
     },
 
     "optional_services": {
+        "node": {
+            "category": "node",
+            "options": ["node"],
+            "default": null,
+            "prompt": "Would you like to add Node.js for frontend builds and Vite dev server?"
+        },
         "cache": {
             "category": "cache",
             "options": ["redis"],

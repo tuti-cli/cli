@@ -11,6 +11,8 @@ stacks/*
 # TUTI default domains
 laravel-app/*
 wordpress-app/*
+wordpress-badrock/*
+wordpress-badrock/.*
 
 # Ideas
 /.idea
@@ -51,3 +53,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Worktrees root
+../tuti-wt/

@@ -179,6 +179,24 @@
                 "required_variables": []
             }
         },
+        "node": {
+            "node": {
+                "name": "Node.js",
+                "description": "Node.js container for npm/yarn/pnpm/bun builds and Vite dev server",
+                "stub": "node/node.stub",
+                "volumes": ["node_cache"],
+                "ports": {
+                    "internal": 5173,
+                    "external": null
+                },
+                "default_variables": {
+                    "NODE_VERSION": "20",
+                    "NODE_PACKAGE_MANAGER": "npm",
+                    "VITE_PORT": "5173"
+                },
+                "required_variables": []
+            }
+        },
         "workers": {
             "scheduler": {
                 "name": "Laravel Scheduler",

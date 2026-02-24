@@ -70,11 +70,6 @@ RUN apt-get update \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js for asset compilation
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g npm@latest
-
 # PHP development settings
 ENV PHP_OPCACHE_ENABLE=0 \
     PHP_DISPLAY_ERRORS=1 \
