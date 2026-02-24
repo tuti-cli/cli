@@ -132,6 +132,10 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
             throw new RuntimeException('Failed to create Laravel project');
         }
 
+        // Note: npm install & build is handled AFTER containers start (in LaravelCommand)
+        // because the PHP container doesn't have node/npm installed.
+        // The node container (which has npm) is used instead.
+
         return true;
     }
 
@@ -237,6 +241,22 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
     public function installNpmDependencies(string $projectPath): bool
     {
         $result = $this->dockerExecutor->runNpm('install', $projectPath);
+
+        return $result->successful;
+    }
+
+    /**
+     * Run the Laravel setup script for starter kits.
+     *
+     * This script handles:
+     * - composer install
+     * - .env setup & key:generate
+     * - database migrations
+     * - npm install & npm run build
+     */
+    public function runSetupScript(string $projectPath): bool
+    {
+        $result = $this->dockerExecutor->runComposer('run-script setup', $projectPath);
 
         return $result->successful;
     }

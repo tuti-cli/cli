@@ -28,13 +28,10 @@ x-app-env-base: &app-env-base
   APP_TIMEZONE: ${APP_TIMEZONE:-UTC}
   APP_LOCALE: ${APP_LOCALE:-en}
 
-  # Database Connection (PostgreSQL)
-  DB_CONNECTION: pgsql
-  DB_HOST: postgres
-  DB_PORT: 5432
-  DB_DATABASE: ${DB_DATABASE:-laravel}
-  DB_USERNAME: ${DB_USERNAME:-laravel}
-  DB_PASSWORD: ${DB_PASSWORD:-secret}
+  # Database Connection (configured by selected database service)
+  # DB_DATABASE is only set when a database service (postgres/mysql/mariadb) is selected
+  # For SQLite, Laravel uses database_path('database.sqlite') by default
+  DB_CONNECTION: ${DB_CONNECTION:-sqlite}
 
   # Cache & Session (defaults, can be overridden per environment)
   CACHE_STORE: ${CACHE_STORE:-file}
@@ -102,29 +99,6 @@ services:
     networks:
       - traefik_proxy
       - app_network
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  # ---------------------------------------------------------------------------
-  # PostgreSQL Database - Base Configuration
-  # ---------------------------------------------------------------------------
-  postgres:
-    image: postgres:${POSTGRES_VERSION:-17}-alpine
-    <<: *common-service
-    environment:
-      POSTGRES_DB: ${DB_DATABASE:-laravel}
-      POSTGRES_USER: ${DB_USERNAME:-laravel}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-laravel} -d ${DB_DATABASE:-laravel}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
 
 # =============================================================================
 # Networks
@@ -139,6 +113,4 @@ networks:
 # =============================================================================
 # Volumes
 # =============================================================================
-volumes:
-  postgres_data:
-    name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_postgres_data
+volumes: {}

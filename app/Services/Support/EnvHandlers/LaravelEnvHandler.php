@@ -40,8 +40,12 @@ final readonly class LaravelEnvHandler
         // Update Docker service variables
         $appDomain = $projectName . '.local.test';
         $hasRedis = $options['has_redis'] ?? false;
+        $database = $options['database'] ?? null;
 
         $replacements = $this->getBaseReplacements($appDomain);
+
+        // Add database-specific replacements based on selection
+        $replacements = array_merge($replacements, $this->getDatabaseReplacements($database));
 
         if ($hasRedis) {
             $replacements = array_merge($replacements, $this->getRedisReplacements());
@@ -57,6 +61,50 @@ final readonly class LaravelEnvHandler
     }
 
     /**
+     * Get database-specific replacements based on selected database.
+     *
+     * @return array<string, string>
+     */
+    private function getDatabaseReplacements(?string $database): array
+    {
+        return match ($database) {
+            'postgres' => [
+                '/^[\s]*#?[\s]*DB_CONNECTION=.*$/m' => 'DB_CONNECTION=pgsql',
+                '/^[\s]*#?[\s]*DB_HOST=.*$/m' => 'DB_HOST=postgres',
+                '/^[\s]*#?[\s]*DB_PORT=.*$/m' => 'DB_PORT=5432',
+                '/^[\s]*#?[\s]*DB_DATABASE=.*$/m' => 'DB_DATABASE=laravel',
+                '/^[\s]*#?[\s]*DB_USERNAME=.*$/m' => 'DB_USERNAME=laravel',
+                '/^[\s]*#?[\s]*DB_PASSWORD=.*$/m' => 'DB_PASSWORD=secret',
+            ],
+            'mysql' => [
+                '/^[\s]*#?[\s]*DB_CONNECTION=.*$/m' => 'DB_CONNECTION=mysql',
+                '/^[\s]*#?[\s]*DB_HOST=.*$/m' => 'DB_HOST=mysql',
+                '/^[\s]*#?[\s]*DB_PORT=.*$/m' => 'DB_PORT=3306',
+                '/^[\s]*#?[\s]*DB_DATABASE=.*$/m' => 'DB_DATABASE=laravel',
+                '/^[\s]*#?[\s]*DB_USERNAME=.*$/m' => 'DB_USERNAME=laravel',
+                '/^[\s]*#?[\s]*DB_PASSWORD=.*$/m' => 'DB_PASSWORD=secret',
+            ],
+            'mariadb' => [
+                '/^[\s]*#?[\s]*DB_CONNECTION=.*$/m' => 'DB_CONNECTION=mysql',
+                '/^[\s]*#?[\s]*DB_HOST=.*$/m' => 'DB_HOST=mariadb',
+                '/^[\s]*#?[\s]*DB_PORT=.*$/m' => 'DB_PORT=3306',
+                '/^[\s]*#?[\s]*DB_DATABASE=.*$/m' => 'DB_DATABASE=laravel',
+                '/^[\s]*#?[\s]*DB_USERNAME=.*$/m' => 'DB_USERNAME=laravel',
+                '/^[\s]*#?[\s]*DB_PASSWORD=.*$/m' => 'DB_PASSWORD=secret',
+            ],
+            default => [
+                // No database selected - use SQLite (Laravel default)
+                '/^[\s]*#?[\s]*DB_CONNECTION=.*$/m' => 'DB_CONNECTION=sqlite',
+                '/^[\s]*#?[\s]*DB_HOST=.*$/m' => '# DB_HOST=127.0.0.1',
+                '/^[\s]*#?[\s]*DB_PORT=.*$/m' => '# DB_PORT=3306',
+                '/^[\s]*#?[\s]*DB_DATABASE=.*$/m' => '# DB_DATABASE=laravel',
+                '/^[\s]*#?[\s]*DB_USERNAME=.*$/m' => '# DB_USERNAME=root',
+                '/^[\s]*#?[\s]*DB_PASSWORD=.*$/m' => '# DB_PASSWORD=',
+            ],
+        };
+    }
+
+    /**
      * Get base replacements for Laravel Docker environment.
      *
      * @return array<string, string>
@@ -64,14 +112,6 @@ final readonly class LaravelEnvHandler
     private function getBaseReplacements(string $appDomain): array
     {
         return [
-            // Database (PostgreSQL)
-            '/^[\s]*#?[\s]*DB_CONNECTION=.*$/m' => 'DB_CONNECTION=pgsql',
-            '/^[\s]*#?[\s]*DB_HOST=.*$/m' => 'DB_HOST=postgres',
-            '/^[\s]*#?[\s]*DB_PORT=.*$/m' => 'DB_PORT=5432',
-            '/^[\s]*#?[\s]*DB_DATABASE=.*$/m' => 'DB_DATABASE=laravel',
-            '/^[\s]*#?[\s]*DB_USERNAME=.*$/m' => 'DB_USERNAME=laravel',
-            '/^[\s]*#?[\s]*DB_PASSWORD=.*$/m' => 'DB_PASSWORD=secret',
-
             // App URL
             '/^[\s]*#?[\s]*APP_URL=.*$/m' => "APP_URL=https://{$appDomain}",
 

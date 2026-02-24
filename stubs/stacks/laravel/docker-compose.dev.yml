@@ -7,6 +7,10 @@
 # Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 #
 # Environment variables are loaded from ../.env (project root)
+#
+# NOTE: Optional services (databases, cache, etc.) are added dynamically
+# based on user selection during installation. Their dev overrides are
+# appended to this file from service stubs.
 # =============================================================================
 
 # =============================================================================
@@ -83,17 +87,9 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
 
-      # Vite HMR WebSocket Support
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}-vite.rule=Host(`${APP_DOMAIN:-app.local.test}`) && PathPrefix(`/@vite`)"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}-vite.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_NAME:-laravel}-vite.tls=true"
-      - "traefik.http.services.${PROJECT_NAME:-laravel}-vite.loadbalancer.server.port=5173"
-
-  # ---------------------------------------------------------------------------
-  # PostgreSQL Database - Development Overrides
-  # ---------------------------------------------------------------------------
-  postgres:
-    container_name: ${PROJECT_NAME:-laravel}_${APP_ENV:-dev}_postgres
-    # Expose port to host for local database tools (DBeaver, TablePlus, etc.)
-    ports:
-      - "${DB_EXTERNAL_PORT:-5432}:5432"
+# =============================================================================
+# Optional Services (added dynamically from stubs)
+# =============================================================================
+# Database, cache, search, storage, mail, and worker services are appended
+# here by StackInitializationService::appendDevSectionsToDevCompose() when
+# selected during installation.

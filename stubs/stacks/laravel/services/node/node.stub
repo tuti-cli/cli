@@ -14,7 +14,26 @@ node:
 # @section: dev
 node:
   container_name: {{PROJECT_NAME}}_${APP_ENV:-dev}_node
-  # Node container doesn't need exposed ports - it's used for builds only
+  ports:
+    - "${VITE_PORT:-5173}:5173"
+  environment:
+    - VITE_HOST=0.0.0.0
+    - NODE_ENV=development
+  # Keep container running for dev server access
+  stdin_open: true
+  tty: true
+  networks:
+    - traefik_proxy
+    - {{NETWORK_NAME}}
+  labels:
+    # Enable Traefik for Vite HMR routing
+    - "traefik.enable=true"
+    - "traefik.docker.network=traefik_proxy"
+    # Vite HMR routes - handles /@vite, /__vite, and /node_modules paths
+    - "traefik.http.routers.{{PROJECT_NAME}}-vite.rule=Host(`{{APP_DOMAIN}}`) && (PathPrefix(`/__vite`) || PathPrefix(`/@vite`) || PathPrefix(`/node_modules`))"
+    - "traefik.http.routers.{{PROJECT_NAME}}-vite.entrypoints=websecure"
+    - "traefik.http.routers.{{PROJECT_NAME}}-vite.tls=true"
+    - "traefik.http.services.{{PROJECT_NAME}}-vite.loadbalancer.server.port=5173"
 
 # @section: volumes
 node_cache:
@@ -23,3 +42,4 @@ node_cache:
 # @section: env
 NODE_VERSION=20
 NODE_PACKAGE_MANAGER=npm
+VITE_PORT=5173

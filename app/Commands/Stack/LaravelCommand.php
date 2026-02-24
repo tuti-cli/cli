@@ -333,8 +333,10 @@ final class LaravelCommand extends Command
             label: 'Which Node package manager?',
             options: [
                 'npm' => 'npm',
+                'yarn' => 'Yarn',
                 'pnpm' => 'pnpm',
                 'bun' => 'Bun',
+                'none' => 'None (skip frontend setup)',
             ],
             default: $this->detectPackageManager()
         );
@@ -355,6 +357,10 @@ final class LaravelCommand extends Command
 
         if (file_exists($cwd . '/pnpm-lock.yaml')) {
             return 'pnpm';
+        }
+
+        if (file_exists($cwd . '/yarn.lock')) {
+            return 'yarn';
         }
 
         return 'npm';
@@ -406,8 +412,10 @@ final class LaravelCommand extends Command
 
             // Skip database category - we already handled it
             if ($category === 'databases') {
-                // Add the selected database (including SQLite for consistency)
-                $defaults[] = $selectedDatabase;
+                // Only add database service if NOT SQLite (SQLite is file-based, no container needed)
+                if ($selectedDatabase !== 'databases.sqlite') {
+                    $defaults[] = $selectedDatabase;
+                }
 
                 continue;
             }
@@ -456,6 +464,14 @@ final class LaravelCommand extends Command
             }
         }
 
+        // Auto-select node for starter kits
+        $starterKit = $laravelOptions['starter_kit'] ?? 'none';
+        $packageManager = $laravelOptions['package_manager'] ?? 'npm';
+
+        if ($starterKit !== 'none' && $packageManager !== 'none') {
+            $optionalDefaults[] = 'node.node';
+        }
+
         if ($optionalChoices !== []) {
             $selectedOptional = multiselect(
                 label: 'Select optional services:',
@@ -464,12 +480,6 @@ final class LaravelCommand extends Command
             );
 
             $defaults = array_merge($defaults, $selectedOptional);
-        }
-
-        // Add node service if starter kit is selected (for frontend builds)
-        $starterKit = $laravelOptions['starter_kit'] ?? 'none';
-        if ($starterKit !== 'none') {
-            $defaults[] = 'node.node';
         }
 
         return array_values(array_unique($defaults));
@@ -689,12 +699,11 @@ final class LaravelCommand extends Command
         }
         $this->success('Infrastructure ready');
 
-        // Create project object
         $projectRoot = $config['project_path'];
         $projectConfig = $metaService->load();
         $project = new Project($projectRoot, $projectConfig);
 
-        // Start containers
+        // Start containers - manifest.json already exists (created by Laravel's setup script for starter kits)
         $this->note('Starting containers...');
         try {
             $stateManager->start($project);
@@ -706,84 +715,22 @@ final class LaravelCommand extends Command
             return false;
         }
 
+        // Build frontend assets AFTER containers are up (node container has npm)
+        $starterKit = $laravelOptions['starter_kit'] ?? 'none';
+        $packageManager = $laravelOptions['package_manager'] ?? 'npm';
+
+        if ($starterKit !== 'none' && $packageManager !== 'none') {
+            $this->runNpmBuild($projectRoot, $config['project_name'], $packageManager);
+        }
+
         // Run migrations (unless skipped) - only if not using SQLite (SQLite already migrated during create-project)
         $selectedDatabase = $this->extractDatabaseFromServices($config['selected_services']);
         if (! $this->option('skip-migrate') && $selectedDatabase !== null && $selectedDatabase !== 'databases.sqlite') {
             $this->runMigrations($projectRoot, $config['project_name']);
         }
 
-        // Run npm install/build if starter kit was selected
-        $starterKit = $laravelOptions['starter_kit'] ?? 'none';
-        if ($starterKit !== 'none') {
-            $this->note('Installing npm dependencies...');
-            $packageManager = $laravelOptions['package_manager'] ?? 'npm';
-            $this->runNpmBuild($projectRoot, $config['project_name'], $packageManager);
-        }
-
         // Handle hosts file management
         return $this->handleHostsFile($hostsFileService, $config['project_name']);
-    }
-
-    /**
-     * Run npm install and build using the node container.
-     */
-    private function runNpmBuild(string $projectRoot, string $projectName, string $packageManager): void
-    {
-        // Install pnpm or bun if selected (runs in node container)
-        if ($packageManager !== 'npm') {
-            Process::path($projectRoot)->run([
-                'docker',
-                'compose',
-                'run',
-                '--rm',
-                'node',
-                'sh',
-                '-c',
-                "npm install -g {$packageManager}",
-            ]);
-        }
-
-        // Run npm install using docker compose run node
-        $installCmd = $packageManager === 'npm' ? 'npm install' : "{$packageManager} install";
-        $installResult = Process::path($projectRoot)->timeout(300)->run([
-            'docker',
-            'compose',
-            'run',
-            '--rm',
-            'node',
-            'sh',
-            '-c',
-            $installCmd,
-        ]);
-
-        if ($installResult->successful()) {
-            $this->success('npm dependencies installed');
-        } else {
-            $this->warning('npm install had issues');
-            $this->hint("Run manually: docker compose run --rm node {$installCmd}");
-
-            return;
-        }
-
-        // Run build using docker compose run node
-        $buildCmd = $packageManager === 'npm' ? 'npm run build' : "{$packageManager} run build";
-        $buildResult = Process::path($projectRoot)->timeout(300)->run([
-            'docker',
-            'compose',
-            'run',
-            '--rm',
-            'node',
-            'sh',
-            '-c',
-            $buildCmd,
-        ]);
-
-        if ($buildResult->successful()) {
-            $this->success('Assets built');
-        } else {
-            $this->warning('npm build had issues');
-            $this->hint("Run manually: docker compose run --rm node {$buildCmd}");
-        }
     }
 
     /**
@@ -870,6 +817,105 @@ final class LaravelCommand extends Command
         } else {
             $this->warning('Migrations had issues');
             $this->hint('Run manually: docker exec ' . $containerName . ' php artisan migrate');
+        }
+    }
+
+    /**
+     * Run npm install and build using split container approach.
+     *
+     * npm install runs in node container (has npm, no PHP needed).
+     * npm run build runs in app container (has PHP for artisan commands like wayfinder:generate).
+     */
+    private function runNpmBuild(string $projectRoot, string $projectName, string $packageManager): void
+    {
+        $this->note('Installing frontend dependencies...');
+
+        // [FIX] Build proper paths for docker compose commands
+        $tutiPath = $projectRoot . '/.tuti';
+        $mainCompose = $tutiPath . '/docker-compose.yml';
+        $devCompose = $tutiPath . '/docker-compose.dev.yml';
+        $envFile = $projectRoot . '/.env';
+
+        // [FIX] Log for debugging
+        tuti_debug()->debug('[FIX] runNpmBuild starting', [
+            'project_root' => $projectRoot,
+            'tuti_path' => $tutiPath,
+            'compose_files' => [
+                'main' => $mainCompose,
+                'dev' => $devCompose,
+                'main_exists' => file_exists($mainCompose),
+                'dev_exists' => file_exists($devCompose),
+            ],
+            'env_file' => $envFile,
+            'env_exists' => file_exists($envFile),
+            'package_manager' => $packageManager,
+        ]);
+
+        // Step 1: Run npm install in NODE container (has npm, no PHP needed)
+        // [FIX] Build command with proper -f flags and run from .tuti directory
+        $installCommand = [
+            'docker',
+            'compose',
+            '-f',
+            $mainCompose,
+            '-f',
+            $devCompose,
+            '--env-file',
+            $envFile,
+            '-p',
+            $projectName,
+            'run',
+            '--rm',
+            'node',
+            $packageManager,
+            'install',
+        ];
+
+        $installResult = Process::path($tutiPath)->timeout(300)->run($installCommand);
+
+        // [FIX] Log result
+        tuti_debug()->debug('[FIX] npm install result', [
+            'success' => $installResult->successful(),
+            'exit_code' => $installResult->exitCode(),
+            'output' => mb_substr($installResult->output(), 0, 500),
+            'error' => mb_substr($installResult->errorOutput(), 0, 500),
+        ]);
+
+        if (! $installResult->successful()) {
+            $this->warning('npm install had issues');
+            $this->hint('Run manually: cd ' . $tutiPath . ' && docker compose run --rm node ' . $packageManager . ' install');
+
+            return;
+        }
+
+        $this->success('Dependencies installed');
+
+        // Step 2: Run npm build in APP container (has PHP for artisan commands)
+        $containerName = "{$projectName}_dev_app";
+
+        $buildResult = Process::path($projectRoot)->timeout(300)->run([
+            'docker',
+            'exec',
+            $containerName,
+            $packageManager,
+            'run',
+            'build',
+        ]);
+
+        // [FIX] Log build result
+        tuti_debug()->debug('[FIX] npm build result', [
+            'container' => $containerName,
+            'success' => $buildResult->successful(),
+            'exit_code' => $buildResult->exitCode(),
+            'output' => mb_substr($buildResult->output(), 0, 500),
+            'error' => mb_substr($buildResult->errorOutput(), 0, 500),
+        ]);
+
+        if ($buildResult->successful()) {
+            $this->success('Assets built');
+        } else {
+            $this->warning('Build had issues');
+            $this->hint('Run manually: docker exec ' . $containerName . ' ' . $packageManager . ' run build');
         }
     }
 
