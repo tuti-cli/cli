@@ -405,7 +405,7 @@ final class LaravelCommand extends Command
 
         // Special handling for database selection in Laravel
         // SQLite is the default and simplest option
-        $selectedDatabase = $this->selectDatabase($laravelOptions);
+        $selectedDatabase = $this->selectDatabase();
 
         foreach ($required as $key => $config) {
             $category = $config['category'];
@@ -487,15 +487,12 @@ final class LaravelCommand extends Command
 
     /**
      * Select database type with SQLite as the recommended default.
-     *
-     * @param  array<string, mixed>  $laravelOptions
      */
-    private function selectDatabase(array $laravelOptions): string
+    private function selectDatabase(): string
     {
         if ($this->option('no-interaction')) {
             return 'databases.sqlite';
         }
-
         return select(
             label: 'Which database will your application use?',
             options: [
@@ -643,7 +640,7 @@ final class LaravelCommand extends Command
 
         // Start containers and run migrations (unless skipped)
         if (! $this->option('skip-start')) {
-            $hostsAdded = $this->startContainersAndMigrate(
+            return $this->startContainersAndMigrate(
                 $config,
                 $metaService,
                 $stateManager,

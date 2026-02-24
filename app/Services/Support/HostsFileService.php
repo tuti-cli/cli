@@ -47,14 +47,7 @@ final readonly class HostsFileService
             "/^127\.0\.0\.1\s+.*\b" . preg_quote($domain, '/') . "\b/im",
             "/^::1\s+.*\b" . preg_quote($domain, '/') . "\b/im",
         ];
-
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $content)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($patterns, fn($pattern): int|false => preg_match($pattern, $content));
     }
 
     /**

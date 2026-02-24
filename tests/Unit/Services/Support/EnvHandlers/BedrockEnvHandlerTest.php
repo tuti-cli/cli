@@ -288,27 +288,27 @@ describe('full bedrock setup', function (): void {
         file_put_contents($this->testDir . '/web/wp-config.php', '<?php');
 
         // Typical Bedrock .env.example content
-        $bedrockExample = <<<'ENV'
-# Bedrock configuration
-DB_NAME=
-DB_USER=
-DB_PASSWORD=
-DB_HOST=localhost
-
-WP_ENV=development
-WP_HOME=http://example.com
-WP_SITEURL=http://example.com/wp
-
-# Salts
-AUTH_KEY=
-SECURE_AUTH_KEY=
-LOGGED_IN_KEY=
-NONCE_KEY=
-AUTH_SALT=
-SECURE_AUTH_SALT=
-LOGGED_IN_SALT=
-NONCE_SALT=
-ENV;
+        $bedrockExample = <<<'ENV_WRAP'
+        # Bedrock configuration
+        DB_NAME=
+        DB_USER=
+        DB_PASSWORD=
+        DB_HOST=localhost
+        
+        WP_ENV=development
+        WP_HOME=http://example.com
+        WP_SITEURL=http://example.com/wp
+        
+        # Salts
+        AUTH_KEY=
+        SECURE_AUTH_KEY=
+        LOGGED_IN_KEY=
+        NONCE_KEY=
+        AUTH_SALT=
+        SECURE_AUTH_SALT=
+        LOGGED_IN_SALT=
+        NONCE_SALT=
+        ENV_WRAP;
         file_put_contents($this->testDir . '/.env.example', $bedrockExample);
 
         $this->handler->configure($this->testDir, 'acme-corp');

@@ -54,10 +54,10 @@ You merge → issue auto-closes
 | `type: feature` | cli-developer |
 | `type: bug` | error-detective |
 | `type: chore` | refactoring-specialist |
-| `type: security` | security-auditor (opus) |
+| `type: security` | security-auditor |
 | `type: performance` | performance-engineer |
 | `type: infra` | devops-engineer |
-| `type: architecture` | architect-reviewer (opus) |
+| `type: architecture` | architect-reviewer |
 | `type: docs` | documentation-engineer |
 | `type: epic` | NOT implemented directly |
 
@@ -76,8 +76,14 @@ composer lint
 ```
 
 ## Improving the Workflow
+
 ```bash
 /improve-workflow "what you want to change"
 ```
-Creates a chore issue, runs the full plan → approve → PR cycle on the workflow files.
+
+Automatic flow:
+1. Enters plan mode and presents improvement plan
+2. After approval → creates issue (type:chore, status:ready)
+3. Auto-calls `/implement` on the new issue
+
 Full spec: `.claude/agents/tuti-workflow-master.md`
