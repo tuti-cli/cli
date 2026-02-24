@@ -180,7 +180,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
         // Use passthru for interactive TTY support
         // This is necessary because Laravel's Process facade doesn't support TTY
-        $commandString = implode(' ', array_map('escapeshellarg', $dockerCommand));
+        $commandString = implode(' ', array_map(escapeshellarg(...), $dockerCommand));
 
         // phpcs:ignore -- passthru is required for TTY support
         passthru($commandString, $exitCode);

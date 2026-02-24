@@ -125,8 +125,8 @@ final readonly class BedrockEnvHandler
                 ];
 
                 foreach ($patterns as $pattern => $replacement) {
-                    if (preg_match($pattern, $content)) {
-                        $content = preg_replace($pattern, $replacement, $content);
+                    if (preg_match($pattern, (string) $content)) {
+                        $content = preg_replace($pattern, $replacement, (string) $content);
 
                         break;
                     }
@@ -165,8 +165,8 @@ final readonly class BedrockEnvHandler
             ];
 
             foreach ($patterns as $pattern => $replacement) {
-                if (preg_match($pattern, $content)) {
-                    $content = preg_replace($pattern, $replacement, $content);
+                if (preg_match($pattern, (string) $content)) {
+                    $content = preg_replace($pattern, $replacement, (string) $content);
 
                     break;
                 }
