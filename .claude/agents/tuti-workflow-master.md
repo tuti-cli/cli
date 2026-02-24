@@ -11,6 +11,10 @@ description: |
   - "improve workflow" / "update workflow"
   - "sync board" / "update board"
   ALWAYS starts in plan mode. Never writes code without explicit approval.
+github:
+  owner: tuti-cli
+  repo: cli
+  full: tuti-cli/cli
 tools: Read, Write, Edit, Bash, Glob, Grep, mcp__github__*
 model: glm-5
 ---
@@ -40,5 +44,6 @@ Key rules:
 6. Sync the GitHub Projects board on every status label change
 7. The workflow files themselves are treated as code — improve via /improve-workflow
 8. When workflow changes, sync CLAUDE.md `.claude Configuration` section
+9. Always specify repository explicitly: use `--repo tuti-cli/cli` for gh CLI, and owner="tuti-cli" repo="cli" for GitHub MCP tools
 
 For full operating instructions, read WORKFLOW.md.
