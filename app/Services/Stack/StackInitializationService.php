@@ -209,7 +209,7 @@ final readonly class StackInitializationService
 
         if ($projectName !== '') {
             $appDomain = $projectName . '.local.test';
-            $userId = $this->envService->read($directory) ? 1000 : 1000; // Placeholder, will be set by EnvFileService
+            $userId = $this->envService->read($directory) !== '' && $this->envService->read($directory) !== '0' ? 1000 : 1000; // Placeholder, will be set by EnvFileService
             $groupId = $userId;
 
             // Use regex patterns to match any default value

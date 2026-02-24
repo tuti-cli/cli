@@ -401,7 +401,7 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
         }
 
         // Run drift conversion - run via PHP image
-        $driftExecResult = $this->dockerExecutor->exec(
+        $this->dockerExecutor->exec(
             $phpImage,
             'php vendor/bin/pest --drift',
             $projectPath
@@ -437,7 +437,7 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
     {
         $defaults = ['DB_HOST=127.0.0.1', 'DB_PORT=3306', 'DB_DATABASE=laravel', 'DB_USERNAME=root', 'DB_PASSWORD='];
 
-        $commented = array_map(static fn ($d): string => "# {$d}", $defaults);
+        $commented = array_map(static fn (string $d): string => "# {$d}", $defaults);
 
         $envPath = $directory . '/.env';
         $envExamplePath = $directory . '/.env.example';
@@ -458,7 +458,7 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
     {
         $commented = ['# DB_HOST=127.0.0.1', '# DB_PORT=3306', '# DB_DATABASE=laravel', '# DB_USERNAME=root', '# DB_PASSWORD='];
 
-        $uncommented = array_map(static fn ($d): string => mb_substr($d, 2), $commented);
+        $uncommented = array_map(static fn (string $d): string => mb_substr($d, 2), $commented);
 
         $envPath = $directory . '/.env';
         $envExamplePath = $directory . '/.env.example';
