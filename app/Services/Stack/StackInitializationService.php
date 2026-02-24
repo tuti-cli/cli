@@ -109,11 +109,15 @@ final readonly class StackInitializationService
     {
         $projectRoot = $this->directoryService->getProjectRoot();
 
+        // Detect which database was selected (if any)
+        $selectedDatabase = $this->detectSelectedDatabase($selectedServices);
+
         // Detect project type and delegate to appropriate handler
         if ($this->laravelEnvHandler->detect($projectRoot)) {
             $this->laravelEnvHandler->configure($projectRoot, $projectName, [
                 'has_redis' => in_array('cache.redis', $selectedServices, true),
                 'php_version' => '8.4',
+                'database' => $selectedDatabase,
             ]);
 
             return;
@@ -122,6 +126,7 @@ final readonly class StackInitializationService
         if ($this->bedrockEnvHandler->detect($projectRoot)) {
             $this->bedrockEnvHandler->configure($projectRoot, $projectName, [
                 'php_version' => '8.3',
+                'database' => $selectedDatabase,
             ]);
 
             return;
@@ -135,6 +140,23 @@ final readonly class StackInitializationService
 
         // Fallback: create .env from template for unknown project types
         $this->createEnvFromTemplateFallback($environment, $projectName);
+    }
+
+    /**
+     * Detect which database service was selected.
+     *
+     * @param  array<int, string>  $selectedServices
+     * @return string|null Database type (postgres, mysql, mariadb) or null if none selected
+     */
+    private function detectSelectedDatabase(array $selectedServices): ?string
+    {
+        foreach ($selectedServices as $service) {
+            if (str_starts_with($service, 'databases.')) {
+                return substr($service, strlen('databases.'));
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -296,15 +318,9 @@ ENV;
             return;
         }
 
-        // Categories that are already in the base docker-compose.yml
-        $baseCategories = ['databases'];
-
-        // Filter to only optional services (cache, mail, workers, search, storage, etc.)
-        $optionalServices = array_filter($selectedServices, function (string $serviceKey) use ($baseCategories): bool {
-            [$category] = explode('.', $serviceKey);
-
-            return ! in_array($category, $baseCategories, true);
-        });
+        // All selected services are optional - the base compose only has the app service
+        // No categories are excluded since databases are now optional too
+        $optionalServices = $selectedServices;
 
         if ($optionalServices === []) {
             return;
@@ -527,21 +543,7 @@ ENV;
      */
     private function appendVolumesToCompose(string $content, array $volumes): string
     {
-        // Find the volumes section
-        $volumesPos = mb_strpos($content, "\nvolumes:");
-        if ($volumesPos === false) {
-            // No volumes section, add it at the end
-            $volumeSection = "\nvolumes:\n";
-            foreach ($volumes as $volumeName => $projectName) {
-                $volumeSection .= "  {$volumeName}:\n";
-                $volumeSection .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
-            }
-
-            return $content . $volumeSection;
-
-        }
-
-        // Find end of file and add new volumes
+        // Build volume entries to add
         $volumesToInsert = '';
         foreach ($volumes as $volumeName => $projectName) {
             // Check if volume already exists
@@ -551,11 +553,29 @@ ENV;
             }
         }
 
-        if ($volumesToInsert !== '') {
-            return mb_rtrim($content) . "\n" . $volumesToInsert;
+        if ($volumesToInsert === '') {
+            return $content;
         }
 
-        return $content;
+        // Check for empty volumes section: "volumes: {}"
+        if (preg_match('/\nvolumes:\s*\{\s*\}/', $content)) {
+            // Replace empty volumes with populated section
+            $volumeSection = "volumes:\n" . $volumesToInsert;
+
+            return preg_replace('/\nvolumes:\s*\{\s*\}/', "\n" . $volumeSection, $content);
+        }
+
+        // Find the volumes section (non-empty)
+        $volumesPos = mb_strpos($content, "\nvolumes:");
+        if ($volumesPos === false) {
+            // No volumes section, add it at the end
+            $volumeSection = "\nvolumes:\n" . $volumesToInsert;
+
+            return $content . $volumeSection;
+        }
+
+        // Append to existing volumes section at end of file
+        return mb_rtrim($content) . "\n" . $volumesToInsert;
     }
 
     /**

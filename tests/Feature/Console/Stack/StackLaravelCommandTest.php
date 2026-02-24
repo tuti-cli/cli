@@ -1256,9 +1256,10 @@ describe('StackLaravelCommand Docker Compose Content', function (): void {
 
         $composeContent = file_get_contents($this->testDir . '/.tuti/docker-compose.yml');
 
-        // PostgreSQL is the default database in the base compose
+        // PostgreSQL service is added when selected
         expect($composeContent)->toContain('postgres:');
-        expect($composeContent)->toContain('DB_CONNECTION: pgsql');
+        // DB_CONNECTION uses variable substitution from .env
+        expect($composeContent)->toContain('DB_CONNECTION: ${DB_CONNECTION:-sqlite}');
     });
 
     it('includes horizon service in docker-compose when selected', function (): void {
@@ -1298,6 +1299,26 @@ describe('StackLaravelCommand Docker Compose Content', function (): void {
         $composeContent = file_get_contents($this->testDir . '/.tuti/docker-compose.yml');
 
         expect($composeContent)->toContain('meilisearch:');
+    });
+
+    it('only includes dev overrides for selected services', function (): void {
+        $this->artisan('stack:laravel', [
+            '--mode' => 'existing',
+            '--no-interaction' => true,
+            '--services' => ['cache.redis'],  // No database selected
+        ])
+            ->assertExitCode(Command::SUCCESS);
+
+        $baseCompose = file_get_contents($this->testDir . '/.tuti/docker-compose.yml');
+        $devCompose = file_get_contents($this->testDir . '/.tuti/docker-compose.dev.yml');
+
+        // Postgres should NOT be in either file since not selected
+        expect($baseCompose)->not->toContain('postgres:');
+        expect($devCompose)->not->toContain('postgres:');
+
+        // Redis should be in both since selected
+        expect($baseCompose)->toContain('redis:');
+        expect($devCompose)->toContain('redis:');
     });
 
     it('configures project name in docker-compose', function (): void {

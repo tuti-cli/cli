@@ -83,7 +83,8 @@ DB_PASSWORD=
 ENV;
         file_put_contents($this->testDir . '/.env', $envContent);
 
-        $this->handler->configure($this->testDir, 'my-laravel');
+        // Pass postgres database option
+        $this->handler->configure($this->testDir, 'my-laravel', ['database' => 'postgres']);
 
         $content = file_get_contents($this->testDir . '/.env');
         expect($content)->toContain('DB_CONNECTION=pgsql');
@@ -198,10 +199,50 @@ APP_NAME=Laravel
 ENV;
         file_put_contents($this->testDir . '/.env', $envContent);
 
-        $this->handler->configure($this->testDir, 'my-laravel');
+        // Pass postgres database option
+        $this->handler->configure($this->testDir, 'my-laravel', ['database' => 'postgres']);
 
         $content = file_get_contents($this->testDir . '/.env');
         expect($content)->toContain('DB_HOST=postgres');
         expect($content)->toContain('DB_PORT=5432');
+    });
+
+    it('defaults to SQLite when no database is selected', function (): void {
+        file_put_contents($this->testDir . '/artisan', '#!/usr/bin/env php');
+
+        $envContent = <<<ENV
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=root
+DB_PASSWORD=
+ENV;
+        file_put_contents($this->testDir . '/.env', $envContent);
+
+        // No database option passed - should default to SQLite
+        $this->handler->configure($this->testDir, 'my-laravel');
+
+        $content = file_get_contents($this->testDir . '/.env');
+        expect($content)->toContain('DB_CONNECTION=sqlite');
+        expect($content)->toContain('# DB_HOST=127.0.0.1');
+    });
+
+    it('configures mysql when mysql database is selected', function (): void {
+        file_put_contents($this->testDir . '/artisan', '#!/usr/bin/env php');
+
+        $envContent = <<<ENV
+DB_CONNECTION=sqlite
+DB_HOST=127.0.0.1
+DB_PORT=3306
+ENV;
+        file_put_contents($this->testDir . '/.env', $envContent);
+
+        $this->handler->configure($this->testDir, 'my-laravel', ['database' => 'mysql']);
+
+        $content = file_get_contents($this->testDir . '/.env');
+        expect($content)->toContain('DB_CONNECTION=mysql');
+        expect($content)->toContain('DB_HOST=mysql');
+        expect($content)->toContain('DB_PORT=3306');
     });
 });
