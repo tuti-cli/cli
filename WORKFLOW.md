@@ -6,7 +6,7 @@
 |---|---|
 | `/triage [N]` | Triage external issues (needs-confirmation) |
 | `/discover` | Codebase analysis → phases → GitHub import |
-| `/implement <N>` | Implement issue (plan → code → PR) |
+| `/implement <N>` | Implement issue (plan → code → PR) with auto-selected agent squad |
 | `/implement --worktree <N>` | Implement issue in isolated worktree |
 | `/status` | Dashboard: milestones, in-progress, review, worktrees |
 | `/switch [N]` | List or switch to issue worktrees |
@@ -62,7 +62,49 @@ You merge → issue auto-closes
 | `type: infra` | devops-engineer |
 | `type: architecture` | architect-reviewer |
 | `type: docs` | documentation-engineer |
+| `type: test` | qa-expert |
 | `type: epic` | NOT implemented directly |
+
+## Agent Selection Rules
+
+### Primary Agent Selection (by type label)
+
+| Type Label | Primary Agent | Secondary Agent(s) |
+|---|---|---|
+| `type: feature` | cli-developer | php-pro, laravel-specialist |
+| `type: bug` | error-detective | code-reviewer, qa-expert |
+| `type: chore` | refactoring-specialist | code-reviewer |
+| `type: security` | security-auditor | code-reviewer |
+| `type: performance` | performance-engineer | refactoring-specialist |
+| `type: infra` | devops-engineer | deployment-engineer, build-engineer |
+| `type: architecture` | architect-reviewer | refactoring-specialist |
+| `type: docs` | documentation-engineer | - |
+| `type: test` | qa-expert | php-pro |
+| `type: epic` | NOT implemented directly | Split into sub-issues |
+
+### Task-Based Agent Enhancement
+
+When issue body or title contains specific keywords, add supplementary agents:
+
+| Keywords | Additional Agent |
+|---|---|
+| docker, compose, container | devops-engineer |
+| test, coverage, pest | qa-expert |
+| refactor, clean, restructure | refactoring-specialist |
+| security, vulnerability, audit | security-auditor |
+| performance, slow, optimize | performance-engineer |
+| docs, documentation, readme | documentation-engineer |
+| database, migration, sql | database-administrator |
+| deploy, release, ci/cd | deployment-engineer |
+| dependency, composer, package | dependency-manager |
+
+### Agent Squad Formation Rules
+
+1. **Always include:** Primary agent (from type label)
+2. **Add secondary agents:** Based on type label mapping
+3. **Add task-based agents:** Based on keyword detection in issue content
+4. **De-duplicate:** Each agent appears only once in squad
+5. **Order matters:** Agents are invoked in list order
 
 ## Conventions
 
