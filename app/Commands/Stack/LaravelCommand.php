@@ -493,6 +493,7 @@ final class LaravelCommand extends Command
         if ($this->option('no-interaction')) {
             return 'databases.sqlite';
         }
+
         return select(
             label: 'Which database will your application use?',
             options: [
