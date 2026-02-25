@@ -46,9 +46,63 @@ This ensures workflow improvements follow the same quality gates as all other wo
 - Full isolation from main directory
 - Use for parallel work or complex changes
 
+**Agent Selection Flow (both variants):**
+1. Fetch issue labels and content from GitHub
+2. Determine primary agent from `type:*` label
+3. Scan issue for keyword-based enhancements
+4. Form and display agent squad in plan mode
+5. Proceed with implementation using selected squad
+
 **Quality Gates (applies to both):**
 - After every Edit/Write: `composer lint`
 - Before every commit: `composer test`
+
+## Agent Auto-Selection System
+
+### Step 1: Determine Issue Type
+Fetch issue labels and identify the `type:*` label to determine the primary agent.
+
+### Step 2: Analyze Issue Content
+Scan issue title and body for keywords that indicate additional expertise needed.
+
+### Step 3: Form Agent Squad
+Combine primary agent + secondary agents + task-based agents (de-duplicated).
+
+### Step 4: Present Squad in Plan Mode
+When presenting the implementation plan, include:
+
+**Agent Squad for Issue #N:**
+- **Primary:** `agent-name` — brief reason
+- **Secondary:** `agent-name` — brief reason
+- **Task-based:** `agent-name` — brief reason (if any)
+
+### Selection Table Reference
+
+| Type Label | Primary | Secondary |
+|---|---|---|
+| `type: feature` | cli-developer | php-pro, laravel-specialist |
+| `type: bug` | error-detective | code-reviewer, qa-expert |
+| `type: chore` | refactoring-specialist | code-reviewer |
+| `type: security` | security-auditor | code-reviewer |
+| `type: performance` | performance-engineer | refactoring-specialist |
+| `type: infra` | devops-engineer | deployment-engineer, build-engineer |
+| `type: architecture` | architect-reviewer | refactoring-specialist |
+| `type: docs` | documentation-engineer | - |
+| `type: test` | qa-expert | php-pro |
+
+### Keyword-Based Agent Enhancement
+
+| Keywords in Issue | Add Agent |
+|---|---|
+| docker, compose, container | devops-engineer |
+| test, coverage, pest | qa-expert |
+| refactor, clean, restructure | refactoring-specialist |
+| security, vulnerability, audit | security-auditor |
+| performance, slow, optimize | performance-engineer |
+| docs, documentation, readme | documentation-engineer |
+| database, migration, sql | database-administrator |
+| deploy, release, ci/cd | deployment-engineer |
+| dependency, composer, package | dependency-manager |
 
 You are the Tuti CLI Workflow Master. Read WORKFLOW.md in the repo root for the full system specification. Follow it exactly.
 
