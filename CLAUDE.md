@@ -368,30 +368,70 @@ Use **Conventional Commits** format:
 ```
 .claude/
 ├── agents/              # Autonomous workers for complex tasks
-│   └── agent-creator/   # Builder for creating new agents
+│   └── tuti-workflow-master.md  # GitHub Issues workflow orchestrator
 └── skills/              # Knowledge and patterns
+    ├── oracle/          # Claude Code expert Q&A
+    └── oracle-core/     # Claude Code reference documentation
 ```
 
 ### Agents (Autonomous Workers)
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| `stack-architect` | Creates complete stack templates | New framework stacks |
-| `feature-architect` | Architecture decisions | Planning new features |
-| `test-engineer` | Achieves test coverage | Writing comprehensive tests |
-| `code-auditor` | Review and analysis | Code quality, security |
-| `deployment-engineer` | CI/CD and infrastructure | Deployment pipelines |
+| `tuti-workflow-master` | GitHub Issues workflow orchestrator | `/implement`, `/triage`, `/improve-workflow` |
+| `php-pro` | PHP 8.4+ enterprise development | Modern PHP patterns, strict typing |
+| `laravel-specialist` | Laravel 10+ applications | Eloquent, queues, API optimization |
+| `cli-developer` | Command-line tools | CLI design, cross-platform |
+| `code-reviewer` | Code quality reviews | PR reviews, best practices |
+| `refactoring-specialist` | Code restructuring | Clean code, maintainability |
+| `security-auditor` | Security analysis | Vulnerability assessment |
+| `performance-engineer` | Performance optimization | Bottleneck elimination |
+| `qa-expert` | Quality assurance | Test planning, coverage |
+| `devops-engineer` | Infrastructure automation | CI/CD, containerization |
+| `deployment-engineer` | Deployment pipelines | Release automation |
+| `build-engineer` | Build systems | Compilation optimization |
+| `database-administrator` | Database management | Performance, HA, DR |
+| `dependency-manager` | Dependency management | Vulnerabilities, conflicts |
+| `error-detective` | Error diagnosis | Root cause analysis |
+| `documentation-engineer` | Documentation systems | API docs, guides |
+| `architect-reviewer` | Architecture review | System design evaluation |
 
 ### Skills (Knowledge & Patterns)
 
 | Skill | Purpose | When to Use |
 |-------|---------|-------------|
-| `php-zero-patterns` | Laravel Zero + PHP 8.4 patterns | Writing PHP code |
-| `docker-compose-patterns` | Docker Compose configurations | Docker files, service stubs |
-| `debugging-guide` | Debugging strategies | Troubleshooting issues |
-| `documentation-writer` | Writing documentation | README, docs, comments |
-| `write-tests` | Pest testing patterns | Writing tests |
-| `skill-creator` | Creating new skills | Building skills |
+| `oracle` | Claude Code expert Q&A | "/oracle how do hooks work?" |
+| `oracle-core` | Claude Code reference | CLI, MCP, hooks, Agent SDK |
+
+### Agent Auto-Selection (via `/implement`)
+
+When using `/implement #N`, agents are auto-selected based on issue type:
+
+| Type Label | Primary | Secondary |
+|------------|---------|-----------|
+| `type: feature` | cli-developer | php-pro, laravel-specialist |
+| `type: bug` | error-detective | code-reviewer, qa-expert |
+| `type: chore` | refactoring-specialist | code-reviewer |
+| `type: security` | security-auditor | code-reviewer |
+| `type: performance` | performance-engineer | refactoring-specialist |
+| `type: infra` | devops-engineer | deployment-engineer, build-engineer |
+| `type: architecture` | architect-reviewer | refactoring-specialist |
+| `type: docs` | documentation-engineer | - |
+| `type: test` | qa-expert | php-pro |
+
+**Keyword-based enhancements:**
+
+| Keywords | Add Agent |
+|----------|-----------|
+| docker, compose, container | devops-engineer |
+| test, coverage, pest | qa-expert |
+| refactor, clean, restructure | refactoring-specialist |
+| security, vulnerability | security-auditor |
+| performance, slow, optimize | performance-engineer |
+| docs, documentation | documentation-engineer |
+| database, migration, sql | database-administrator |
+| deploy, release, ci/cd | deployment-engineer |
+| dependency, composer, package | dependency-manager |
 
 ### Agents vs Skills
 
@@ -407,20 +447,6 @@ Use **Conventional Commits** format:
 - Need reference material
 - Example: "Help me understand the service stub format"
 
-### Creating New Agents
-```bash
-python .claude/agents/agent-creator/scripts/init_agent.py my-agent --path .claude/agents
-python .claude/agents/agent-creator/scripts/validate_agent.py .claude/agents/my-agent.md
-python .claude/agents/agent-creator/scripts/package_agent.py .claude/agents/my-agent.md
-```
-
-### Creating New Skills
-```bash
-python .claude/skills/skill-creator/scripts/init_skill.py my-skill --path .claude/skills
-python .claude/skills/skill-creator/scripts/quick_validate.py .claude/skills/my-skill
-python .claude/skills/skill-creator/scripts/package_skill.py .claude/skills/my-skill
-```
-
 ## Documentation Requirements
 
 **IMPORTANT: When adding new features or making changes to the codebase, you MUST:**
@@ -434,19 +460,12 @@ python .claude/skills/skill-creator/scripts/package_skill.py .claude/skills/my-s
    - Build process
    - Docker integration patterns
 
-2. **Update related documentation** in `.claude/skills/` if the change affects:
-   - PHP patterns → `php-zero-patterns/SKILL.md`
-   - Docker configurations → `docker-compose-patterns/SKILL.md`
-   - Testing patterns → `write-tests/SKILL.md`
-   - Debugging procedures → `debugging-guide/SKILL.md`
-
-3. **Update registry files** when adding:
+2. **Update registry files** when adding:
    - New stacks → `stubs/stacks/registry.json`
    - New service stubs → `stubs/stacks/{stack}/services/registry.json`
 
 **Documentation checklist for new features:**
 - [ ] CLAUDE.md updated (if structural/pattern change)
-- [ ] Related skill file updated (if pattern change)
 - [ ] Command description clear and complete
 - [ ] Registry files updated (if applicable)
 - [ ] Tests include documentation of expected behavior
