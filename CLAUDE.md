@@ -348,6 +348,8 @@ Use **Conventional Commits** format:
   - `feat(local): add port conflict detection`
   - `fix(docker): resolve container naming issue`
   - `docs(readme): update installation instructions`
+- Do **not** add Co-Authored-By lines in commit messages.
+- Only use the author name and email configured in Git (`git config user.name` / `user.email`).
 
 ### Branch Strategy
 - `main` - stable releases only
@@ -448,5 +450,3 @@ python .claude/skills/skill-creator/scripts/package_skill.py .claude/skills/my-s
 - [ ] Command description clear and complete
 - [ ] Registry files updated (if applicable)
 - [ ] Tests include documentation of expected behavior
-
-
