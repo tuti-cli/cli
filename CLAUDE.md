@@ -390,8 +390,19 @@ Use **Conventional Commits** format:
 │       └── remove.md               /agents:remove <name>
 │
 └── skills/
-    ├── workflow-rules.md           Global workflow rules
-    └── issue-template.md           GitHub issue format
+    ├── audit-checklist/            Comprehensive audit checklist
+    │   └── SKILL.md
+    ├── issue-template/             GitHub issue format
+    │   └── SKILL.md
+    ├── oracle/                     Claude Code expert Q&A
+    │   └── SKILL.md
+    ├── oracle-core/                Claude Code reference docs
+    │   ├── SKILL.md
+    │   └── references/
+    ├── php-laravel-zero/           PHP testing patterns
+    │   └── SKILL.md
+    └── workflow-rules/             Global workflow rules
+        └── SKILL.md
 ```
 
 ### Workflow System (v5)
@@ -472,6 +483,10 @@ SETUP → IMPLEMENT → REVIEW → QUALITY → COMMIT → PR → CLOSE
 |-------|---------|-------------|
 | `workflow-rules` | Global workflow rules and standards | Understanding pipeline requirements |
 | `issue-template` | GitHub issue format specification | Creating well-formed issues |
+| `audit-checklist` | Comprehensive audit procedures | Codebase auditing |
+| `php-laravel-zero` | PHP testing patterns (Pest) | Writing tests for PHP code |
+| `oracle` | Interactive Q&A with web search | Claude Code questions, uses oracle-core for static knowledge |
+| `oracle-core` | Static reference knowledge base | CLI, MCP, hooks, Agent SDK docs (used by oracle) |
 
 ### GitHub Repository
 

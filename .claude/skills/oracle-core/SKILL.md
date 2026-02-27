@@ -1,6 +1,7 @@
 ---
 name: oracle-core
-description: Claude Code expert knowledge base for CLI, MCP, Agent SDK, hooks, and best practices. Use when answering questions about Claude Code features.
+description: Reference knowledge base for Claude Code - CLI, MCP, Agent SDK, hooks, and best practices. Used by oracle skill for static documentation.
+priority: 8
 ---
 
 # Oracle Core Skill
@@ -19,6 +20,16 @@ Claude Code is Anthropic's official CLI tool for Claude. It enables AI-assisted 
 - IDE integrations
 - Worktrees for parallel development
 
+## When to Use This Skill
+
+This skill is a **reference knowledge base** - use it when:
+- Looking up static Claude Code documentation
+- Understanding hooks, MCP, skills, Agent SDK
+- Need CLI command reference
+- Want best practices and patterns
+
+For current/dynamic information (releases, new features), use WebSearch instead.
+
 ## Current Version Support
 
 ### Claude Models
@@ -33,7 +44,7 @@ Claude Code is Anthropic's official CLI tool for Claude. It enables AI-assisted 
 
 - Linux, macOS, Windows (WSL)
 - **Node.js**: 18+ recommended
-- **Updated**: 2026-02-24
+- **Updated**: 2026-02-27
 
 ---
 
