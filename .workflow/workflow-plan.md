@@ -67,23 +67,26 @@ Full replacement of current workflow system with v5 spec, tailored for tuti-cli 
 ### Spec Compliance Check (Phase A)
 | v5 Spec Requirement | Our Implementation | Diff? | Impact |
 |---------------------|-------------------|-------|--------|
-| `master-orchestrator.md` ★ BUILD | | | |
-| `issue-executor.md` ★ BUILD | | | |
-| `issue-creator.md` ★ BUILD | | | |
-| `issue-closer.md` ★ BUILD | | | |
-| `workflow-orchestrator.md` ✅ IMPORT | | | |
-| `multi-agent-coordinator.md` ✅ IMPORT | | | |
-| `git-workflow-manager.md` ✅ IMPORT | | | |
-| `/workflow:issue` command | | | |
-| `/workflow:commit` command | | | |
-| `/workflow:create-issue` command | | | |
-| `/agents:install` command | | | |
-| `/agents:remove` command | | | |
-| `/agents:search` command | | | |
-| `/agents:list` command | | | |
+| `master-orchestrator.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `issue-executor.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `issue-creator.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `issue-closer.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `workflow-orchestrator.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `multi-agent-coordinator.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `git-workflow-manager.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `/workflow:issue` command | ✅ Created | No | — |
+| `/workflow:commit` command | ✅ Created | No | — |
+| `/workflow:create-issue` command | ✅ Created | No | — |
+| `/agents:install` command | ✅ Created | No | — |
+| `/agents:remove` command | ✅ Created | No | — |
+| `/agents:search` command | ✅ Created | No | — |
+| `/agents:list` command | ✅ Created | No | — |
+| `skills/workflow-rules.md` | ✅ Created | No | — |
+| `skills/issue-template.md` | ✅ Created | No | — |
+| CLAUDE.md updated | ✅ Updated with v5 workflow section | No | — |
 
-**Differences:** *(fill after phase completion)*
-**Impact:** *(fill after phase completion)*
+**Differences:** None - all BUILD agents follow VoltAgent styling conventions
+**Impact:** None - full v5 spec compliance achieved for Phase A
 
 ---
 
@@ -416,7 +419,7 @@ At any point:
 | Phase | Status | Date Completed |
 |-------|--------|----------------|
 | 0 — Backup | ✅ Complete | 2026-02-27 |
-| A — Core | ⏳ Pending | |
+| A — Core | ✅ Complete | 2026-02-27 |
 | B — Discovery | ⏳ Pending | |
 | C — Testing | ⏳ Pending | |
 | D — Documentation | ⏳ Pending | |
