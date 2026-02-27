@@ -21,41 +21,84 @@ model: glm-5
 
 ## /improve-workflow Flow
 
-When user invokes `/improve-workflow "description"`:
+When user invokes `/improve-workflow [--no-issue] "description"`:
 
 1. **Auto-enter plan mode** — present improvement plan first
-2. **After approval** — create GitHub issue:
-   - Title: `workflow: <description>`
-   - Labels: `type:chore`, `status:ready`, `area:workflow`
-   - Body: Acceptance criteria from approved plan
-3. **Auto-call `/implement <N>`** — begin implementation immediately
-4. **Sync CLAUDE.md** — ensure `.claude Configuration` section reflects any changes
+2. **Identify affected files:**
+   - `.claude/agents/tuti-workflow-master.md` — this agent definition
+   - `WORKFLOW.md` — workflow documentation
+   - `.claude/commands/*.md` — command definitions
+   - `.claude/settings.json` — permissions and hooks
+   - `CLAUDE.md` — .claude Configuration section (if agents/skills change)
+3. **Agent squad:** refactoring-specialist (primary for type:chore)
 
+**IF `--no-issue` flag (quick inline mode):**
+- After approval → edit files in current branch
+- NO issue creation, NO commits, NO PR
+- User handles version control manually
+- Useful for small tweaks and experimentation
+
+**ELSE (full flow):**
+- After approval → create GitHub issue:
+  - Title: `workflow: <description>`
+  - Labels: `type:chore`, `status:ready`, `area:workflow`
+  - Body: Acceptance criteria from approved plan
+- Auto-call `/implement <N>` — begin implementation
+- Commit as: `chore(workflow): <description> (#N)`
+- Create PR
+4. **Sync all files** — keep tuti-workflow-master.md, WORKFLOW.md, and CLAUDE.md in sync
+
+All info about workflow in this project described in a single file: WORKFLOW.md.
 This ensures workflow improvements follow the same quality gates as all other work.
 
 ## /implement Flow Variants
 
 **Standard (default):** `/implement <N>`
+- Sequential pipeline: Setup → Implement → Review → Quality Gate → Commit → PR
 - Works in current directory
 - Creates branch: `feature/<N>-slug`
-- No worktree isolation
 
 **With Worktree:** `/implement --worktree <N>`
+- Same sequential pipeline
 - Creates isolated worktree at `.claude/worktrees/<N>-slug/`
-- Creates branch: `feature/<N>-slug`
 - Full isolation from main directory
 - Use for parallel work or complex changes
 
-**Agent Selection Flow (both variants):**
+**Quick Mode:** `/implement --quick <N>`
+- Skips review stage
+- Minimal quality checks (lint + test before commit)
+- Use for trivial changes: typos, config tweaks, hotfixes
+
+## Sequential Pipeline (Default)
+
+When `/implement <N>` is invoked without `--quick`:
+
+```
+┌────────────┐   ┌────────────┐   ┌────────────┐   ┌──────────────┐   ┌─────────┐
+│  1.SETUP   │──▶│ 2.IMPLEMENT│──▶│ 3.REVIEW   │──▶│ 4.QUALITY    │──▶│ 5.PR    │
+│  Branch    │   │  Code      │   │  Check     │   │ GATE         │   │ Create  │
+└────────────┘   └────────────┘   └────────────┘   └──────────────┘   └─────────┘
+                                                          │
+                                                          ▼
+                                                  ┌──────────────┐
+                                                  │ lint + test  │
+                                                  │ (must pass)  │
+                                                  └──────────────┘
+```
+
+**Stage Details:**
+1. **SETUP:** Create branch (or worktree), label `status:in-progress`, sync board
+2. **IMPLEMENT:** Primary agent writes code
+3. **REVIEW:** code-reviewer reviews changes (can run concurrently with stage 4)
+4. **QUALITY GATE:** Run `composer lint && composer test` — MUST PASS before commit
+5. **COMMIT & PR:** Self-review diff, commit, push, create draft PR, mark ready, label `status:review`
+
+**Agent Selection Flow (all variants):**
 1. Fetch issue labels and content from GitHub
 2. Determine primary agent from `type:*` label
 3. Scan issue for keyword-based enhancements
 4. Form and display agent squad in plan mode
 5. Proceed with implementation using selected squad
-
-**Quality Gates (applies to both):**
-- After every Edit/Write: `composer lint`
-- Before every commit: `composer test`
 
 ## Agent Auto-Selection System
 
