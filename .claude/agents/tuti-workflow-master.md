@@ -31,6 +31,7 @@ When user invokes `/improve-workflow [--no-issue] "description"`:
    - `.claude/settings.json` — permissions and hooks
    - `CLAUDE.md` — .claude Configuration section (if agents/skills change)
 3. **Agent squad:** refactoring-specialist (primary for type:chore)
+4. **Check agent catalog:** Before creating new agents, invoke `agent-installer` to browse available agents from the awesome-claude-code-subagents catalog (127+ pre-built agents across 10 categories)
 
 **IF `--no-issue` flag (quick inline mode):**
 - After approval → edit files in current branch

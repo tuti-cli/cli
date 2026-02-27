@@ -368,7 +368,8 @@ Use **Conventional Commits** format:
 ```
 .claude/
 ├── agents/              # Autonomous workers for complex tasks
-│   └── tuti-workflow-master.md  # GitHub Issues workflow orchestrator
+│   ├── tuti-workflow-master.md  # GitHub Issues workflow orchestrator
+│   └── agent-installer.md       # Browse and install agents from catalog
 └── skills/              # Knowledge and patterns
     ├── oracle/          # Claude Code expert Q&A
     └── oracle-core/     # Claude Code reference documentation
@@ -379,6 +380,7 @@ Use **Conventional Commits** format:
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
 | `tuti-workflow-master` | GitHub Issues workflow orchestrator | `/implement`, `/triage`, `/improve-workflow` |
+| `agent-installer` | Browse and install agents from catalog | Adding new agents from awesome-claude-code-subagents |
 | `php-pro` | PHP 8.4+ enterprise development | Modern PHP patterns, strict typing |
 | `laravel-specialist` | Laravel 10+ applications | Eloquent, queues, API optimization |
 | `cli-developer` | Command-line tools | CLI design, cross-platform |

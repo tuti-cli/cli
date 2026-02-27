@@ -189,5 +189,14 @@ Full spec: `.claude/agents/tuti-workflow-master.md`
 ### References
 
 - [Azure AI Agent Orchestration Patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) — Sequential, Concurrent, Group Chat, Handoff, Magentic patterns
-- [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) — 127+ pre-built agents
+- [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) — 127+ pre-built agents across 10 categories:
+  - **Core Development**: api-designer, backend-developer, frontend-developer, fullstack-developer, graphql-architect
+  - **Languages**: php-pro, laravel-specialist, typescript-pro, python-pro, golang-pro, rust-engineer
+  - **Infrastructure**: docker-expert, kubernetes-specialist, terraform-engineer, sre-engineer
+  - **Quality & Security**: code-reviewer, security-auditor, qa-expert, performance-engineer
+  - **Dev Experience**: cli-developer, build-engineer, dependency-manager, documentation-engineer
+  - **Orchestration**: multi-agent-coordinator, workflow-orchestrator, task-distributor
+  - **Research**: research-analyst, competitive-analyst, trend-analyst
 - [lee-to/ai-factory](https://github.com/lee-to/ai-factory) — Self-improvement loop inspiration
+
+**When adding new agents:** Use the `agent-installer` agent to browse and install from the catalog, or check [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) directly. Use `/improve-workflow` to integrate new agents into the workflow.
