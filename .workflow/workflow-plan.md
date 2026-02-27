@@ -276,13 +276,13 @@ Full replacement of current workflow system with v5 spec, tailored for tuti-cli 
 ### Spec Compliance Check (Phase G)
 | v5 Spec Requirement | Our Implementation | Diff? | Impact |
 |---------------------|-------------------|-------|--------|
-| `skill-evolver.md` ★ BUILD | | | |
-| `workflow-improver.md` ★ BUILD | | | |
-| `/workflow:evolve` command | | | |
-| `/workflow:improve` command | | | |
+| `skill-evolver.md` ★ BUILD | ✅ Created - learns from patches | No | — |
+| `workflow-improver.md` ★ BUILD | ✅ Created - optimizes workflow | No | — |
+| `/workflow:evolve` command | ✅ Created | No | — |
+| `/workflow:improve` command | ✅ Created | No | — |
 
-**Differences:** *(fill after phase completion)*
-**Impact:** *(fill after phase completion)*
+**Differences:** None
+**Impact:** None - full v5 spec compliance achieved for Phase G
 
 ---
 
@@ -437,7 +437,7 @@ At any point:
 | D — Documentation | ✅ Complete | 2026-02-27 |
 | E — Review & Fix | ✅ Complete | 2026-02-27 |
 | F — Architecture | ✅ Complete | 2026-02-27 |
-| G — Self-Improvement | ⏳ Pending | |
+| G — Self-Improvement | ✅ Complete | 2026-02-27 |
 | H — Additional Imports | ⏳ Pending | |
 | I — Cleanup | ⏳ Pending | |
 
