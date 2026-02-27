@@ -6,12 +6,14 @@
 |---|---|
 | `/triage [N]` | Triage external issues (needs-confirmation) |
 | `/discover` | Codebase analysis → phases → GitHub import |
-| `/implement <N>` | Implement issue (plan → code → PR) with auto-selected agent squad |
-| `/implement --worktree <N>` | Implement issue in isolated worktree |
+| `/implement <N>` | Sequential pipeline: setup → code → review → test → PR |
+| `/implement --worktree <N>` | Same pipeline in isolated worktree |
+| `/implement --quick <N>` | Quick mode: skip review, minimal checks |
 | `/status` | Dashboard: milestones, in-progress, review, worktrees |
 | `/switch [N]` | List or switch to issue worktrees |
 | `/board setup\|sync\|view` | Manage GitHub Projects kanban board |
-| `/improve-workflow "..."` | Improve this workflow system |
+| `/improve-workflow "..."` | Improve workflow (full flow: issue + PR) |
+| `/improve-workflow --no-issue "..."` | Improve workflow (quick: no issue, no commits) |
 
 ## Issue Lifecycle
 
@@ -20,22 +22,25 @@ External issue (needs-confirmation) → /triage → confirmed/ready
 Discovery issue → /discover → ready
 Manual issue → create with acceptance criteria → ready
     ↓
-/implement <N> [--worktree]
+/implement <N> [--worktree] [--quick]
     ↓
 Plan mode (your approval required)
     ↓
-Branch created (worktree only if --worktree flag)
-    ↓
-Agent squad implements
-    ↓
-After each edit: composer lint (auto-fix)
-    ↓
-Before each commit: composer test (all checks)
-    ↓
-Commit → Push → Draft PR → Ready PR
+┌─────────────────────────────────────────────────────────────┐
+│                  SEQUENTIAL PIPELINE                         │
+├─────────────────────────────────────────────────────────────┤
+│  1. SETUP     → Create branch, label in-progress, sync board │
+│  2. IMPLEMENT → Primary agent writes code                    │
+│  3. REVIEW    → code-reviewer checks changes                 │
+│  4. QUALITY   → composer lint && composer test               │
+│  5. COMMIT    → Self-review, commit with issue reference     │
+│  6. PR        → Push, draft PR, ready, label review          │
+└─────────────────────────────────────────────────────────────┘
     ↓
 You merge → issue auto-closes
 ```
+
+**Quick mode (`--quick`):** Skips step 3 (review), use for trivial changes.
 
 ## Status Labels & Board Columns
 
@@ -115,25 +120,74 @@ Scopes: `local` `deploy` `env` `projects` `config` `core` `build` `commands` `wo
 
 **Quality gates (all must pass before commit):**
 ```bash
-composer test
-composer lint
-./vendor/bin/phpstan analyse
+composer lint && composer test
 ```
 
-**Automatic quality checks:**
-- After EVERY file edit/write: `composer lint` (auto-fixes formatting)
-- Before EVERY commit: `composer test` (all checks must pass)
-- This prevents CI failures and ensures consistent code quality
+This runs:
+- **lint:** Pint (formatting) + Rector (refactoring) — auto-fixes
+- **test:** PHPStan (static analysis) + Pest (unit tests)
+
+**When checks run:**
+- **Before commit** (Quality Gate stage): Full lint + test suite
+- **CI/CD:** Same checks run in GitHub Actions
 
 ## Improving the Workflow
 
+### Full Flow
 ```bash
 /improve-workflow "what you want to change"
 ```
+Creates issue → implements → commits → creates PR.
 
-Automatic flow:
-1. Enters plan mode and presents improvement plan
-2. After approval → creates issue (type:chore, status:ready)
-3. Auto-calls `/implement` on the new issue
+### Quick Inline Mode
+```bash
+/improve-workflow --no-issue "quick fix"
+```
+Plan → approve → edit files in current branch. No issue, no commits. Use for small tweaks.
+
+## Workflow Files
+
+All these files must stay synchronized:
+
+| File | Purpose |
+|------|---------|
+| `.claude/agents/tuti-workflow-master.md` | Agent definition and flows |
+| `WORKFLOW.md` | This documentation |
+| `.claude/commands/*.md` | Command definitions |
+| `.claude/settings.json` | Permissions and hooks |
+| `CLAUDE.md` | Agent/skill documentation section |
+
+Always use `/improve-workflow` to make changes — it ensures all files stay in sync.
 
 Full spec: `.claude/agents/tuti-workflow-master.md`
+
+## Roadmap
+
+### Completed
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | GitHub-centric workflow with agent selection | ✅ Done |
+| 2 | Sequential pipeline (setup → code → review → test → PR) | ✅ Done |
+
+### Planned
+
+| Phase | Description | When |
+|-------|-------------|------|
+| 3 | Self-improvement loop (`/fix` → patch → `/evolve`) | After 20-30 repeated patterns |
+| 4 | Expand agent library (from awesome-subagents) | When more specialists needed |
+| 5 | Provider abstraction (Linear, ClickUp, Jira) | Only if real friction emerges |
+
+### Design Philosophy
+
+**Stay simple until real pain emerges.** Build based on actual friction, not anticipated friction.
+
+- **Phase 3** waits until you have 20+ patches showing repeated mistake patterns
+- **Phase 5** (provider abstraction) is deferred indefinitely — the GitHub-centric approach works well
+- Agent selection via type labels + keywords is sufficient for current scale
+
+### References
+
+- [Azure AI Agent Orchestration Patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) — Sequential, Concurrent, Group Chat, Handoff, Magentic patterns
+- [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) — 127+ pre-built agents
+- [lee-to/ai-factory](https://github.com/lee-to/ai-factory) — Self-improvement loop inspiration
