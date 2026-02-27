@@ -156,14 +156,16 @@ Full replacement of current workflow system with v5 spec, tailored for tuti-cli 
 ### Spec Compliance Check (Phase C)
 | v5 Spec Requirement | Our Implementation | Diff? | Impact |
 |---------------------|-------------------|-------|--------|
-| `test-engineer.md` ★ BUILD | | | |
-| `coverage-guardian.md` ★ BUILD | | | |
-| `/workflow:test` command | | | |
-| `/workflow:coverage` command | | | |
-| `/workflow:gate` command | | | |
-| Stack-specific skill file | | | |
+| `test-engineer.md` ★ BUILD | ✅ Created - Pest-aware for PHP | No | — |
+| `coverage-guardian.md` ★ BUILD | ✅ Created - hard gate enforcement | No | — |
+| `test-automator.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `chaos-engineer.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `/workflow:test` command | ✅ Created | No | — |
+| `/workflow:coverage` command | ✅ Created | No | — |
+| `/workflow:gate` command | ✅ Created | No | — |
+| `skills/stack/php-laravel-zero.md` | ✅ Created | No | — |
 
-**Differences:** *(fill after phase completion)*
+**Differences:** None - test-engineer adapted for Pest/PHP instead of Jest/TypeScript
 
 **PHP/Laravel Zero Adaptations:**
 - Test framework: Pest (not Jest)
@@ -427,7 +429,7 @@ At any point:
 | 0 — Backup | ✅ Complete | 2026-02-27 |
 | A — Core | ✅ Complete | 2026-02-27 |
 | B — Discovery | ✅ Complete | 2026-02-27 |
-| C — Testing | ⏳ Pending | |
+| C — Testing | ✅ Complete | 2026-02-27 |
 | D — Documentation | ⏳ Pending | |
 | E — Review & Fix | ⏳ Pending | |
 | F — Architecture | ⏳ Pending | |
