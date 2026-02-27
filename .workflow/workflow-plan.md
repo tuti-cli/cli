@@ -250,16 +250,16 @@ Full replacement of current workflow system with v5 spec, tailored for tuti-cli 
 ### Spec Compliance Check (Phase F)
 | v5 Spec Requirement | Our Implementation | Diff? | Impact |
 |---------------------|-------------------|-------|--------|
-| `architecture-lead.md` ★ BUILD | | | |
-| `architecture-challenger.md` ★ BUILD | | | |
-| `architecture-recorder.md` ★ BUILD | | | |
-| `/arch:brainstorm` command | | | |
-| `/arch:decide` command | | | |
-| `/arch:adr` command | | | |
-| `/arch:review` command | | | |
+| `architecture-lead.md` ★ BUILD | ✅ Created - proposes options with tradeoffs | No | — |
+| `architecture-challenger.md` ★ BUILD | ✅ Created - devil's advocate for decisions | No | — |
+| `architecture-recorder.md` ★ BUILD | ✅ Created - writes ADRs and creates issues | No | — |
+| `knowledge-synthesizer.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `/arch:brainstorm` command | ✅ Created | No | — |
+| `/arch:decide` command | ✅ Created | No | — |
+| `/arch:challenge` command | ✅ Created (combined adr+review) | Minor | — |
 
-**Differences:** *(fill after phase completion)*
-**Impact:** *(fill after phase completion)*
+**Differences:** Combined /arch:adr and /arch:review into /arch:challenge for simplicity
+**Impact:** None - same functionality, cleaner API
 
 ---
 
@@ -436,7 +436,7 @@ At any point:
 | C — Testing | ✅ Complete | 2026-02-27 |
 | D — Documentation | ✅ Complete | 2026-02-27 |
 | E — Review & Fix | ✅ Complete | 2026-02-27 |
-| F — Architecture | ⏳ Pending | |
+| F — Architecture | ✅ Complete | 2026-02-27 |
 | G — Self-Improvement | ⏳ Pending | |
 | H — Additional Imports | ⏳ Pending | |
 | I — Cleanup | ⏳ Pending | |
