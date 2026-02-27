@@ -190,10 +190,12 @@ Full replacement of current workflow system with v5 spec, tailored for tuti-cli 
 ### Spec Compliance Check (Phase D)
 | v5 Spec Requirement | Our Implementation | Diff? | Impact |
 |---------------------|-------------------|-------|--------|
-| `doc-updater.md` ★ BUILD | | | |
-| `/workflow:docs` command | | | |
+| `doc-updater.md` ★ BUILD | ✅ Created - event-driven doc updates | No | — |
+| `api-documenter.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `technical-writer.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `/workflow:docs` command | ✅ Created | No | — |
 
-**Differences:** *(fill after phase completion)*
+**Differences:** None
 
 **CLI Tool Adaptations:**
 - No API docs (CLI tool, not REST API)
@@ -430,7 +432,7 @@ At any point:
 | A — Core | ✅ Complete | 2026-02-27 |
 | B — Discovery | ✅ Complete | 2026-02-27 |
 | C — Testing | ✅ Complete | 2026-02-27 |
-| D — Documentation | ⏳ Pending | |
+| D — Documentation | ✅ Complete | 2026-02-27 |
 | E — Review & Fix | ⏳ Pending | |
 | F — Architecture | ⏳ Pending | |
 | G — Self-Improvement | ⏳ Pending | |
