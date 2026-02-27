@@ -116,20 +116,26 @@ Full replacement of current workflow system with v5 spec, tailored for tuti-cli 
 ### Spec Compliance Check (Phase B)
 | v5 Spec Requirement | Our Implementation | Diff? | Impact |
 |---------------------|-------------------|-------|--------|
-| `project-analyst.md` ★ BUILD | | | |
-| `description-writer.md` ★ BUILD | | | |
-| `codebase-auditor.md` ★ BUILD | | | |
-| `tech-debt-mapper.md` ★ BUILD | | | |
-| `feature-planner.md` ★ BUILD | | | |
-| `task-decomposer.md` ★ BUILD | | | |
-| `migration-planner.md` ★ BUILD | | | |
-| `/workflow:discover` command | | | |
-| `/workflow:audit` command | | | |
-| `/workflow:feature` command | | | |
-| `/workflow:push-plan` command | | | |
+| `project-analyst.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `description-writer.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `codebase-auditor.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `tech-debt-mapper.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `feature-planner.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `task-decomposer.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `migration-planner.md` ★ BUILD | ✅ Created - follows VoltAgent style | No | — |
+| `research-analyst.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `data-researcher.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `project-manager.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `context-manager.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `task-distributor.md` ✅ IMPORT | ✅ Installed from VoltAgent catalog | No | — |
+| `/workflow:discover` command | ✅ Created | No | — |
+| `/workflow:audit` command | ✅ Created | No | — |
+| `/workflow:feature` command | ✅ Created | No | — |
+| `/workflow:push-plan` command | ✅ Created | No | — |
+| `skills/audit-checklist.md` | ✅ Created | No | — |
 
-**Differences:** *(fill after phase completion)*
-**Impact:** *(fill after phase completion)*
+**Differences:** None - all BUILD agents follow VoltAgent styling conventions
+**Impact:** None - full v5 spec compliance achieved for Phase B
 
 ---
 
@@ -420,7 +426,7 @@ At any point:
 |-------|--------|----------------|
 | 0 — Backup | ✅ Complete | 2026-02-27 |
 | A — Core | ✅ Complete | 2026-02-27 |
-| B — Discovery | ⏳ Pending | |
+| B — Discovery | ✅ Complete | 2026-02-27 |
 | C — Testing | ⏳ Pending | |
 | D — Documentation | ⏳ Pending | |
 | E — Review & Fix | ⏳ Pending | |
