@@ -12,6 +12,7 @@ use RuntimeException;
  * Service JsonFileService
  *
  * Generic service for handling JSON file operations with variable substitution support.
+ * Uses atomic writes (temp file + rename) to prevent data corruption from interrupted writes.
  */
 final class JsonFileService
 {
@@ -44,7 +45,13 @@ final class JsonFileService
     }
 
     /**
-     * Write data to a JSON file.
+     * Write data to a JSON file using atomic write pattern.
+     *
+     * Uses tempnam() + rename() for atomic writes:
+     * - Writes to temporary file first
+     * - Renames temp file to target (atomic on POSIX systems)
+     * - Prevents data corruption from interrupted writes
+     * - Ensures file is either old version or new version, never partial
      *
      * @param  string  $path  Absolute path to the file.
      * @param  array<string, mixed>  $data  Data to encode and write.
@@ -59,7 +66,23 @@ final class JsonFileService
 
         try {
             $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-            File::put($path, $json);
+
+            // Atomic write: write to temp file, then rename
+            $tempFile = tempnam($dir, 'json-');
+
+            if ($tempFile === false) {
+                throw new RuntimeException("Failed to create temporary file in {$dir}");
+            }
+
+            if (file_put_contents($tempFile, $json) === false) {
+                @unlink($tempFile);
+                throw new RuntimeException("Failed to write to temporary file for {$path}");
+            }
+
+            if (! rename($tempFile, $path)) {
+                @unlink($tempFile);
+                throw new RuntimeException("Failed to rename temporary file to {$path}");
+            }
         } catch (JsonException $e) {
             throw new RuntimeException("Failed to encode JSON for {$path}: " . $e->getMessage(), $e->getCode(), $e);
         }
