@@ -1,18 +1,143 @@
 [
   {
-    "name": "bug",
+    "name": "type:feature",
+    "color": "0e8a16",
+    "description": "New feature implementation"
+  },
+  {
+    "name": "type:bug",
     "color": "d73a4a",
-    "description": "Something isn't working"
+    "description": "Bug fix"
   },
   {
-    "name": "enhancement",
+    "name": "type:enhancement",
     "color": "a2eeef",
-    "description": "New feature or request"
+    "description": "Feature enhancement or improvement"
   },
   {
-    "name": "documentation",
+    "name": "type:chore",
+    "color": "7057ff",
+    "description": "Maintenance task"
+  },
+  {
+    "name": "type:security",
+    "color": "e11d21",
+    "description": "Security vulnerability or fix"
+  },
+  {
+    "name": "type:performance",
+    "color": "1d76db",
+    "description": "Performance optimization"
+  },
+  {
+    "name": "type:infra",
+    "color": "0db7ed",
+    "description": "Infrastructure or DevOps change"
+  },
+  {
+    "name": "type:architecture",
+    "color": "5319e7",
+    "description": "Architectural change or decision"
+  },
+  {
+    "name": "type:docs",
     "color": "0075ca",
-    "description": "Improvements or additions to documentation"
+    "description": "Documentation only change"
+  },
+  {
+    "name": "type:test",
+    "color": "fbca04",
+    "description": "Test coverage or testing change"
+  },
+  {
+    "name": "workflow:feature",
+    "color": "0e8a16",
+    "description": "Feature implementation pipeline"
+  },
+  {
+    "name": "workflow:bugfix",
+    "color": "d73a4a",
+    "description": "Bug fix pipeline"
+  },
+  {
+    "name": "workflow:refactor",
+    "color": "1d76db",
+    "description": "Refactor pipeline"
+  },
+  {
+    "name": "workflow:modernize",
+    "color": "5319e7",
+    "description": "Legacy migration pipeline"
+  },
+  {
+    "name": "workflow:task",
+    "color": "7057ff",
+    "description": "Simple task pipeline"
+  },
+  {
+    "name": "priority:critical",
+    "color": "e11d21",
+    "description": "Critical priority - execute immediately"
+  },
+  {
+    "name": "priority:high",
+    "color": "b60205",
+    "description": "High priority - this sprint"
+  },
+  {
+    "name": "priority:normal",
+    "color": "008672",
+    "description": "Normal priority - backlog"
+  },
+  {
+    "name": "priority:low",
+    "color": "cfd3d7",
+    "description": "Low priority - nice to have"
+  },
+  {
+    "name": "status:ready",
+    "color": "0e8a16",
+    "description": "Ready to implement"
+  },
+  {
+    "name": "status:in-progress",
+    "color": "1d76db",
+    "description": "Work is in progress"
+  },
+  {
+    "name": "status:review",
+    "color": "fbca04",
+    "description": "PR exists, ready for review"
+  },
+  {
+    "name": "status:blocked",
+    "color": "e11d21",
+    "description": "Blocked by something else"
+  },
+  {
+    "name": "status:needs-confirmation",
+    "color": "d4c5f9",
+    "description": "Needs triage/confirmation"
+  },
+  {
+    "name": "status:needs-reproduction",
+    "color": "d4c5f9",
+    "description": "Needs a reproduction step"
+  },
+  {
+    "name": "status:rejected",
+    "color": "b60205",
+    "description": "Closed, will not implement"
+  },
+  {
+    "name": "status:done",
+    "color": "008672",
+    "description": "Completed and closed"
+  },
+  {
+    "name": "status:stale",
+    "color": "eeeeee",
+    "description": "No recent activity"
   },
   {
     "name": "good first issue",
@@ -25,69 +150,9 @@
     "description": "Extra attention is needed"
   },
   {
-    "name": "priority: high",
-    "color": "b60205",
-    "description": "High priority issue"
-  },
-  {
-    "name": "priority: low",
-    "color": "cfd3d7",
-    "description": "Low priority issue"
-  },
-  {
-    "name": "status: needs triage",
-    "color": "fbca04",
-    "description": "Needs initial review"
-  },
-  {
-    "name": "status: needs reproduction",
-    "color": "d4c5f9",
-    "description": "Needs a reproduction step"
-  },
-  {
-    "name": "status: in progress",
-    "color": "1d76db",
-    "description": "Work is in progress"
-  },
-  {
-    "name": "status: blocked",
+    "name": "breaking change",
     "color": "e11d21",
-    "description": "Blocked by something else"
-  },
-  {
-    "name": "status: needs review",
-    "color": "0e8a16",
-    "description": "Ready for review"
-  },
-  {
-    "name": "status: stale",
-    "color": "eeeeee",
-    "description": "No recent activity"
-  },
-  {
-    "name": "size: XS",
-    "color": "5D9CEC",
-    "description": "Extra small: 1-10 lines"
-  },
-  {
-    "name": "size: S",
-    "color": "5D9CEC",
-    "description": "Small: 11-50 lines"
-  },
-  {
-    "name": "size: M",
-    "color": "5D9CEC",
-    "description": "Medium: 51-200 lines"
-  },
-  {
-    "name": "size: L",
-    "color": "5D9CEC",
-    "description": "Large: 201-500 lines"
-  },
-  {
-    "name": "size: XL",
-    "color": "5D9CEC",
-    "description": "Extra large: 500+ lines"
+    "description": "Breaking change requiring major version bump"
   },
   {
     "name": "dependencies",
@@ -108,10 +173,5 @@
     "name": "github-actions",
     "color": "2088ff",
     "description": "GitHub Actions related changes"
-  },
-  {
-    "name": "breaking change",
-    "color": "e11d21",
-    "description": "Breaking change requiring major version bump"
   }
 ]

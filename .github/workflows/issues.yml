@@ -10,11 +10,11 @@ permissions:
 jobs:
   label-management:
     runs-on: ubuntu-latest
-    if: "github.event.label.name == 'status: needs reproduction' || github.event.label.name == 'good first issue'"
+    if: "github.event.label.name == 'status:needs-reproduction' || github.event.label.name == 'good first issue'"
 
     steps:
       - name: Add comment for needs reproduction
-        if: "github.event.label.name == 'status: needs reproduction'"
+        if: "github.event.label.name == 'status:needs-reproduction'"
         uses: actions/github-script@v8
         with:
           script: |

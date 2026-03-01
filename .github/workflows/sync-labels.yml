@@ -1,0 +1,44 @@
+name: Sync GitHub Labels
+
+on:
+  push:
+    paths:
+      - '.github/labels.json'
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync-labels:
+    name: Sync labels from labels.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup gh CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install gh CLI
+        run: |
+          type -p curl >/dev/null || sudo apt-get install -y curl
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Authenticate with GitHub
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Sync labels
+        run: |
+          bash .github/scripts/sync-labels.sh
