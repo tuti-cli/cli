@@ -367,57 +367,101 @@ Use **Conventional Commits** format:
 ### Directory Structure
 ```
 .claude/
-├── agents/              # Autonomous workers for complex tasks
-│   └── tuti-workflow-master.md  # GitHub Issues workflow orchestrator
-└── skills/              # Knowledge and patterns
-    ├── oracle/          # Claude Code expert Q&A
-    └── oracle-core/     # Claude Code reference documentation
+├── agents/                  # Autonomous workers for complex tasks
+│   ├── ── ORCHESTRATION ───────────────────────────────────────
+│   ├── master-orchestrator.md      ★ Brain of workflow system
+│   ├── issue-executor.md           ★ Issue → pipeline trigger
+│   ├── issue-creator.md            ★ Creates GitHub issues
+│   ├── issue-closer.md             ★ Closes issues with summary
+│   ├── agent-installer.md          ⚡ Install from catalog
+│   ├── workflow-orchestrator.md    ✅ Base orchestration
+│   ├── multi-agent-coordinator.md  ✅ Parallel agent execution
+│   └── git-workflow-manager.md     ✅ Git/branch management
+│
+├── commands/
+│   ├── workflow/
+│   │   ├── issue.md                /workflow:issue <N>
+│   │   ├── commit.md               /workflow:commit
+│   │   └── create-issue.md         /workflow:create-issue
+│   └── agents/
+│       ├── install.md              /agents:install <name>
+│       ├── search.md               /agents:search <query>
+│       ├── list.md                 /agents:list
+│       └── remove.md               /agents:remove <name>
+│
+└── skills/
+    ├── audit-checklist/            Comprehensive audit checklist
+    │   └── SKILL.md
+    ├── issue-template/             GitHub issue format
+    │   └── SKILL.md
+    ├── oracle/                     Claude Code expert Q&A
+    │   └── SKILL.md
+    ├── oracle-core/                Claude Code reference docs
+    │   ├── SKILL.md
+    │   └── references/
+    ├── php-laravel-zero/           PHP testing patterns
+    │   └── SKILL.md
+    └── workflow-rules/             Global workflow rules
+        └── SKILL.md
 ```
 
-### Agents (Autonomous Workers)
+### Workflow System (v5)
+
+This project uses the v5 AI Development Workflow System with sequential pipelines.
+
+**Main Commands:**
+| Command | Description |
+|---------|-------------|
+| `/workflow:issue <N>` | Execute issue through full pipeline |
+| `/workflow:issue <N> --dry-run` | Show plan without executing |
+| `/workflow:commit` | Create conventional commit |
+| `/workflow:create-issue` | Create issue from context |
+| `/agents:install <name>` | Install agent from catalog |
+| `/agents:search <query>` | Search available agents |
+| `/agents:list` | List installed agents |
+
+**Pipeline Stages:**
+```
+SETUP → IMPLEMENT → REVIEW → QUALITY → COMMIT → PR → CLOSE
+```
+
+**Pre-Flight (always):**
+1. Read CLAUDE.md for context
+2. Read .workflow/PROJECT.md for workflow rules
+3. Read ALL .workflow/patches/ for lessons learned
+4. Read relevant .workflow/ADRs/ for architecture decisions
+
+### Core Agents (BUILD)
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| `tuti-workflow-master` | GitHub Issues workflow orchestrator | `/implement`, `/triage`, `/improve-workflow` |
-| `php-pro` | PHP 8.4+ enterprise development | Modern PHP patterns, strict typing |
-| `laravel-specialist` | Laravel 10+ applications | Eloquent, queues, API optimization |
-| `cli-developer` | Command-line tools | CLI design, cross-platform |
-| `code-reviewer` | Code quality reviews | PR reviews, best practices |
-| `refactoring-specialist` | Code restructuring | Clean code, maintainability |
-| `security-auditor` | Security analysis | Vulnerability assessment |
-| `performance-engineer` | Performance optimization | Bottleneck elimination |
-| `qa-expert` | Quality assurance | Test planning, coverage |
-| `devops-engineer` | Infrastructure automation | CI/CD, containerization |
-| `deployment-engineer` | Deployment pipelines | Release automation |
-| `build-engineer` | Build systems | Compilation optimization |
-| `database-administrator` | Database management | Performance, HA, DR |
-| `dependency-manager` | Dependency management | Vulnerabilities, conflicts |
-| `error-detective` | Error diagnosis | Root cause analysis |
-| `documentation-engineer` | Documentation systems | API docs, guides |
-| `architect-reviewer` | Architecture review | System design evaluation |
+| `master-orchestrator` | Brain of workflow, coordinates all agents | All pipeline executions |
+| `issue-executor` | Fetches issues, validates, enriches context | Entry point for /workflow:issue |
+| `issue-creator` | Creates GitHub issues from artifacts | After plans, ADRs, patches |
+| `issue-closer` | Posts summary, closes issues | After PR merge |
 
-### Skills (Knowledge & Patterns)
+### Imported Agents (from VoltAgent catalog)
 
-| Skill | Purpose | When to Use |
+| Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| `oracle` | Claude Code expert Q&A | "/oracle how do hooks work?" |
-| `oracle-core` | Claude Code reference | CLI, MCP, hooks, Agent SDK |
+| `workflow-orchestrator` | Base workflow orchestration patterns | Extended by master-orchestrator |
+| `multi-agent-coordinator` | Parallel agent execution | Concurrent reviews |
+| `git-workflow-manager` | Git branching and commits | Branch/commit operations |
+| `agent-installer` | Install agents from catalog | /agents:install |
 
-### Agent Auto-Selection (via `/implement`)
-
-When using `/implement #N`, agents are auto-selected based on issue type:
+### Agent Auto-Selection
 
 | Type Label | Primary | Secondary |
 |------------|---------|-----------|
-| `type: feature` | cli-developer | php-pro, laravel-specialist |
-| `type: bug` | error-detective | code-reviewer, qa-expert |
-| `type: chore` | refactoring-specialist | code-reviewer |
-| `type: security` | security-auditor | code-reviewer |
-| `type: performance` | performance-engineer | refactoring-specialist |
-| `type: infra` | devops-engineer | deployment-engineer, build-engineer |
-| `type: architecture` | architect-reviewer | refactoring-specialist |
-| `type: docs` | documentation-engineer | - |
-| `type: test` | qa-expert | php-pro |
+| `type:feature` | cli-developer | php-pro, laravel-specialist |
+| `type:bug` | error-detective | code-reviewer, qa-expert |
+| `type:chore` | refactoring-specialist | code-reviewer |
+| `type:security` | security-auditor | code-reviewer |
+| `type:performance` | performance-engineer | refactoring-specialist |
+| `type:infra` | devops-engineer | deployment-engineer, build-engineer |
+| `type:architecture` | architect-reviewer | refactoring-specialist |
+| `type:docs` | documentation-engineer | - |
+| `type:test` | qa-expert | php-pro |
 
 **Keyword-based enhancements:**
 
@@ -433,19 +477,42 @@ When using `/implement #N`, agents are auto-selected based on issue type:
 | deploy, release, ci/cd | deployment-engineer |
 | dependency, composer, package | dependency-manager |
 
-### Agents vs Skills
+### Skills (Knowledge & Patterns)
 
-**Use Agents when:**
-- Task is complex and multi-step
-- Want autonomous execution
-- Task needs its own tool set
-- Example: "Create a new Drupal stack with Redis and Postgres"
+| Skill | Purpose | When to Use |
+|-------|---------|-------------|
+| `workflow-rules` | Global workflow rules and standards | Understanding pipeline requirements |
+| `issue-template` | GitHub issue format specification | Creating well-formed issues |
+| `audit-checklist` | Comprehensive audit procedures | Codebase auditing |
+| `php-laravel-zero` | PHP testing patterns (Pest) | Writing tests for PHP code |
+| `oracle` | Interactive Q&A with web search | Claude Code questions, uses oracle-core for static knowledge |
+| `oracle-core` | Static reference knowledge base | CLI, MCP, hooks, Agent SDK docs (used by oracle) |
 
-**Use Skills when:**
-- Providing knowledge and patterns
-- User wants to drive the work
-- Need reference material
-- Example: "Help me understand the service stub format"
+### GitHub Repository
+
+- **Owner:** tuti-cli
+- **Repo:** cli
+- **Full:** tuti-cli/cli
+- **gh CLI:** Always use `--repo tuti-cli/cli`
+- **GitHub MCP:** Always use `owner="tuti-cli" repo="cli"`
+
+### Quality Gates (Mandatory)
+
+Before any commit:
+```bash
+composer lint && composer test
+```
+Both MUST pass. No exceptions.
+
+### Protected Agents
+
+These agents cannot be removed without `--force`:
+- master-orchestrator
+- issue-executor
+- issue-creator
+- issue-closer
+- agent-installer
+- workflow-orchestrator
 
 ## Documentation Requirements
 
