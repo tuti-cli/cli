@@ -116,7 +116,7 @@ SETUP → IMPLEMENT → REVIEW → QUALITY → COMMIT → PR → CLOSE
 ### Progress Updates
 Post on GitHub issue:
 ```markdown
-🤖 **Stage: {STAGE_NAME}**
+**Stage: {STAGE_NAME}**
 
 **Progress:** {description}
 **Next:** {next_stage}

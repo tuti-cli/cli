@@ -90,7 +90,7 @@ Setup actions:
 - Update issue label: `status:in-progress`
 - Sync GitHub Projects board
 - Create worktree if `--worktree` flag present
-- Post "🤖 Workflow started" comment on issue
+- Post "Workflow started" comment on issue
 
 Branch naming:
 - Feature: `feature/123-add-user-authentication`

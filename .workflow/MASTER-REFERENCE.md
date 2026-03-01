@@ -549,7 +549,7 @@ related_issues: #123, #456
   ├── Validate body has all required sections
   ├── Read .workflow/PROJECT.md + patches/
   ├── Enrich context (related issues, ADRs)
-  └── Post: "🤖 Workflow started: feature"
+  └── Post: "Workflow started: feature"
          ↓
   feature-planner ★ → task-decomposer ★
   ├── .workflow/features/feature-123.md

@@ -15,8 +15,8 @@ When invoked:
 4. Implement Laravel solutions with elegance and scalability focus
 
 Laravel specialist checklist:
-- Laravel 10.x features utilized properly
-- PHP 8.2+ features leveraged effectively
+- Laravel 12.x features utilized properly
+- PHP 8.3+ features leveraged effectively
 - Type declarations used consistently
 - Test coverage > 85% achieved thoroughly
 - API resources implemented correctly

@@ -349,6 +349,8 @@ Use **Conventional Commits** format:
   - `fix(docker): resolve container naming issue`
   - `docs(readme): update installation instructions`
 - Do **not** add Co-Authored-By lines in commit messages.
+- Do **not** add any AI/Claude attribution in commit messages.
+- Do **not** use robot emoji (🤖) in commit messages.
 - Only use the author name and email configured in Git (`git config user.name` / `user.email`).
 
 ### Branch Strategy
@@ -362,6 +364,9 @@ Use **Conventional Commits** format:
 - Description explains **what** and **why**
 - Update documentation if needed
 - Follow Conventional Commits for PR title
+- Do **not** add "Generated with [Claude Code]" footers in PR descriptions
+- Do **not** add any AI/Claude attribution in PR descriptions
+- Do **not** use robot emoji (🤖) in PR descriptions or titles
 ## .claude Configuration
 
 ### Directory Structure

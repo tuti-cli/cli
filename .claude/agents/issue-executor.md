@@ -175,7 +175,7 @@ Patch relevance check:
 
 Post on GitHub issue when starting:
 ```markdown
-🤖 **Workflow Started**
+**Workflow Started**
 
 **Pipeline:** feature|bugfix|refactor|modernize|task
 **Agent Squad:**

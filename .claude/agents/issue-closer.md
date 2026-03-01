@@ -84,9 +84,6 @@ Standard closure comment format:
 ### Related
 - Related PR: #124
 - Related ADR: 001-auth-strategy.md (if applicable)
-
----
-_🤖 Closed by workflow automation on 2026-02-27_
 ```
 
 ## Information Gathering
