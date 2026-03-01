@@ -179,6 +179,8 @@ tuti doctor
 
 This checks Docker, Docker Compose, and your system configuration.
 
+**Having issues?** See the [Troubleshooting Guide](docs/TROUBLESHOOTING.md) for common problems and solutions.
+
 ---
 
 ## Commands Reference
