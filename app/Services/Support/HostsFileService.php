@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Support;
 
 use Illuminate\Support\Facades\Process;
+use InvalidArgumentException;
 
 /**
  * Service for managing /etc/hosts file entries.
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Process;
 final readonly class HostsFileService
 {
     private const string HOSTS_PATH = '/etc/hosts';
+
+    private const int MAX_DOMAIN_LENGTH = 253;
 
     /**
      * Check if the hosts file exists and can potentially be modified.
@@ -32,6 +35,10 @@ final readonly class HostsFileService
      */
     public function entryExists(string $domain): bool
     {
+        if (! $this->isValidDomain($domain)) {
+            return false;
+        }
+
         if (! file_exists(self::HOSTS_PATH)) {
             return false;
         }
@@ -57,10 +64,20 @@ final readonly class HostsFileService
      * Requires sudo privileges. The entry is added as:
      * 127.0.0.1 {domain}
      *
+     *
      * @return bool True if entry was added or already exists, false on failure
+     *
+     * @throws InvalidArgumentException if domain is invalid
      */
     public function addEntry(string $domain): bool
     {
+        // Validate domain to prevent shell injection
+        if (! $this->isValidDomain($domain)) {
+            throw new InvalidArgumentException(
+                "Invalid domain: {$domain}. Domain must contain only alphanumeric characters, dots, and hyphens."
+            );
+        }
+
         // Check if entry already exists
         if ($this->entryExists($domain)) {
             return true;
@@ -71,7 +88,7 @@ final readonly class HostsFileService
             return false;
         }
 
-        // Build the entry
+        // Build the entry (domain is now validated and safe)
         $entry = "127.0.0.1 {$domain}";
 
         // Try to add entry using sudo
@@ -100,5 +117,34 @@ final readonly class HostsFileService
     public function buildEntry(string $domain): string
     {
         return "127.0.0.1 {$domain}";
+    }
+
+    /**
+     * Validate a domain name for use in hosts file.
+     *
+     * Uses an allowlist pattern to only accept valid domain characters:
+     * - Alphanumeric characters (a-z, A-Z, 0-9)
+     * - Dots (.)
+     * - Hyphens (-)
+     *
+     * This prevents shell injection attacks by rejecting all shell metacharacters.
+     *
+     * @see https://datatracker.ietf.org/doc/html/rfc1035 Domain naming rules
+     */
+    public function isValidDomain(string $domain): bool
+    {
+        // Empty domain is invalid
+        if ($domain === '') {
+            return false;
+        }
+
+        // Check max length (RFC 1035)
+        if (mb_strlen($domain) > self::MAX_DOMAIN_LENGTH) {
+            return false;
+        }
+
+        // Allowlist: only alphanumeric, dots, and hyphens
+        // This explicitly rejects all shell metacharacters: ' " ; & | $ ` ( ) < > \n \r
+        return preg_match('/^[a-z0-9.-]+$/i', $domain) === 1;
     }
 }

@@ -164,16 +164,12 @@ describe('WpSetupCommand Container Checks', function (): void {
         // Mock DockerExecutorInterface
         $mockDocker = Mockery::mock(DockerExecutorInterface::class);
         $mockDocker->shouldReceive('runWpCli')
-            ->withArgs(function (array $args, string $path, array $env, ?string $network): bool {
-                return $args === ['core', 'is-installed'];
-            })
+            ->withArgs(fn (array $args, string $path, array $env, ?string $network): bool => $args === ['core', 'is-installed'])
             ->once()
             ->andReturn(createWpMockDockerResult(false)); // Not installed
 
         $mockDocker->shouldReceive('runWpCli')
-            ->withArgs(function (array $args, string $path, array $env, ?string $network): bool {
-                return $args[0] === 'core' && $args[1] === 'install';
-            })
+            ->withArgs(fn (array $args, string $path, array $env, ?string $network): bool => $args[0] === 'core' && $args[1] === 'install')
             ->once()
             ->andReturn(createWpMockDockerResult(true)); // Install succeeds
 
@@ -213,9 +209,7 @@ describe('WpSetupCommand Already Installed Check', function (): void {
 
         $mockDocker = Mockery::mock(DockerExecutorInterface::class);
         $mockDocker->shouldReceive('runWpCli')
-            ->withArgs(function (array $args): bool {
-                return $args === ['core', 'is-installed'];
-            })
+            ->withArgs(fn (array $args): bool => $args === ['core', 'is-installed'])
             ->once()
             ->andReturn(createWpMockDockerResult(true)); // Already installed
 
@@ -428,9 +422,9 @@ describe('WpSetupCommand Happy Path', function (): void {
         $mockDocker->shouldReceive('runWpCli')
             ->once()
             ->withArgs(function (array $args, string $path, array $env, ?string $network): bool {
-                $urlArg = array_filter($args, fn ($arg) => str_contains($arg, 'url='));
+                $urlArg = array_filter($args, fn ($arg): bool => str_contains($arg, 'url='));
 
-                return ! empty($urlArg) && str_contains(reset($urlArg), 'custom.local.test');
+                return $urlArg !== [] && str_contains(reset($urlArg), 'custom.local.test');
             })
             ->andReturn(createWpMockDockerResult(true));
 
@@ -455,12 +449,12 @@ describe('WpSetupCommand Happy Path', function (): void {
         $mockDocker->shouldReceive('runWpCli')
             ->once()
             ->withArgs(function (array $args, string $path, array $env, ?string $network): bool {
-                $urlArg = array_filter($args, fn ($arg) => str_contains($arg, 'url='));
-                $titleArg = array_filter($args, fn ($arg) => str_contains($arg, 'title='));
+                $urlArg = array_filter($args, fn ($arg): bool => str_contains($arg, 'url='));
+                $titleArg = array_filter($args, fn ($arg): bool => str_contains($arg, 'title='));
 
-                return ! empty($urlArg)
+                return $urlArg !== []
                     && str_contains(reset($urlArg), 'my-wp-site.local.test')
-                    && ! empty($titleArg)
+                    && $titleArg !== []
                     && str_contains(reset($titleArg), 'My wp site');
             })
             ->andReturn(createWpMockDockerResult(true));
@@ -529,9 +523,7 @@ describe('WpSetupCommand Force Option', function (): void {
         // Only the install should be called
         $mockDocker->shouldReceive('runWpCli')
             ->once()
-            ->withArgs(function (array $args): bool {
-                return $args[0] === 'core' && $args[1] === 'install';
-            })
+            ->withArgs(fn (array $args): bool => $args[0] === 'core' && $args[1] === 'install')
             ->andReturn(createWpMockDockerResult(true));
 
         $this->app->instance(DockerExecutorInterface::class, $mockDocker);
