@@ -28,6 +28,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
     private const int DEFAULT_TIMEOUT = 600; // 10 minutes
 
     public function __construct(
+        private DockerCommandBuilder $builder,
         private string $phpImage = self::DEFAULT_PHP_IMAGE,
         private string $phpVersion = self::DEFAULT_PHP_VERSION,
     ) {}
@@ -90,7 +91,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
         // Check if WP-CLI service is running in the project
         if ($this->isWpCliServiceRunning($workDir)) {
-            return $this->execInWpCliService($arguments, $workDir, $env);
+            return $this->execInWpCliService($arguments, $workDir);
         }
 
         // Fall back to temporary container
@@ -126,16 +127,18 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
             }
         }
 
-        // Build docker compose command with available files
-        $parts = ['docker', 'compose', '-f', $composeFile];
+        // Build docker compose command with available files using builder
+        $composeFiles = [$composeFile];
         if (file_exists($composeDevFile)) {
-            $parts[] = '-f';
-            $parts[] = $composeDevFile;
+            $composeFiles[] = $composeDevFile;
         }
-        $parts = array_merge($parts, ['ps', '--services', '--filter', 'status=running']);
+        $command = $this->builder->buildComposeCommand(
+            composeFiles: $composeFiles,
+            args: ['ps', '--services', '--filter', 'status=running'],
+        );
 
         // Check if the wpcli container is actually running
-        $process = Process::run($parts);
+        $process = Process::run($command);
 
         if (! $process->successful()) {
             return false;
@@ -261,42 +264,24 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
      * Execute WP-CLI command in the project's WP-CLI service container.
      *
      * @param  array<int, string>  $arguments  WP-CLI command arguments
-     * @param  array<string, string>  $env  Environment variables
      */
-    private function execInWpCliService(array $arguments, string $projectPath, array $env = []): DockerExecutionResult
+    private function execInWpCliService(array $arguments, string $projectPath): DockerExecutionResult
     {
         $composeFile = $projectPath . '/docker-compose.yml';
         $composeDevFile = $projectPath . '/docker-compose.dev.yml';
 
-        $parts = ['docker', 'compose', '-f', $composeFile];
-
-        // Add dev compose file if it exists
+        $composeFiles = [$composeFile];
         if (file_exists($composeDevFile)) {
-            $parts[] = '-f';
-            $parts[] = $composeDevFile;
+            $composeFiles[] = $composeDevFile;
         }
 
-        $parts[] = 'exec';
-        $parts[] = '-T'; // Disable pseudo-TTY
+        // Build compose exec command
+        $composeCommand = $this->builder->buildComposeCommand(
+            composeFiles: $composeFiles,
+            args: array_merge(['exec', '-T', 'wpcli', 'php', '-d', 'memory_limit=512M', '/usr/local/bin/wp'], $arguments),
+        );
 
-        // Add environment variables
-        foreach ($env as $key => $value) {
-            $parts[] = '-e';
-            $parts[] = "{$key}={$value}";
-        }
-
-        $parts[] = 'wpcli';
-        // Use PHP with increased memory limit, then wp binary with safe array arguments
-        $parts[] = 'php';
-        $parts[] = '-d';
-        $parts[] = 'memory_limit=512M';
-        $parts[] = '/usr/local/bin/wp';
-        // Append all WP-CLI arguments as separate array elements (safe from injection)
-        foreach ($arguments as $arg) {
-            $parts[] = $arg;
-        }
-
-        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
+        $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($composeCommand);
 
         return new DockerExecutionResult(
             successful: $process->successful(),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Infrastructure;
 
 use App\Contracts\InfrastructureManagerInterface;
+use App\Services\Docker\DockerCommandBuilder;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use RecursiveDirectoryIterator;
@@ -32,6 +33,7 @@ final readonly class GlobalInfrastructureManager implements InfrastructureManage
 
     public function __construct(
         private string $globalTutiPath,
+        private DockerCommandBuilder $builder,
     ) {}
 
     public function isInstalled(): bool
@@ -48,7 +50,10 @@ final readonly class GlobalInfrastructureManager implements InfrastructureManage
         }
 
         $process = Process::run(
-            ['docker', 'compose', '-p', self::COMPOSE_PROJECT_NAME, 'ps', '--format', 'json']
+            $this->builder->buildComposeCommand(
+                projectName: self::COMPOSE_PROJECT_NAME,
+                args: ['ps', '--format', 'json'],
+            )
         );
 
         if (! $process->successful()) {
@@ -124,7 +129,10 @@ final readonly class GlobalInfrastructureManager implements InfrastructureManage
         $traefikPath = $this->getTraefikPath();
 
         $process = Process::path($traefikPath)->run(
-            ['docker', 'compose', '-p', self::COMPOSE_PROJECT_NAME, 'up', '-d']
+            $this->builder->buildComposeCommand(
+                projectName: self::COMPOSE_PROJECT_NAME,
+                args: ['up', '-d'],
+            )
         );
 
         if (! $process->successful()) {
@@ -143,7 +151,10 @@ final readonly class GlobalInfrastructureManager implements InfrastructureManage
         $traefikPath = $this->getTraefikPath();
 
         Process::path($traefikPath)->run(
-            ['docker', 'compose', '-p', self::COMPOSE_PROJECT_NAME, 'down']
+            $this->builder->buildComposeCommand(
+                projectName: self::COMPOSE_PROJECT_NAME,
+                args: ['down'],
+            )
         );
     }
 
@@ -175,14 +186,14 @@ final readonly class GlobalInfrastructureManager implements InfrastructureManage
     public function ensureNetworkExists(string $networkName = self::NETWORK_NAME): bool
     {
         // Check if network exists
-        $process = Process::run(['docker', 'network', 'inspect', $networkName]);
+        $process = Process::run($this->builder->buildNetworkInspectCommand($networkName));
 
         if ($process->successful()) {
             return true;
         }
 
         // Create network
-        $process = Process::run(['docker', 'network', 'create', $networkName]);
+        $process = Process::run($this->builder->buildNetworkCreateCommand($networkName));
 
         if (! $process->successful()) {
             throw new RuntimeException(
@@ -271,7 +282,7 @@ final readonly class GlobalInfrastructureManager implements InfrastructureManage
      */
     private function networkExists(): bool
     {
-        $process = Process::run(['docker', 'network', 'inspect', self::NETWORK_NAME]);
+        $process = Process::run($this->builder->buildNetworkInspectCommand(self::NETWORK_NAME));
 
         return $process->successful();
     }

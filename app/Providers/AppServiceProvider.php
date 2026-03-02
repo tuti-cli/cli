@@ -38,8 +38,13 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(StateManagerInterface::class, ProjectStateManagerService::class);
         $this->app->bind(DockerExecutorInterface::class, DockerExecutorService::class);
 
-        // Register GlobalInfrastructureManager with the global tuti path
-        $this->app->singleton(InfrastructureManagerInterface::class, fn ($app): GlobalInfrastructureManager => new GlobalInfrastructureManager($this->getGlobalTutiPath()));
+        // Register GlobalInfrastructureManager with contextual binding
+        // When GlobalInfrastructureManager needs $globalTutiPath, inject this value
+        $this->app->when(GlobalInfrastructureManager::class)
+            ->needs('$globalTutiPath')
+            ->give($this->getGlobalTutiPath());
+
+        $this->app->singleton(InfrastructureManagerInterface::class, GlobalInfrastructureManager::class);
 
         // Register EnvFileService and handlers
         $this->app->singleton(EnvFileService::class);

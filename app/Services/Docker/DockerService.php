@@ -11,6 +11,7 @@ final readonly class DockerService
     public function __construct(
         private string $composePath,
         private string $projectName,
+        private DockerCommandBuilder $builder,
         private ?string $envFilePath = null,
     ) {}
 
@@ -267,28 +268,12 @@ final readonly class DockerService
      */
     private function buildComposeCommand(array $args): array
     {
-        $parts = ['docker', 'compose'];
-
-        // Add compose file
-        $parts[] = '-f';
-        $parts[] = $this->composePath;
-
-        // Add project name
-        $parts[] = '-p';
-        $parts[] = $this->projectName;
-
-        // Add environment file
-        if ($this->envFilePath !== null && file_exists($this->envFilePath)) {
-            $parts[] = '--env-file';
-            $parts[] = $this->envFilePath;
-        }
-
-        // Add arguments
-        foreach ($args as $arg) {
-            $parts[] = $arg;
-        }
-
-        return $parts;
+        return $this->builder->buildComposeCommand(
+            composeFiles: [$this->composePath],
+            projectName: $this->projectName,
+            envFilePath: $this->envFilePath,
+            args: $args,
+        );
     }
 
     /**
