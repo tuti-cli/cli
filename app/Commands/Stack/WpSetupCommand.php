@@ -6,6 +6,7 @@ namespace App\Commands\Stack;
 
 use App\Concerns\HasBrandedOutput;
 use App\Services\Stack\Installers\WordPressStackInstaller;
+use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
 
 use function Laravel\Prompts\spin;
@@ -173,11 +174,16 @@ final class WpSetupCommand extends Command
 
         // Check if app container is running
         $containerName = "{$projectName}_dev_app";
-        $command = sprintf('docker ps --filter "name=%s" --filter "status=running" -q 2>/dev/null', $containerName);
 
-        exec($command, $output, $exitCode);
+        $process = Process::run([
+            'docker',
+            'ps',
+            '--filter', "name={$containerName}",
+            '--filter', 'status=running',
+            '-q',
+        ]);
 
-        return $exitCode === 0 && $output !== [];
+        return $process->successful() && mb_trim($process->output()) !== '';
     }
 
     /**
@@ -200,34 +206,34 @@ final class WpSetupCommand extends Command
 
         while ($attempt < $maxAttempts) {
             // First try: check if container is running AND healthy
-            $healthyCommand = sprintf(
-                'docker ps --filter "name=%s" --filter "health=healthy" --filter "status=running" -q 2>/dev/null',
-                $containerName
-            );
+            $healthyProcess = Process::run([
+                'docker',
+                'ps',
+                '--filter', "name={$containerName}",
+                '--filter', 'health=healthy',
+                '--filter', 'status=running',
+                '-q',
+            ]);
 
-            exec($healthyCommand, $healthyOutput, $healthyExitCode);
-
-            if ($healthyExitCode === 0 && $healthyOutput !== []) {
+            if ($healthyProcess->successful() && mb_trim($healthyProcess->output()) !== '') {
                 return true;
             }
 
             // Fallback: just check if container is running (some images don't have healthcheck)
-            $runningCommand = sprintf(
-                'docker ps --filter "name=%s" --filter "status=running" -q 2>/dev/null',
-                $containerName
-            );
-
-            exec($runningCommand, $runningOutput, $runningExitCode);
+            $runningProcess = Process::run([
+                'docker',
+                'ps',
+                '--filter', "name={$containerName}",
+                '--filter', 'status=running',
+                '-q',
+            ]);
 
             // If container is running but not healthy yet, wait more
             // If container is running and has been for a while, assume it's ready
-            if ($runningExitCode === 0 && $runningOutput !== [] && $attempt >= 10) {
+            if ($runningProcess->successful() && mb_trim($runningProcess->output()) !== '' && $attempt >= 10) {
                 return true;
             }
 
-            // Clear outputs for next iteration
-            $healthyOutput = [];
-            $runningOutput = [];
             $attempt++;
             usleep(500000); // 0.5 seconds
         }
