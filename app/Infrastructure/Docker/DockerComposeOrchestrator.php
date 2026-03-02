@@ -7,6 +7,7 @@ namespace App\Infrastructure\Docker;
 use App\Contracts\OrchestratorInterface;
 use App\Domain\Project\Project;
 use App\Services\Debug\DebugLogService;
+use App\Services\Docker\DockerCommandBuilder;
 use Illuminate\Support\Facades\Process;
 
 /**
@@ -23,8 +24,9 @@ final readonly class DockerComposeOrchestrator implements OrchestratorInterface
 {
     private DebugLogService $debug;
 
-    public function __construct()
-    {
+    public function __construct(
+        private DockerCommandBuilder $builder,
+    ) {
         $this->debug = DebugLogService::getInstance();
         $this->debug->setContext('docker:orchestrator');
     }
@@ -227,8 +229,6 @@ final readonly class DockerComposeOrchestrator implements OrchestratorInterface
      */
     private function buildComposeCommand(Project $project, array $args): array
     {
-        $parts = ['docker', 'compose'];
-
         // Determine compose file paths
         $tutiPath = $project->path . '/.tuti';
         $mainCompose = $tutiPath . '/docker-compose.yml';
@@ -240,31 +240,20 @@ final readonly class DockerComposeOrchestrator implements OrchestratorInterface
             $mainCompose = $tutiPath . '/docker/docker-compose.yml';
         }
 
-        // Add main config file
-        $parts[] = '-f';
-        $parts[] = $mainCompose;
-
-        // Add dev override if exists (for local development)
+        $composeFiles = [$mainCompose];
         if (file_exists($devCompose)) {
-            $parts[] = '-f';
-            $parts[] = $devCompose;
+            $composeFiles[] = $devCompose;
         }
 
-        // Explicitly specify env file from project root
-        if (file_exists($projectEnv)) {
-            $parts[] = '--env-file';
-            $parts[] = $projectEnv;
-        }
-
-        // Add project name context
-        $parts[] = '-p';
-        $parts[] = $project->config->name;
-
-        // Append actual action arguments (up, down, etc.)
-        $parts = array_merge($parts, $args);
+        $command = $this->builder->buildComposeCommand(
+            composeFiles: $composeFiles,
+            projectName: $project->config->name,
+            envFilePath: file_exists($projectEnv) ? $projectEnv : null,
+            args: $args,
+        );
 
         $this->debug->debug('Creating process', [
-            'command' => implode(' ', $parts),
+            'command' => implode(' ', $command),
             'compose_files' => [
                 'main' => $mainCompose,
                 'dev' => file_exists($devCompose) ? $devCompose : null,
@@ -272,6 +261,6 @@ final readonly class DockerComposeOrchestrator implements OrchestratorInterface
             'env_file' => file_exists($projectEnv) ? $projectEnv : 'not found',
         ]);
 
-        return $parts;
+        return $command;
     }
 }

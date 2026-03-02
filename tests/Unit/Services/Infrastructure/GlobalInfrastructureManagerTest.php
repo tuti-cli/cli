@@ -13,6 +13,7 @@ declare(strict_types=1);
  * @see GlobalInfrastructureManager
  */
 
+use App\Services\Docker\DockerCommandBuilder;
 use App\Services\Infrastructure\GlobalInfrastructureManager;
 use Illuminate\Support\Facades\Process;
 
@@ -20,7 +21,8 @@ use Illuminate\Support\Facades\Process;
 
 beforeEach(function (): void {
     $this->globalTutiPath = createTestDirectory();
-    $this->service = new GlobalInfrastructureManager($this->globalTutiPath);
+    $this->builder = new DockerCommandBuilder;
+    $this->service = new GlobalInfrastructureManager($this->globalTutiPath, $this->builder);
 });
 
 afterEach(function (): void {

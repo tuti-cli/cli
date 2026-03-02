@@ -12,6 +12,7 @@ declare(strict_types=1);
  */
 
 use App\Contracts\DockerExecutionResult;
+use App\Services\Docker\DockerCommandBuilder;
 use App\Services\Docker\DockerExecutorService;
 use Illuminate\Support\Facades\Process;
 
@@ -19,7 +20,8 @@ use Illuminate\Support\Facades\Process;
 
 beforeEach(function (): void {
     $this->tempDir = createTestDirectory();
-    $this->service = new DockerExecutorService;
+    $this->builder = new DockerCommandBuilder;
+    $this->service = new DockerExecutorService($this->builder);
 });
 
 afterEach(function (): void {
@@ -87,7 +89,8 @@ describe('getPhpImage', function (): void {
     });
 
     it('uses custom image from constructor', function (): void {
-        $service = new DockerExecutorService(phpImage: 'custom/php');
+        $builder = new DockerCommandBuilder;
+        $service = new DockerExecutorService($builder, phpImage: 'custom/php');
 
         expect($service->getPhpImage('8.4'))->toBe('custom/php:8.4-cli');
     });

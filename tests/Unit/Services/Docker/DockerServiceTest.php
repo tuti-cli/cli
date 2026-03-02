@@ -11,16 +11,27 @@ declare(strict_types=1);
  * @see DockerService
  */
 
+use App\Services\Docker\DockerCommandBuilder;
 use App\Services\Docker\DockerService;
 use Illuminate\Support\Facades\Process;
 
 // ─── Setup ──────────────────────────────────────────────────────────────
 
 beforeEach(function (): void {
+    $this->tempDir = createTestDirectory();
+    $this->composePath = $this->tempDir . '/docker-compose.yml';
+    file_put_contents($this->composePath, 'version: "3"');
+
+    $this->builder = new DockerCommandBuilder;
     $this->service = new DockerService(
-        composePath: '/projects/myapp/.tuti/docker-compose.yml',
+        composePath: $this->composePath,
         projectName: 'myapp',
+        builder: $this->builder,
     );
+});
+
+afterEach(function (): void {
+    cleanupTestDirectory($this->tempDir);
 });
 
 // ─── Helpers ────────────────────────────────────────────────────────────
@@ -82,7 +93,7 @@ describe('start', function (): void {
 
         $this->service->start();
 
-        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), '-f /projects/myapp/.tuti/docker-compose.yml')
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), "-f {$this->composePath}")
             && str_contains(commandStr($p), '-p myapp'));
     });
 
@@ -373,12 +384,16 @@ describe('env file', function (): void {
 
     it('includes env file in command when it exists', function (): void {
         $tempDir = createTestDirectory();
+        $composePath = $tempDir . '/docker-compose.yml';
+        file_put_contents($composePath, 'version: "3"');
         $envFile = $tempDir . '/local.env';
         file_put_contents($envFile, 'APP_ENV=dev');
 
+        $builder = new DockerCommandBuilder;
         $service = new DockerService(
-            composePath: '/projects/myapp/.tuti/docker-compose.yml',
+            composePath: $composePath,
             projectName: 'myapp',
+            builder: $builder,
             envFilePath: $envFile,
         );
 
@@ -405,27 +420,42 @@ describe('env file', function (): void {
 
 describe('constructor', function (): void {
 
-    it('can be instantiated with just composePath and projectName', function (): void {
-        $service = new DockerService('/path/to/compose.yml', 'myproject');
+    it('can be instantiated with required parameters', function (): void {
+        $builder = new DockerCommandBuilder;
+        $service = new DockerService('/path/to/compose.yml', 'myproject', $builder);
 
         expect($service)->toBeInstanceOf(DockerService::class);
     });
 
     it('uses injected project name in commands', function (): void {
-        $service = new DockerService('/any/path.yml', 'custom-project');
+        $tempDir = createTestDirectory();
+        $composePath = $tempDir . '/docker-compose.yml';
+        file_put_contents($composePath, 'version: "3"');
+
+        $builder = new DockerCommandBuilder;
+        $service = new DockerService($composePath, 'custom-project', $builder);
         fakeComposeRunning();
 
         $service->start();
 
         Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), '-p custom-project'));
+
+        cleanupTestDirectory($tempDir);
     });
 
     it('uses injected compose path in commands', function (): void {
-        $service = new DockerService('/custom/docker-compose.yml', 'app');
+        $tempDir = createTestDirectory();
+        $composePath = $tempDir . '/docker-compose.yml';
+        file_put_contents($composePath, 'version: "3"');
+
+        $builder = new DockerCommandBuilder;
+        $service = new DockerService($composePath, 'app', $builder);
         fakeComposeRunning();
 
         $service->start();
 
-        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), '-f /custom/docker-compose.yml'));
+        Process::assertRan(fn (object $p): bool => str_contains(commandStr($p), "-f {$composePath}"));
+
+        cleanupTestDirectory($tempDir);
     });
 });
