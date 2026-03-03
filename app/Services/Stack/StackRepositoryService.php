@@ -19,6 +19,12 @@ final class StackRepositoryService
     private const string REGISTRY_PATH = 'stacks/registry.json';
 
     /**
+     * Valid stack name pattern: alphanumeric, dashes, underscores only.
+     * Prevents path traversal attacks (e.g., '../../../etc/passwd').
+     */
+    private const string VALID_STACK_NAME_PATTERN = '/^[a-z0-9_-]+$/i';
+
+    /**
      * @var array<string, mixed>|null
      */
     private ?array $registry = null;
@@ -38,6 +44,8 @@ final class StackRepositoryService
      */
     public function getStackPath(string $stackName, bool $forceUpdate = false): string
     {
+        $this->validateStackName($stackName);
+
         // Check multiple possible local paths for bundled stacks
         $localPaths = [
             stack_path($stackName),                    // stubs/stacks/laravel
@@ -74,6 +82,8 @@ final class StackRepositoryService
      */
     public function downloadStack(string $stackName): string
     {
+        $this->validateStackName($stackName);
+
         $stackInfo = $this->getStackInfo($stackName);
 
         if ($stackInfo === null) {
@@ -136,6 +146,8 @@ final class StackRepositoryService
      */
     public function updateStack(string $stackName): string
     {
+        $this->validateStackName($stackName);
+
         return $this->downloadStack($stackName);
     }
 
@@ -144,6 +156,8 @@ final class StackRepositoryService
      */
     public function hasStack(string $stackName): bool
     {
+        $this->validateStackName($stackName);
+
         // Check local first
         $localPath = stack_path("{$stackName}-stack");
         if (is_dir($localPath) && file_exists($localPath . '/stack.json')) {
@@ -161,6 +175,8 @@ final class StackRepositoryService
      */
     public function getStackInfo(string $stackName): ?array
     {
+        $this->validateStackName($stackName);
+
         $registry = $this->loadRegistry();
 
         return $registry['stacks'][$stackName] ?? null;
@@ -215,6 +231,8 @@ final class StackRepositoryService
      */
     public function getCachedStackPath(string $stackName): string
     {
+        $this->validateStackName($stackName);
+
         return global_tuti_path("stacks/{$stackName}-stack");
     }
 
@@ -224,6 +242,7 @@ final class StackRepositoryService
     public function clearCache(?string $stackName = null): void
     {
         if ($stackName !== null) {
+            $this->validateStackName($stackName);
             $path = $this->getCachedStackPath($stackName);
             if (is_dir($path)) {
                 $this->removeDirectory($path);
@@ -236,6 +255,24 @@ final class StackRepositoryService
         $cachePath = global_tuti_path('stacks');
         if (is_dir($cachePath)) {
             $this->removeDirectory($cachePath);
+        }
+    }
+
+    /**
+     * Validate stack name to prevent path traversal attacks.
+     *
+     * @throws RuntimeException If stack name contains invalid characters
+     */
+    private function validateStackName(string $stackName): void
+    {
+        if ($stackName === '') {
+            throw new RuntimeException('Stack name cannot be empty');
+        }
+
+        if (! preg_match(self::VALID_STACK_NAME_PATTERN, $stackName)) {
+            throw new RuntimeException(
+                "Invalid stack name '{$stackName}'. Stack names may only contain letters, numbers, dashes, and underscores."
+            );
         }
     }
 
