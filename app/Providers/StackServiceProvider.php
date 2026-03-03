@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Contracts\StackInstallerInterface;
 use App\Services\Stack\Installers\LaravelStackInstaller;
 use App\Services\Stack\Installers\WordPressStackInstaller;
+use App\Services\Stack\OptionalServicesBuilder;
 use App\Services\Stack\StackComposeBuilderService;
 use App\Services\Stack\StackEnvGeneratorService;
 use App\Services\Stack\StackFilesCopierService;
@@ -29,6 +30,7 @@ final class StackServiceProvider extends ServiceProvider
         $this->app->singleton(StackEnvGeneratorService::class);
         $this->app->singleton(StackComposeBuilderService::class);
         $this->app->singleton(StackFilesCopierService::class);
+        $this->app->singleton(OptionalServicesBuilder::class);
         $this->app->singleton(StackInitializationService::class);
         $this->app->singleton(StackRepositoryService::class);
 
