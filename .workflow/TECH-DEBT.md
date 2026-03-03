@@ -11,8 +11,8 @@
 |----------|-------|--------------|
 | Critical | 0 | 0 days |
 | High | 5 | 3.5 days |
-| Normal | 10 | 11.5 days |
-| Resolved | 2 | - |
+| Normal | 11 | 12.5 days |
+| Resolved | 1 | - |
 | Low | 6 | 3.5 days |
 
 ### Category Breakdown
@@ -20,7 +20,7 @@
 | Category | Critical | High | Normal | Low |
 |----------|----------|------|--------|-----|
 | Security | 0 | 2 | 3 | 2 |
-| Architecture | 0 | 0 | 1 | 1 |
+| Architecture | 0 | 0 | 2 | 1 |
 | Code Quality | 0 | 1 | 4 | 2 |
 | Testing | 0 | 1 | 2 | 1 |
 
@@ -335,7 +335,7 @@ DEBT-012 ──relates──▶ DEBT-020
 | DEBT-007 | Normal | Security | XS | #73 | Open |
 | DEBT-008 | Normal | Security | S | #74 | Open |
 | DEBT-009 | Normal | Architecture | S | #75 | Resolved |
-| DEBT-010 | Normal | Architecture | M | #76 | Resolved |
+| DEBT-010 | Normal | Architecture | M | #76 | Open |
 | DEBT-011 | Normal | Code Quality | S | #77 | Open |
 | DEBT-012 | Normal | Code Quality | XL | #78 | Open |
 | DEBT-013 | Normal | Architecture | S | #79 | Open |
@@ -361,8 +361,8 @@ DEBT-012 ──relates──▶ DEBT-020
 | Priority | Count | Issues |
 |----------|-------|--------|
 | High | 5 | #67, #68, #69, #70, #71 |
-| Normal | 8 | #72, #73, #74, #77, #78, #79, #80, #81 |
-| Resolved | 2 | #75 (DockerService deleted), #76 (DockerCommandBuilder) |
+| Normal | 9 | #72, #73, #74, #76, #77, #78, #79, #80, #81 |
+| Resolved | 1 | #75 (DockerService deleted) |
 | Low | 2 | #82, #83 |
 
 ### Issues by Category
