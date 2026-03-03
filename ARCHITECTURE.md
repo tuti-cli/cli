@@ -104,7 +104,7 @@ app/
 ├── Services/             # Application Layer (organized by domain)
 │   ├── Context/          # WorkingDirectoryService
 │   ├── Debug/            # DebugLogService (singleton)
-│   ├── Docker/           # DockerExecutorService, DockerService
+│   ├── Docker/           # DockerExecutorService, DockerCommandBuilder
 │   ├── Global/           # GlobalRegistryService, GlobalSettingsService
 │   ├── Infrastructure/   # GlobalInfrastructureManager
 │   ├── Project/          # ProjectDirectoryService, ProjectInitializationService,

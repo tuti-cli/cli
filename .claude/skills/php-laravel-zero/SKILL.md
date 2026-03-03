@@ -45,7 +45,7 @@ tests/
 ├── Unit/
 │   └── Services/          # Service unit tests
 │       ├── StackServiceTest.php
-│       └── DockerServiceTest.php
+│       └── DockerExecutorServiceTest.php
 ├── Mocks/                 # Test mocks
 │   └── FakeDockerOrchestrator.php
 ├── Pest.php               # Pest configuration

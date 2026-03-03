@@ -32,7 +32,7 @@ Increase test coverage from ~5 test files to comprehensive coverage across all c
   - [x] `ProjectStateManagerService` - Docker status querying (19 tests)
   - [x] `GlobalInfrastructureManager` - Traefik lifecycle (23 tests)
   - [x] `WorkingDirectoryService` - Project detection, path resolution
-  - [x] `DockerService` - Docker Compose wrapper (33 tests, refactored for testability)
+  - [x] `DockerComposeOrchestrator` - Docker Compose lifecycle management (via OrchestratorInterface)
   - [x] `ProjectDirectoryService` - Project directory management (14 tests)
 - [ ] Feature tests for all user-facing commands (target: >80% coverage)
   - [x] `install` command

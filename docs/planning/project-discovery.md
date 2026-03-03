@@ -302,7 +302,7 @@ Based on codebase analysis, the actual current bottlenecks are:
 
 4. **4 test/debug commands in production binary** - Commands like `test:registry`, `test:compose-builder`, `test:stack-loader`, `test:tuti-directory`, `test:stack-overrides`, `validate:quick`, and `ui:showcase` are development tools that will ship in the production binary. These need to be excluded from PHAR builds or gated behind a dev flag.
 
-5. **Port management is passive, not active** - `DockerService.checkPortConflicts()` method exists but is not called before starting containers. Port conflicts are resolved architecturally through Traefik (all projects on ports 80/443), but direct database/redis port access across multiple running projects would still conflict.
+5. **Port management is passive, not active** - Port conflict detection should be implemented before starting containers. Port conflicts are resolved architecturally through Traefik (all projects on ports 80/443), but direct database/redis port access across multiple running projects would still conflict.
 
 6. **Global registry (`projects.json`) not exposed via commands** - `GlobalRegistryService` can register and list projects, but there's no CLI command to view registered projects (`projects:list`), switch between them, or check their status across the board. Multi-project management is partially implemented in the backend but not accessible to users.
 
