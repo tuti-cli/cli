@@ -11,7 +11,8 @@
 |----------|-------|--------------|
 | Critical | 0 | 0 days |
 | High | 5 | 3.5 days |
-| Normal | 12 | 13.5 days |
+| Normal | 11 | 12.5 days |
+| Resolved | 1 | - |
 | Low | 6 | 3.5 days |
 
 ### Category Breakdown
@@ -19,7 +20,7 @@
 | Category | Critical | High | Normal | Low |
 |----------|----------|------|--------|-----|
 | Security | 0 | 2 | 3 | 2 |
-| Architecture | 0 | 0 | 3 | 1 |
+| Architecture | 0 | 0 | 2 | 1 |
 | Code Quality | 0 | 1 | 4 | 2 |
 | Testing | 0 | 1 | 2 | 1 |
 
@@ -58,10 +59,10 @@
 - **Effort:** M (4-16 hours)
 - **ROI:** 2.0 (Maintainability / Medium Effort)
 - **Issue:** #69
-- **Description:** Duplicate buildComposeCommand() logic across 3 Docker services
+- **Description:** Duplicate buildComposeCommand() logic across Docker services
 - **Remediation:** Create DockerCommandBuilder service to centralize command construction
 - **Impact:** Code duplication increases maintenance burden and bug surface area
-- **Affected Files:** app/Services/Docker/DockerExecutorService.php, app/Services/Docker/DockerService.php, app/Services/Infrastructure/GlobalInfrastructureManager.php
+- **Affected Files:** app/Services/Docker/DockerExecutorService.php, app/Services/Infrastructure/GlobalInfrastructureManager.php
 
 ### DEBT-004: Add tests for WpSetupCommand
 - **Category:** Testing
@@ -127,18 +128,6 @@
 - **Remediation:** Add prominent warnings when development credentials are detected in use
 - **Impact:** Risk of deploying development credentials to production
 - **Affected Files:** app/Commands/Stack/WpSetupCommand.php, app/Commands/Stack/WordPressCommand.php, app/Services/Docker/DockerExecutorService.php, app/Services/Stack/Installers/LaravelStackInstaller.php
-
-### DEBT-009: Create DockerServiceInterface
-- **Category:** Architecture
-- **Source:** AUDIT.md#ARCH-001
-- **Severity:** Medium
-- **Effort:** S (2-4 hours)
-- **ROI:** 1.0 (Architecture / Low Effort)
-- **Issue:** #75
-- **Description:** DockerService not abstracted via interface, unlike DockerExecutorService
-- **Remediation:** Create DockerServiceInterface and refactor DockerService to implement it
-- **Impact:** Inconsistent abstraction pattern reduces testability and flexibility
-- **Affected Files:** app/Contracts/DockerServiceInterface.php (new), app/Services/Docker/DockerService.php
 
 ### DEBT-010: Refactor buildComposeCommand() duplication
 - **Category:** Architecture
@@ -303,7 +292,6 @@ DEBT-002 ──relates──▶ DEBT-001
 DEBT-003 ──relates──▶ DEBT-010
 DEBT-004 ──relates──▶ DEBT-015
 DEBT-005 ──relates──▶ DEBT-014
-DEBT-009 ──relates──▶ DEBT-010
 DEBT-010 ──relates──▶ DEBT-003
 DEBT-011 ──relates──▶ DEBT-012
 DEBT-012 ──relates──▶ DEBT-020
@@ -323,9 +311,8 @@ DEBT-012 ──relates──▶ DEBT-020
 ### Next Sprint
 1. **DEBT-006**: Add directory validation before Docker volume mounts (Security)
 2. **DEBT-008**: Add development credential warnings (Security)
-3. **DEBT-009**: Create DockerServiceInterface (Architecture)
-4. **DEBT-011**: Refactor appendOptionalServices() method (Code Quality)
-5. **DEBT-014**: Add tests for StackRepositoryService (Testing)
+3. **DEBT-011**: Refactor appendOptionalServices() method (Code Quality)
+4. **DEBT-014**: Add tests for StackRepositoryService (Testing)
 
 ### Upcoming (Future)
 1. **DEBT-010**: Refactor buildComposeCommand() duplication (Architecture)
@@ -347,7 +334,7 @@ DEBT-012 ──relates──▶ DEBT-020
 | DEBT-006 | Normal | Security | S | #72 | Open |
 | DEBT-007 | Normal | Security | XS | #73 | Open |
 | DEBT-008 | Normal | Security | S | #74 | Open |
-| DEBT-009 | Normal | Architecture | S | #75 | Open |
+| DEBT-009 | Normal | Architecture | S | #75 | Resolved |
 | DEBT-010 | Normal | Architecture | M | #76 | Open |
 | DEBT-011 | Normal | Code Quality | S | #77 | Open |
 | DEBT-012 | Normal | Code Quality | XL | #78 | Open |
@@ -374,7 +361,8 @@ DEBT-012 ──relates──▶ DEBT-020
 | Priority | Count | Issues |
 |----------|-------|--------|
 | High | 5 | #67, #68, #69, #70, #71 |
-| Normal | 10 | #72, #73, #74, #75, #76, #77, #78, #79, #80, #81 |
+| Normal | 9 | #72, #73, #74, #76, #77, #78, #79, #80, #81 |
+| Resolved | 1 | #75 (DockerService deleted) |
 | Low | 2 | #82, #83 |
 
 ### Issues by Category

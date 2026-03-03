@@ -415,7 +415,7 @@ Process::run(implode(' ', $parts));
 
 - **Never** interpolate variables into shell command strings
 - **Never** use `escapeshellarg()` / `escapeshellcmd()` - array syntax handles escaping
-- Docker commands should go through `DockerService` / `DockerExecutorService`
+- Docker commands should go through `DockerExecutorService` or `DockerComposeOrchestrator`
 
 ---
 

@@ -56,8 +56,7 @@ The Tuti CLI codebase demonstrates **strong architectural foundations** with cle
 
 | Issue | Location | Severity | Notes |
 |-------|----------|----------|-------|
-| Missing interface | `DockerService` | Medium | Not abstracted via interface, unlike `DockerExecutorService` |
-| Duplicate command building | 3 Docker services | Medium | `buildComposeCommand()` duplicated across services |
+| Duplicate command building | 2 Docker services | Medium | `buildComposeCommand()` duplicated across services |
 | StateManager interface limited | `StateManagerInterface` | Low | Missing state query methods |
 | DockerExecutionResult placement | `Contracts/` folder | Low | Value object in contracts folder |
 
@@ -272,9 +271,8 @@ $result = Process::run([
 
 1. Refactor `StackInitializationService::appendOptionalServices()`
 2. Split `LaravelStackInstaller` into smaller services
-3. Create `DockerServiceInterface`
-4. Add directory validation before Docker volume mounts
-5. Add development credential warnings
+3. Add directory validation before Docker volume mounts
+4. Add development credential warnings
 6. Move `DockerExecutionResult` to Value Objects
 
 ### Low Priority (Backlog)

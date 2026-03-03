@@ -46,7 +46,7 @@ Surface the existing project registry through user-facing commands.
 Make port management active instead of passive.
 
 **Deliverables:**
-- [ ] Call `DockerService.checkPortConflicts()` before `local:start`
+- [ ] Implement port conflict detection before `local:start`
   - Check if any project service ports conflict with running containers
   - Warn user and suggest resolution (stop conflicting project or use Traefik-only access)
 - [ ] `tuti projects:ports` - Show port allocations across all projects

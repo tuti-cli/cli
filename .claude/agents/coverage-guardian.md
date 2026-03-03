@@ -107,7 +107,7 @@ composer test:coverage
 | File | Coverage | Status |
 |------|----------|--------|
 | StackService.php | 94.2% | ✅ |
-| DockerService.php | 91.1% | ✅ |
+| DockerExecutorService.php | 91.1% | ✅ |
 | ConfigService.php | 89.5% | ❌ |
 
 ### Commands (Target: 80%)

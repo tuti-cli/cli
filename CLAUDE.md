@@ -147,7 +147,7 @@ app/
 ├── Services/
 │   ├── Context/          # WorkingDirectoryService
 │   ├── Debug/            # DebugLogService (singleton)
-│   ├── Docker/           # DockerExecutorService, DockerService
+│   ├── Docker/           # DockerExecutorService, DockerCommandBuilder
 │   ├── Global/           # GlobalRegistryService, GlobalSettingsService
 │   ├── Infrastructure/   # GlobalInfrastructureManager
 │   ├── Project/          # ProjectDirectoryService, ProjectInitializationService,
@@ -334,7 +334,7 @@ interface InfrastructureManagerInterface {
 - **NEVER** use `escapeshellarg()` / `escapeshellcmd()` — array syntax eliminates the need
 - **NEVER** interpolate variables into shell command strings
 - All external process execution MUST go through array syntax for shell injection prevention
-- Docker commands: centralize in `DockerService` / `DockerExecutorService` — no direct `Process::run(['docker', ...])` in commands or other services
+- Docker commands: centralize in `DockerExecutorService` or `DockerComposeOrchestrator` — no direct `Process::run(['docker', ...])` in commands or other services
 - Validate file paths exist before passing to Process (use `file_exists()`, `is_dir()`)
 - Use `Process::path($dir)` for working directory — never `cd` in command strings
 
