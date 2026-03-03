@@ -86,9 +86,9 @@ function laravelCommandStr(string $command): string
 /**
  * Create a fake Docker executor result object.
  */
-function createFakeDockerResult(bool $successful = true, string $output = 'OK', string $errorOutput = ''): App\Contracts\DockerExecutionResult
+function createFakeDockerResult(bool $successful = true, string $output = 'OK', string $errorOutput = ''): App\Services\Docker\ValueObjects\DockerExecutionResultVO
 {
-    return new App\Contracts\DockerExecutionResult(
+    return new App\Services\Docker\ValueObjects\DockerExecutionResultVO(
         successful: $successful,
         output: $output,
         errorOutput: $errorOutput,

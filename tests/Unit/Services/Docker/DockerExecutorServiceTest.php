@@ -11,9 +11,9 @@ declare(strict_types=1);
  * @see DockerExecutorService
  */
 
-use App\Contracts\DockerExecutionResult;
 use App\Services\Docker\DockerCommandBuilder;
 use App\Services\Docker\DockerExecutorService;
+use App\Services\Docker\ValueObjects\DockerExecutionResultVO;
 use Illuminate\Support\Facades\Process;
 
 // ─── Setup ──────────────────────────────────────────────────────────────
@@ -100,12 +100,12 @@ describe('getPhpImage', function (): void {
 
 describe('runComposer', function (): void {
 
-    it('returns a DockerExecutionResult', function (): void {
+    it('returns a DockerExecutionResultVO', function (): void {
         fakeDockerAvailable();
 
         $result = $this->service->runComposer('install', $this->tempDir);
 
-        expect($result)->toBeInstanceOf(DockerExecutionResult::class);
+        expect($result)->toBeInstanceOf(DockerExecutionResultVO::class);
         expect($result->successful)->toBeTrue();
     });
 
@@ -243,12 +243,12 @@ describe('runNpm', function (): void {
             && str_contains(execCommandStr($process), 'node:20-alpine'));
     });
 
-    it('returns a DockerExecutionResult', function (): void {
+    it('returns a DockerExecutionResultVO', function (): void {
         fakeDockerAvailable();
 
         $result = $this->service->runNpm('build', $this->tempDir);
 
-        expect($result)->toBeInstanceOf(DockerExecutionResult::class);
+        expect($result)->toBeInstanceOf(DockerExecutionResultVO::class);
     });
 });
 
