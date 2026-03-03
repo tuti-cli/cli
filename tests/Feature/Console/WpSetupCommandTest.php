@@ -10,17 +10,17 @@ declare(strict_types=1);
  * @see App\Commands\Stack\WpSetupCommand
  */
 
-use App\Contracts\DockerExecutionResult;
 use App\Contracts\DockerExecutorInterface;
+use App\Services\Docker\ValueObjects\DockerExecutionResultVO;
 use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
 
 /**
  * Create a mock Docker execution result.
  */
-function createWpMockDockerResult(bool $successful = true, string $output = '', string $error = ''): DockerExecutionResult
+function createWpMockDockerResult(bool $successful = true, string $output = '', string $error = ''): DockerExecutionResultVO
 {
-    return new DockerExecutionResult(
+    return new DockerExecutionResultVO(
         successful: $successful,
         output: $output,
         errorOutput: $error,

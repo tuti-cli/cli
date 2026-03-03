@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Docker;
 
-use App\Contracts\DockerExecutionResult;
 use App\Contracts\DockerExecutorInterface;
+use App\Services\Docker\ValueObjects\DockerExecutionResultVO;
 use Illuminate\Support\Facades\Process;
 use RuntimeException;
 
@@ -33,7 +33,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         private string $phpVersion = self::DEFAULT_PHP_VERSION,
     ) {}
 
-    public function runComposer(string $command, string $workDir, array $env = []): DockerExecutionResult
+    public function runComposer(string $command, string $workDir, array $env = []): DockerExecutionResultVO
     {
         $this->ensureDockerAvailable();
         $this->validateDirectoryExists($workDir);
@@ -44,12 +44,12 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         return $this->exec($image, $fullCommand, $workDir, $env);
     }
 
-    public function runArtisan(string $command, string $projectPath, array $env = []): DockerExecutionResult
+    public function runArtisan(string $command, string $projectPath, array $env = []): DockerExecutionResultVO
     {
         $this->ensureDockerAvailable();
 
         if (! file_exists($projectPath . '/artisan')) {
-            return DockerExecutionResult::failure(
+            return DockerExecutionResultVO::failure(
                 "No Laravel project found at {$projectPath}",
                 1
             );
@@ -64,7 +64,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         return $this->exec($image, $fullCommand, $projectPath, $env);
     }
 
-    public function runNpm(string $command, string $workDir, array $env = []): DockerExecutionResult
+    public function runNpm(string $command, string $workDir, array $env = []): DockerExecutionResultVO
     {
         $this->ensureDockerAvailable();
         $this->validateDirectoryExists($workDir);
@@ -84,7 +84,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
      * @param  array<string, string>  $env  Environment variables
      * @param  string|null  $networkName  Optional Docker network to connect to (for database access)
      */
-    public function runWpCli(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
+    public function runWpCli(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResultVO
     {
         $this->ensureDockerAvailable();
         $this->validateDirectoryExists($workDir);
@@ -153,7 +153,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         string $workDir,
         array $env = [],
         array $volumes = []
-    ): DockerExecutionResult {
+    ): DockerExecutionResultVO {
         $this->ensureDockerAvailable();
 
         // Build docker run command
@@ -161,7 +161,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
         $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($dockerCommand);
 
-        return new DockerExecutionResult(
+        return new DockerExecutionResultVO(
             successful: $process->successful(),
             output: $process->output(),
             errorOutput: $process->errorOutput(),
@@ -267,11 +267,11 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
     /**
      * Pull a Docker image if not available locally.
      */
-    public function pullImage(string $image): DockerExecutionResult
+    public function pullImage(string $image): DockerExecutionResultVO
     {
         $process = Process::timeout(300)->run(['docker', 'pull', $image]);
 
-        return new DockerExecutionResult(
+        return new DockerExecutionResultVO(
             successful: $process->successful(),
             output: $process->output(),
             errorOutput: $process->errorOutput(),
@@ -298,7 +298,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         string $containerName,
         string $command,
         array $env = []
-    ): DockerExecutionResult {
+    ): DockerExecutionResultVO {
         $parts = ['docker', 'exec'];
 
         foreach ($env as $key => $value) {
@@ -313,7 +313,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
         $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
 
-        return new DockerExecutionResult(
+        return new DockerExecutionResultVO(
             successful: $process->successful(),
             output: $process->output(),
             errorOutput: $process->errorOutput(),
@@ -326,7 +326,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
      *
      * @param  array<int, string>  $arguments  WP-CLI command arguments
      */
-    private function execInWpCliService(array $arguments, string $projectPath): DockerExecutionResult
+    private function execInWpCliService(array $arguments, string $projectPath): DockerExecutionResultVO
     {
         $composeFile = $projectPath . '/docker-compose.yml';
         $composeDevFile = $projectPath . '/docker-compose.dev.yml';
@@ -344,7 +344,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
         $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($composeCommand);
 
-        return new DockerExecutionResult(
+        return new DockerExecutionResultVO(
             successful: $process->successful(),
             output: $process->output(),
             errorOutput: $process->errorOutput(),
@@ -360,7 +360,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
      * @param  array<int, string>  $arguments  WP-CLI command arguments
      * @param  array<string, string>  $env  Environment variables
      */
-    private function runWpCliTemporary(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
+    private function runWpCliTemporary(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResultVO
     {
         $image = 'wordpress:cli-2-php8.3';
 
@@ -415,7 +415,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
         $process = Process::timeout(self::DEFAULT_TIMEOUT)->run($parts);
 
-        return new DockerExecutionResult(
+        return new DockerExecutionResultVO(
             successful: $process->successful(),
             output: $process->output(),
             errorOutput: $process->errorOutput(),

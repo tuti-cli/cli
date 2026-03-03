@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
+use App\Services\Docker\ValueObjects\DockerExecutionResultVO;
+
 /**
  * Interface for executing commands inside Docker containers.
  *
@@ -19,7 +21,7 @@ interface DockerExecutorInterface
      * @param  string  $workDir  The working directory to mount
      * @param  array<string, string>  $env  Environment variables
      */
-    public function runComposer(string $command, string $workDir, array $env = []): DockerExecutionResult;
+    public function runComposer(string $command, string $workDir, array $env = []): DockerExecutionResultVO;
 
     /**
      * Run a PHP artisan command inside a Docker container.
@@ -28,7 +30,7 @@ interface DockerExecutorInterface
      * @param  string  $projectPath  Path to the Laravel project
      * @param  array<string, string>  $env  Environment variables
      */
-    public function runArtisan(string $command, string $projectPath, array $env = []): DockerExecutionResult;
+    public function runArtisan(string $command, string $projectPath, array $env = []): DockerExecutionResultVO;
 
     /**
      * Run an npm command inside a Docker container.
@@ -37,7 +39,7 @@ interface DockerExecutorInterface
      * @param  string  $workDir  The working directory to mount
      * @param  array<string, string>  $env  Environment variables
      */
-    public function runNpm(string $command, string $workDir, array $env = []): DockerExecutionResult;
+    public function runNpm(string $command, string $workDir, array $env = []): DockerExecutionResultVO;
 
     /**
      * Run a WP-CLI command inside a Docker container.
@@ -47,7 +49,7 @@ interface DockerExecutorInterface
      * @param  array<string, string>  $env  Environment variables
      * @param  string|null  $networkName  Optional Docker network to connect to (for database access)
      */
-    public function runWpCli(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult;
+    public function runWpCli(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResultVO;
 
     /**
      * Run a generic command inside a Docker container.
@@ -64,7 +66,7 @@ interface DockerExecutorInterface
         string $workDir,
         array $env = [],
         array $volumes = []
-    ): DockerExecutionResult;
+    ): DockerExecutionResultVO;
 
     /**
      * Run an interactive command inside a Docker container with TTY support.
@@ -96,37 +98,4 @@ interface DockerExecutorInterface
      * Get the PHP image to use for commands.
      */
     public function getPhpImage(string $version = '8.4'): string;
-}
-
-/**
- * Value object for Docker execution results.
- */
-final readonly class DockerExecutionResult
-{
-    public function __construct(
-        public bool $successful,
-        public string $output,
-        public string $errorOutput,
-        public int $exitCode,
-    ) {}
-
-    public static function success(string $output): self
-    {
-        return new self(
-            successful: true,
-            output: $output,
-            errorOutput: '',
-            exitCode: 0,
-        );
-    }
-
-    public static function failure(string $errorOutput, int $exitCode = 1): self
-    {
-        return new self(
-            successful: false,
-            output: '',
-            errorOutput: $errorOutput,
-            exitCode: $exitCode,
-        );
-    }
 }
