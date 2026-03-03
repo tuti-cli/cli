@@ -7,6 +7,7 @@ namespace App\Commands\Stack;
 use App\Concerns\BuildsProjectUrls;
 use App\Concerns\HasBrandedOutput;
 use App\Services\Project\ProjectDirectoryService;
+use App\Services\Security\CredentialValidationService;
 use App\Services\Stack\Installers\WordPressStackInstaller;
 use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
@@ -41,7 +42,8 @@ final class WordPressCommand extends Command
         StackRegistryManagerService $registry,
         StackLoaderService $stackLoader,
         ProjectDirectoryService $directoryService,
-        StackInitializationService $initService
+        StackInitializationService $initService,
+        CredentialValidationService $credentialValidator
     ): int {
         $this->brandedHeader('WordPress Stack Installation');
 
@@ -67,7 +69,7 @@ final class WordPressCommand extends Command
             }
 
             $this->executeInstallation($installer, $initService, $config);
-            $this->displayNextSteps($config);
+            $this->displayNextSteps($config, $credentialValidator);
 
             return self::SUCCESS;
 
@@ -528,7 +530,7 @@ final class WordPressCommand extends Command
     /**
      * @param  array<string, mixed>  $config
      */
-    private function displayNextSteps(array $config): void
+    private function displayNextSteps(array $config, CredentialValidationService $credentialValidator): void
     {
         $this->section('Project Structure');
 
@@ -573,6 +575,8 @@ final class WordPressCommand extends Command
                 'Username' => 'admin',
                 'Password' => 'admin',
             ], 55, true);
+
+            $this->displayCredentialWarning($credentialValidator);
         } else {
             $nextSteps = array_merge($nextSteps, [
                 'Add to /etc/hosts: 127.0.0.1 ' . $projectDomain,
@@ -590,5 +594,23 @@ final class WordPressCommand extends Command
         $this->box('Project URLs', $urls, 60, true);
 
         $this->hint('Use "tuti local:status" to check running services');
+    }
+
+    /**
+     * Display warning about development credentials.
+     */
+    private function displayCredentialWarning(CredentialValidationService $validator): void
+    {
+        $credentials = [
+            'admin_user' => 'admin',
+            'admin_password' => 'admin',
+        ];
+
+        $result = $validator->validateCredentials($credentials);
+
+        if ($result['has_issues']) {
+            $warning = $validator->formatWarning($result['issues']);
+            $this->warningBox($warning['title'], $warning['lines']);
+        }
     }
 }

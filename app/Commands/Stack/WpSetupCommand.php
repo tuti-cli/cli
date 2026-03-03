@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Commands\Stack;
 
 use App\Concerns\HasBrandedOutput;
+use App\Services\Security\CredentialValidationService;
 use App\Services\Stack\Installers\WordPressStackInstaller;
 use Illuminate\Support\Facades\Process;
 use LaravelZero\Framework\Commands\Command;
@@ -26,8 +27,10 @@ final class WpSetupCommand extends Command
 
     protected $description = 'Complete WordPress installation with dev credentials (run after local:start)';
 
-    public function handle(WordPressStackInstaller $installer): int
-    {
+    public function handle(
+        WordPressStackInstaller $installer,
+        CredentialValidationService $credentialValidator,
+    ): int {
         $this->brandedHeader('WordPress Auto-Setup');
 
         $projectPath = getcwd();
@@ -86,6 +89,8 @@ final class WpSetupCommand extends Command
                     'Username' => $autoSetup['admin_user'],
                     'Password' => $autoSetup['admin_password'],
                 ], 55, true);
+
+                $this->displayCredentialWarning($credentialValidator, $autoSetup);
 
                 return self::SUCCESS;
             }
@@ -149,6 +154,8 @@ final class WpSetupCommand extends Command
             'Password' => $autoSetup['admin_password'],
             'Email' => $autoSetup['admin_email'],
         ], 55, true);
+
+        $this->displayCredentialWarning($credentialValidator, $autoSetup);
 
         $this->completed('WordPress is ready!', [
             'Visit: ' . $autoSetup['site_url'],
@@ -239,5 +246,25 @@ final class WpSetupCommand extends Command
         }
 
         return false;
+    }
+
+    /**
+     * Display warning if development credentials are detected.
+     *
+     * @param  array<string, mixed>  $autoSetup
+     */
+    private function displayCredentialWarning(CredentialValidationService $validator, array $autoSetup): void
+    {
+        $credentials = [
+            'admin_user' => $autoSetup['admin_user'] ?? '',
+            'admin_password' => $autoSetup['admin_password'] ?? '',
+        ];
+
+        $result = $validator->validateCredentials($credentials);
+
+        if ($result['has_issues']) {
+            $warning = $validator->formatWarning($result['issues']);
+            $this->warningBox($warning['title'], $warning['lines']);
+        }
     }
 }
