@@ -124,13 +124,76 @@ describe('runComposer', function (): void {
             ->toThrow(RuntimeException::class, 'Docker is not available');
     });
 
-    it('creates directory if it does not exist', function (): void {
+    it('rejects non-existent directory', function (): void {
         fakeDockerAvailable();
         $newDir = $this->tempDir . '/new-project';
 
-        $this->service->runComposer('install', $newDir);
+        expect(fn () => $this->service->runComposer('install', $newDir))
+            ->toThrow(RuntimeException::class, 'Directory does not exist');
+    });
+});
 
-        expect($newDir)->toBeDirectory();
+// ─── Directory Validation (Security) ─────────────────────────────────────
+
+describe('directory validation', function (): void {
+
+    it('rejects non-existent directory with clear error message', function (): void {
+        fakeDockerAvailable();
+        $nonExistentDir = $this->tempDir . '/does-not-exist';
+
+        expect(fn () => $this->service->runComposer('install', $nonExistentDir))
+            ->toThrow(RuntimeException::class, 'Directory does not exist')
+            ->toThrow(RuntimeException::class, 'Please create it before running Docker commands');
+    });
+
+    it('rejects file path instead of directory', function (): void {
+        fakeDockerAvailable();
+        $filePath = $this->tempDir . '/some-file.txt';
+        file_put_contents($filePath, 'content');
+
+        expect(fn () => $this->service->runComposer('install', $filePath))
+            ->toThrow(RuntimeException::class, 'Path exists but is not a directory')
+            ->toThrow(RuntimeException::class, 'Docker volume mounts require a directory');
+    });
+
+    it('rejects symlink pointing to file', function (): void {
+        fakeDockerAvailable();
+        $filePath = $this->tempDir . '/target-file.txt';
+        $symlinkPath = $this->tempDir . '/symlink-to-file';
+        file_put_contents($filePath, 'content');
+        symlink($filePath, $symlinkPath);
+
+        // is_dir() follows symlinks and returns false for files
+        expect(fn () => $this->service->runComposer('install', $symlinkPath))
+            ->toThrow(RuntimeException::class, 'Path exists but is not a directory');
+    });
+
+    it('accepts symlink pointing to valid directory', function (): void {
+        fakeDockerAvailable();
+        $realDir = $this->tempDir . '/real-directory';
+        $symlinkDir = $this->tempDir . '/symlink-to-directory';
+        mkdir($realDir);
+        symlink($realDir, $symlinkDir);
+
+        $result = $this->service->runComposer('install', $symlinkDir);
+
+        expect($result->successful)->toBeTrue();
+    });
+
+    it('validates directory for runNpm', function (): void {
+        fakeDockerAvailable();
+        $nonExistentDir = $this->tempDir . '/missing-dir';
+
+        expect(fn () => $this->service->runNpm('install', $nonExistentDir))
+            ->toThrow(RuntimeException::class, 'Directory does not exist');
+    });
+
+    it('validates directory for runWpCli', function (): void {
+        fakeDockerAvailable();
+        $nonExistentDir = $this->tempDir . '/missing-wp-dir';
+
+        expect(fn () => $this->service->runWpCli(['core', 'download'], $nonExistentDir))
+            ->toThrow(RuntimeException::class, 'Directory does not exist');
     });
 });
 
@@ -397,19 +460,13 @@ describe('runInteractive', function (): void {
         ))->toThrow(RuntimeException::class, 'Docker is not available');
     });
 
-    it('creates directory if it does not exist', function (): void {
+    it('rejects non-existent directory', function (): void {
         // We can't actually test the interactive execution, but we can verify
-        // that the directory creation logic works
+        // that directory validation works before Docker operations
         fakeDockerAvailable();
         $newDir = $this->tempDir . '/new-interactive-project';
 
-        // The method will fail at passthru but directory should be created first
-        try {
-            $this->service->runInteractive('alpine', ['ls'], $newDir);
-        } catch (Throwable) {
-            // Expected - passthru will fail in test environment
-        }
-
-        expect($newDir)->toBeDirectory();
+        expect(fn () => $this->service->runInteractive('alpine', ['ls'], $newDir))
+            ->toThrow(RuntimeException::class, 'Directory does not exist');
     });
 });

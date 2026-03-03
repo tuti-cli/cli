@@ -36,7 +36,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
     public function runComposer(string $command, string $workDir, array $env = []): DockerExecutionResult
     {
         $this->ensureDockerAvailable();
-        $this->ensureDirectoryExists($workDir);
+        $this->validateDirectoryExists($workDir);
 
         $image = $this->getPhpImage($this->phpVersion);
         $fullCommand = "composer {$command}";
@@ -67,7 +67,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
     public function runNpm(string $command, string $workDir, array $env = []): DockerExecutionResult
     {
         $this->ensureDockerAvailable();
-        $this->ensureDirectoryExists($workDir);
+        $this->validateDirectoryExists($workDir);
 
         $fullCommand = "npm {$command}";
 
@@ -87,7 +87,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
     public function runWpCli(array $arguments, string $workDir, array $env = [], ?string $networkName = null): DockerExecutionResult
     {
         $this->ensureDockerAvailable();
-        $this->ensureDirectoryExists($workDir);
+        $this->validateDirectoryExists($workDir);
 
         // Check if WP-CLI service is running in the project
         if ($this->isWpCliServiceRunning($workDir)) {
@@ -177,7 +177,7 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         array $volumes = []
     ): int {
         $this->ensureDockerAvailable();
-        $this->ensureDirectoryExists($workDir);
+        $this->validateDirectoryExists($workDir);
 
         $dockerCommand = $this->buildInteractiveDockerCommand($image, $command, $workDir, $env, $volumes);
 
@@ -489,12 +489,38 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
     }
 
     /**
-     * Ensure directory exists, create if necessary.
+     * Validate that the path exists and is a directory.
+     *
+     * This is a security measure to prevent mounting unexpected paths
+     * to Docker containers. We validate BEFORE Docker operations rather
+     * than auto-creating, which could be exploited.
+     *
+     * @throws RuntimeException If the path does not exist or is not a directory
      */
-    private function ensureDirectoryExists(string $path): void
+    private function validateDirectoryExists(string $path): void
     {
-        if (! is_dir($path) && (! mkdir($path, 0755, true) && ! is_dir($path))) {
-            throw new RuntimeException("Failed to create directory: {$path}");
+        // Check if path exists at all
+        if (! file_exists($path)) {
+            throw new RuntimeException(
+                "Directory does not exist: {$path}. Please create it before running Docker commands."
+            );
+        }
+
+        // Check if it's actually a directory (not a file or symlink to file)
+        if (! is_dir($path)) {
+            throw new RuntimeException(
+                "Path exists but is not a directory: {$path}. Docker volume mounts require a directory."
+            );
+        }
+
+        // Check for symlink and resolve it to ensure it points to a valid directory
+        if (is_link($path)) {
+            $realPath = realpath($path);
+            if ($realPath === false || ! is_dir($realPath)) {
+                throw new RuntimeException(
+                    "Symlink points to invalid directory: {$path} -> {$realPath}"
+                );
+            }
         }
     }
 }
