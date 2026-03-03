@@ -169,6 +169,65 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
         );
     }
 
+    /**
+     * Run an interactive Docker command with TTY support.
+     *
+     * This method provides interactive terminal sessions inside Docker containers,
+     * allowing users to run commands like `php artisan tinker` or `mysql -u root -p`
+     * with full terminal interactivity.
+     *
+     * ## Security Exception: escapeshellarg() Usage
+     *
+     * This method uses `escapeshellarg()` to escape command arguments before passing
+     * them to `passthru()`. This is a documented exception to the project's security
+     * standard that requires array syntax for all external process execution.
+     *
+     * ### Why This Exception Exists
+     *
+     * 1. **TTY Requirement**: Interactive terminal sessions require a TTY (teletype),
+     *    which Laravel's Process facade does not support. The `passthru()` function
+     *    is the only PHP built-in that provides proper TTY passthrough.
+     *
+     * 2. **Array Syntax Limitation**: Unlike `proc_open()` (used by Laravel Process),
+     *    `passthru()` accepts only string commands, not arrays. Therefore, we must
+     *    construct a command string with properly escaped arguments.
+     *
+     * ### Why This Is Safe
+     *
+     * 1. **Trusted Input Sources**: All elements in `$dockerCommand` are built
+     *    internally by `buildInteractiveDockerCommand()`. The only external inputs
+     *    are:
+     *    - `$image`: Validated against internal constants/defaults
+     *    - `$command`: Passed through as array elements (escaped individually)
+     *    - `$workDir`: Validated by `validateDirectoryExists()` (realpath checked)
+     *    - `$env`: Key-value pairs escaped as a whole
+     *    - `$volumes`: Paths validated as existing directories
+     *
+     * 2. **Defense in Depth**: Each array element is individually escaped using
+     *    `escapeshellarg()`, which wraps values in single quotes and escapes any
+     *    existing single quotes. This prevents shell metacharacter injection even
+     *    if malicious data somehow entered the pipeline.
+     *
+     * 3. **No User Interpolation**: This method never interpolates user input
+     *    directly into command strings. All values go through `escapeshellarg()`.
+     *
+     * ### Related Documentation
+     *
+     * - AUDIT.md#SEC-003: Original security assessment
+     * - TECH-DEBT.md#DEBT-007: Technical debt tracking
+     * - Issue #73: Documentation task
+     *
+     * @param  string  $image  Docker image to run (validated internally)
+     * @param  array<int, string>  $command  Command and arguments to execute
+     * @param  string  $workDir  Working directory (validated to exist)
+     * @param  array<string, string>  $env  Environment variables
+     * @param  array<string, string>  $volumes  Additional volume mounts
+     * @return int Exit code from the command (0 = success)
+     *
+     * @security This method uses escapeshellarg() instead of array syntax.
+     *           This is a documented exception required for TTY support.
+     *           See method documentation for security justification.
+     */
     public function runInteractive(
         string $image,
         array $command,
@@ -183,6 +242,8 @@ final readonly class DockerExecutorService implements DockerExecutorInterface
 
         // Use passthru for interactive TTY support
         // This is necessary because Laravel's Process facade doesn't support TTY
+        // SECURITY: escapeshellarg() is used here as a documented exception.
+        // All inputs are from trusted internal sources. See method documentation.
         $commandString = implode(' ', array_map(escapeshellarg(...), $dockerCommand));
 
         // phpcs:ignore -- passthru is required for TTY support

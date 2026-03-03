@@ -67,6 +67,18 @@ Tuti CLI manages environment variables for Docker Compose. Ensure:
 - Sensitive values are not logged
 - Production secrets are managed securely
 
+### Interactive Terminal (TTY) Support
+
+Tuti CLI uses `escapeshellarg()` in `DockerExecutorService::runInteractive()` for interactive terminal sessions. This is a documented exception to our standard security practice of using array syntax for all external process execution.
+
+**Why this exception exists:**
+- Interactive TTY sessions require PHP's `passthru()` function
+- `passthru()` accepts only string commands, not arrays
+- All inputs are from trusted internal sources (validated internally)
+- Each command element is individually escaped with `escapeshellarg()`
+
+This is a controlled exception with full documentation in the source code. See `app/Services/Docker/DockerExecutorService.php` for details.
+
 ---
 
 Thank you for helping keep Tuti CLI and its users safe!
