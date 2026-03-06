@@ -6,11 +6,13 @@ namespace App\Commands\Stack;
 
 use App\Concerns\BuildsProjectUrls;
 use App\Concerns\HasBrandedOutput;
+use App\Contracts\DockerExecutorInterface;
 use App\Contracts\InfrastructureManagerInterface;
 use App\Domain\Project\Project;
 use App\Services\Project\ProjectDirectoryService;
 use App\Services\Project\ProjectMetadataService;
 use App\Services\Project\ProjectStateManagerService;
+use App\Services\Stack\Installers\Laravel\LaravelDatabaseConfigurator;
 use App\Services\Stack\Installers\LaravelStackInstaller;
 use App\Services\Stack\StackInitializationService;
 use App\Services\Stack\StackLoaderService;
@@ -45,6 +47,8 @@ final class LaravelCommand extends Command
 
     public function handle(
         LaravelStackInstaller $installer,
+        LaravelDatabaseConfigurator $databaseConfigurator,
+        DockerExecutorInterface $dockerExecutor,
         StackRegistryManagerService $registry,
         StackLoaderService $stackLoader,
         ProjectDirectoryService $directoryService,
@@ -77,7 +81,17 @@ final class LaravelCommand extends Command
                 return self::SUCCESS;
             }
 
-            $hostsAdded = $this->executeInstallation($installer, $initService, $metaService, $stateManager, $infrastructureManager, $hostsFileService, $config);
+            $hostsAdded = $this->executeInstallation(
+                $installer,
+                $databaseConfigurator,
+                $dockerExecutor,
+                $initService,
+                $metaService,
+                $stateManager,
+                $infrastructureManager,
+                $hostsFileService,
+                $config
+            );
             $this->displayNextSteps($config, $hostsAdded);
 
             return self::SUCCESS;
@@ -540,6 +554,8 @@ final class LaravelCommand extends Command
      */
     private function executeInstallation(
         LaravelStackInstaller $installer,
+        LaravelDatabaseConfigurator $databaseConfigurator,
+        DockerExecutorInterface $dockerExecutor,
         StackInitializationService $initService,
         ProjectMetadataService $metaService,
         ProjectStateManagerService $stateManager,
@@ -590,7 +606,7 @@ final class LaravelCommand extends Command
             if (($laravelOptions['testing'] ?? 'phpunit') === 'pest') {
                 $this->note('Installing Pest...');
                 spin(
-                    fn (): bool => $installer->installPest($config['project_path']),
+                    fn (): bool => $this->installPest($dockerExecutor, $config['project_path']),
                     'Installing Pest with drift conversion...'
                 );
                 $this->success('Pest installed');
@@ -600,7 +616,7 @@ final class LaravelCommand extends Command
             if ($laravelOptions['boost'] ?? false) {
                 $this->note('Installing Laravel Boost...');
                 spin(
-                    fn (): bool => $installer->installBoost($config['project_path']),
+                    fn (): bool => $this->installBoost($dockerExecutor, $config['project_path']),
                     'Installing Laravel Boost...'
                 );
                 $this->success('Laravel Boost installed');
@@ -609,7 +625,7 @@ final class LaravelCommand extends Command
             // Configure .env for Docker database (if not SQLite)
             if ($selectedDatabase !== null && $selectedDatabase !== 'databases.sqlite') {
                 $this->note('Configuring Docker database...');
-                $installer->configureDefaultDatabaseConnection(
+                $databaseConfigurator->configureDefaultDatabaseConnection(
                     $config['project_path'],
                     $selectedDatabase,
                     $config['project_name']
@@ -618,7 +634,7 @@ final class LaravelCommand extends Command
             }
 
             // Install additional packages if needed (e.g., Horizon)
-            $this->installRequiredPackages($installer, $config);
+            $this->installRequiredPackages($dockerExecutor, $config);
 
             chdir($config['project_path']);
         }
@@ -922,7 +938,7 @@ final class LaravelCommand extends Command
      *
      * @param  array<string, mixed>  $config
      */
-    private function installRequiredPackages(LaravelStackInstaller $installer, array $config): void
+    private function installRequiredPackages(DockerExecutorInterface $dockerExecutor, array $config): void
     {
         $packages = $this->getRequiredPackages($config['selected_services']);
 
@@ -930,7 +946,7 @@ final class LaravelCommand extends Command
             $this->note("Installing {$package}...");
 
             spin(
-                fn (): bool => $installer->runComposerRequire($config['project_path'], $package),
+                fn (): bool => $dockerExecutor->runComposer("require {$package} --no-interaction", $config['project_path'])->successful,
                 "Installing {$package}..."
             );
 
@@ -938,7 +954,7 @@ final class LaravelCommand extends Command
 
             if ($artisanCommand !== null) {
                 spin(
-                    fn (): bool => $installer->runArtisan($config['project_path'], $artisanCommand),
+                    fn (): bool => $dockerExecutor->runArtisan($artisanCommand, $config['project_path'])->successful,
                     "Running php artisan {$artisanCommand}..."
                 );
             }
@@ -1078,5 +1094,76 @@ final class LaravelCommand extends Command
         } else {
             $this->hint('Run "tuti local:start" to start the project');
         }
+    }
+
+    /**
+     * Install Pest testing framework with drift conversion.
+     */
+    private function installPest(DockerExecutorInterface $dockerExecutor, string $projectPath): bool
+    {
+        // Remove PHPUnit and add Pest
+        $commands = [
+            'remove phpunit/phpunit --dev --no-update',
+            'require pestphp/pest pestphp/pest-plugin-laravel --no-update --dev',
+        ];
+
+        foreach ($commands as $cmd) {
+            $result = $dockerExecutor->runComposer($cmd, $projectPath);
+            if (! $result->successful) {
+                return false;
+            }
+        }
+
+        // Composer update to apply changes
+        $result = $dockerExecutor->runComposer('update', $projectPath);
+        if (! $result->successful) {
+            return false;
+        }
+
+        // Initialize Pest - run via PHP image
+        $phpImage = $dockerExecutor->getPhpImage('8.4');
+        $initResult = $dockerExecutor->exec(
+            $phpImage,
+            'php vendor/bin/pest --init',
+            $projectPath
+        );
+        if (! $initResult->successful) {
+            return false;
+        }
+
+        // Drift conversion - convert PHPUnit tests to Pest
+        $driftResult = $dockerExecutor->runComposer('require pestphp/pest-plugin-drift --dev', $projectPath);
+        if (! $driftResult->successful) {
+            return false;
+        }
+
+        // Run drift conversion - run via PHP image
+        $dockerExecutor->exec(
+            $phpImage,
+            'php vendor/bin/pest --drift',
+            $projectPath
+        );
+        // Drift might fail if no tests exist, continue anyway
+
+        // Remove drift plugin
+        $removeResult = $dockerExecutor->runComposer('remove pestphp/pest-plugin-drift --dev', $projectPath);
+
+        return $removeResult->successful;
+    }
+
+    /**
+     * Install Laravel Boost.
+     */
+    private function installBoost(DockerExecutorInterface $dockerExecutor, string $projectPath): bool
+    {
+        $result = $dockerExecutor->runComposer('require laravel/boost ^2.0 --dev -W', $projectPath);
+
+        if (! $result->successful) {
+            return false;
+        }
+
+        $artisanResult = $dockerExecutor->runArtisan('boost:install', $projectPath);
+
+        return $artisanResult->successful;
     }
 }

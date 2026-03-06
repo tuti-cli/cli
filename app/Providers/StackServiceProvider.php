@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\StackInstallerInterface;
+use App\Services\Stack\Installers\Laravel\LaravelDatabaseConfigurator;
+use App\Services\Stack\Installers\Laravel\LaravelProjectCreator;
 use App\Services\Stack\Installers\LaravelStackInstaller;
 use App\Services\Stack\Installers\WordPressStackInstaller;
 use App\Services\Stack\OptionalServicesBuilder;
@@ -33,6 +35,10 @@ final class StackServiceProvider extends ServiceProvider
         $this->app->singleton(OptionalServicesBuilder::class);
         $this->app->singleton(StackInitializationService::class);
         $this->app->singleton(StackRepositoryService::class);
+
+        // Laravel installer sub-services
+        $this->app->singleton(LaravelDatabaseConfigurator::class);
+        $this->app->singleton(LaravelProjectCreator::class);
 
         // Stack installers
         $this->app->singleton(LaravelStackInstaller::class);
