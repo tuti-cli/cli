@@ -8,7 +8,9 @@ use App\Concerns\HasBrandedOutput;
 use App\Services\Security\CredentialValidationService;
 use App\Services\Stack\Installers\WordPressStackInstaller;
 use Illuminate\Support\Facades\Process;
+use JsonException;
 use LaravelZero\Framework\Commands\Command;
+use RuntimeException;
 
 use function Laravel\Prompts\spin;
 
@@ -45,12 +47,20 @@ final class WpSetupCommand extends Command
         }
 
         // Load project config
-        $projectConfig = json_decode(file_get_contents($configPath), true);
+        try {
+            $projectConfig = json_decode(file_get_contents($configPath), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new RuntimeException("Invalid JSON in config: {$configPath}");
+        }
         $projectName = $projectConfig['project']['name'] ?? basename($projectPath);
 
         // Load auto-setup config or create defaults
         if (file_exists($autoSetupPath)) {
-            $autoSetup = json_decode(file_get_contents($autoSetupPath), true);
+            try {
+                $autoSetup = json_decode(file_get_contents($autoSetupPath), true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException) {
+                throw new RuntimeException("Invalid JSON in auto-setup config: {$autoSetupPath}");
+            }
         } else {
             // Generate defaults based on project name
             $autoSetup = [
@@ -175,8 +185,12 @@ final class WpSetupCommand extends Command
         $configPath = $projectPath . '/.tuti/config.json';
 
         if (file_exists($configPath)) {
-            $config = json_decode(file_get_contents($configPath), true);
-            $projectName = $config['project']['name'] ?? $projectName;
+            try {
+                $config = json_decode(file_get_contents($configPath), true, 512, JSON_THROW_ON_ERROR);
+                $projectName = $config['project']['name'] ?? $projectName;
+            } catch (JsonException) {
+                // Use directory name as fallback if config is invalid
+            }
         }
 
         // Check if app container is running
@@ -203,8 +217,12 @@ final class WpSetupCommand extends Command
         $configPath = $projectPath . '/.tuti/config.json';
 
         if (file_exists($configPath)) {
-            $config = json_decode(file_get_contents($configPath), true);
-            $projectName = $config['project']['name'] ?? $projectName;
+            try {
+                $config = json_decode(file_get_contents($configPath), true, 512, JSON_THROW_ON_ERROR);
+                $projectName = $config['project']['name'] ?? $projectName;
+            } catch (JsonException) {
+                // Use directory name as fallback if config is invalid
+            }
         }
 
         $containerName = "{$projectName}_dev_database";

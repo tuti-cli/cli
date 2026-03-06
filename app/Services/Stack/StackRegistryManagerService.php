@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Stack;
 
+use JsonException;
 use RuntimeException;
 
 /**
@@ -53,10 +54,10 @@ final class StackRegistryManagerService
             throw new RuntimeException("Failed to read service registry: {$registryPath}");
         }
 
-        $decoded = json_decode($content, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new RuntimeException('Failed to parse service registry JSON: ' . json_last_error_msg());
+        try {
+            $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            throw new RuntimeException("Invalid JSON in service registry: {$e->getMessage()}", $e->getCode(), $e);
         }
 
         $this->validateRegistry($decoded, $registryPath);

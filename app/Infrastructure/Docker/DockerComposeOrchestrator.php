@@ -9,6 +9,7 @@ use App\Domain\Project\Project;
 use App\Services\Debug\DebugLogService;
 use App\Services\Docker\DockerCommandBuilder;
 use Illuminate\Support\Facades\Process;
+use JsonException;
 
 /**
  * Class DockerComposeOrchestrator
@@ -173,9 +174,12 @@ final readonly class DockerComposeOrchestrator implements OrchestratorInterface
             if ($line === '0') {
                 continue;
             }
-            $data = json_decode($line, true);
-            if ($data) {
+            try {
+                $data = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
                 $services[] = $data;
+            } catch (JsonException) {
+                // Skip malformed JSON lines (Docker output may contain non-JSON lines)
+                continue;
             }
         }
 

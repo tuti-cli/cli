@@ -10,6 +10,7 @@ use App\Contracts\StackInstallerInterface;
 use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRepositoryService;
+use JsonException;
 use RuntimeException;
 
 /**
@@ -108,9 +109,13 @@ final readonly class LaravelStackInstaller implements StackInstallerInterface
         // Additionally check composer.json for Laravel framework
         $composerPath = $path . '/composer.json';
         if (file_exists($composerPath)) {
-            $composer = json_decode(file_get_contents($composerPath), true);
+            try {
+                $composer = json_decode(file_get_contents($composerPath), true, 512, JSON_THROW_ON_ERROR);
 
-            return isset($composer['require']['laravel/framework']);
+                return isset($composer['require']['laravel/framework']);
+            } catch (JsonException) {
+                return false;
+            }
         }
 
         return false;
