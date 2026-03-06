@@ -10,6 +10,7 @@ use App\Contracts\StackInstallerInterface;
 use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRepositoryService;
+use JsonException;
 use RuntimeException;
 
 /**
@@ -102,9 +103,13 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
         // Additionally check composer.json for Bedrock
         $composerPath = $path . '/composer.json';
         if (file_exists($composerPath)) {
-            $composer = json_decode(file_get_contents($composerPath), true);
+            try {
+                $composer = json_decode(file_get_contents($composerPath), true, 512, JSON_THROW_ON_ERROR);
 
-            return isset($composer['require']['roots/bedrock']);
+                return isset($composer['require']['roots/bedrock']);
+            } catch (JsonException) {
+                return false;
+            }
         }
 
         return false;
@@ -257,8 +262,12 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
         $configPath = $projectPath . '/.tuti/config.json';
 
         if (file_exists($configPath)) {
-            $config = json_decode(file_get_contents($configPath), true);
-            $projectName = $config['project']['name'] ?? $projectName;
+            try {
+                $config = json_decode(file_get_contents($configPath), true, 512, JSON_THROW_ON_ERROR);
+                $projectName = $config['project']['name'] ?? $projectName;
+            } catch (JsonException) {
+                // Use directory name as fallback if config is invalid
+            }
         }
 
         // Build network name (matches DockerComposeOrchestrator pattern)

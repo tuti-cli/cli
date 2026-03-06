@@ -8,6 +8,7 @@ use App\Contracts\InfrastructureManagerInterface;
 use App\Services\Docker\DockerCommandBuilder;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
+use JsonException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -73,9 +74,14 @@ final readonly class GlobalInfrastructureManager implements InfrastructureManage
             if ($line === '0') {
                 continue;
             }
-            $container = json_decode($line, true);
-            if ($container && isset($container['State']) && $container['State'] === 'running') {
-                return true;
+            try {
+                $container = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+                if ($container && isset($container['State']) && $container['State'] === 'running') {
+                    return true;
+                }
+            } catch (JsonException) {
+                // Skip malformed JSON lines (Docker output may contain non-JSON lines)
+                continue;
             }
         }
 
