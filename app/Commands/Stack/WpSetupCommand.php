@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Commands\Stack;
 
 use App\Concerns\HasBrandedOutput;
+use App\Enums\ContainerNamingEnum;
 use App\Services\Security\CredentialValidationService;
 use App\Services\Stack\Installers\WordPressStackInstaller;
 use Illuminate\Support\Facades\Process;
@@ -225,7 +226,7 @@ final class WpSetupCommand extends Command
             }
         }
 
-        $containerName = "{$projectName}_dev_database";
+        $containerName = ContainerNamingEnum::Container->name($projectName, 'database');
         $maxAttempts = 30;
         $attempt = 0;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Stack;
 
+use App\Enums\ContainerNamingEnum;
 use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -117,7 +118,7 @@ final readonly class StackComposeBuilderService
         return [
             'services' => [],
             'networks' => [
-                "{$projectName}_network" => [
+                ContainerNamingEnum::Network->key($projectName) => [
                     'driver' => 'bridge',
                 ],
             ],
@@ -255,7 +256,7 @@ final readonly class StackComposeBuilderService
         [$category, $serviceName] = $this->parseServiceKey($serviceKey);
 
         $replacements = [
-            'NETWORK_NAME' => "{$projectName}_network",
+            'NETWORK_NAME' => ContainerNamingEnum::Network->key($projectName),
             'PROJECT_NAME' => $projectName,
             'ENVIRONMENT' => $environment,
         ];
@@ -406,7 +407,7 @@ final readonly class StackComposeBuilderService
             if (! isset($compose['volumes'][$volume])) {
                 $compose['volumes'][$volume] = [
                     'driver' => 'local',
-                    'name' => "{$projectName}_{$volume}",
+                    'name' => ContainerNamingEnum::Volume->volumeKey($projectName, $volume),
                 ];
             }
         }
