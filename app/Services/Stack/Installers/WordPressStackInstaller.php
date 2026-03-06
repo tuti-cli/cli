@@ -7,6 +7,7 @@ namespace App\Services\Stack\Installers;
 use App\Contracts\DockerExecutorInterface;
 use App\Contracts\InfrastructureManagerInterface;
 use App\Contracts\StackInstallerInterface;
+use App\Enums\ContainerNamingEnum;
 use App\Services\Stack\StackFilesCopierService;
 use App\Services\Stack\StackLoaderService;
 use App\Services\Stack\StackRepositoryService;
@@ -271,7 +272,7 @@ final readonly class WordPressStackInstaller implements StackInstallerInterface
         }
 
         // Build network name (matches DockerComposeOrchestrator pattern)
-        $networkName = "{$projectName}_dev_network";
+        $networkName = ContainerNamingEnum::Network->name($projectName);
 
         $result = $this->dockerExecutor->runWpCli(
             $arguments,

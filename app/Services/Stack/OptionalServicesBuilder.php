@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Stack;
 
+use App\Enums\ContainerNamingEnum;
 use Exception;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -152,7 +153,7 @@ final readonly class OptionalServicesBuilder
     {
         return [
             'PROJECT_NAME' => $projectName,
-            'NETWORK_NAME' => 'app_network',
+            'NETWORK_NAME' => ContainerNamingEnum::DEFAULT_NETWORK,
             'APP_DOMAIN' => "{$projectName}.local.test",
         ];
     }
@@ -204,7 +205,7 @@ final readonly class OptionalServicesBuilder
             // Check if volume already exists
             if (mb_strpos($content, "  {$volumeName}:") === false) {
                 $volumesToInsert .= "  {$volumeName}:\n";
-                $volumesToInsert .= "    name: {$projectName}_\${APP_ENV:-dev}_{$volumeName}\n";
+                $volumesToInsert .= '    name: ' . ContainerNamingEnum::Volume->withEnvVar($projectName, $volumeName) . "\n";
             }
         }
 
