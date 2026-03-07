@@ -1,10 +1,21 @@
 # agents:remove
-Remove an installed agent from local or global directory.
+
+> Remove an installed agent from local or global directory.
 
 **Usage:**
 - `/agents:remove <name>` — Remove agent (searches local first, then global)
 - `/agents:remove <name> --local` — Remove from .claude/agents/ only
 - `/agents:remove <name> --global` — Remove from ~/.claude/agents/ only
+
+**When to use:**
+- Removing unused agents
+- Cleaning up after project completion
+- Replacing with different agent
+
+**Related commands:**
+- `/agents:list` — See installed agents first
+- `/agents:install` — Install replacement agent
+- `/agents:search` — Find alternatives
 
 **Examples:**
 - `/agents:remove wordpress-master` — Remove WordPress agent

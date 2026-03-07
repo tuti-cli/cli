@@ -1,10 +1,21 @@
 # workflow:commit
-Create a conventional commit with proper formatting, issue reference, and optional PR creation.
+
+> Create a conventional commit with proper formatting and optional PR.
 
 **Usage:**
 - `/workflow:commit` — Interactive commit with diff review
 - `/workflow:commit "message"` — Commit with specified message
 - `/workflow:commit --pr` — Commit and create PR
+
+**When to use:**
+- Ready to commit current changes
+- Want to create PR after commit
+- Need help writing conventional commit message
+
+**Related commands:**
+- `/workflow:issue` — Full pipeline for GitHub issue
+- `/workflow:pr` — Just create PR (if commit exists)
+- `/arch:decide` — Document architecture before commit
 
 **Commit Format:**
 ```

@@ -1,0 +1,61 @@
+# Workflow State Directory
+
+This directory stores workflow state files for interruption recovery.
+
+## Purpose
+
+State files allow workflows to be resumed after interruption:
+- Track current pipeline stage
+- Store branch name and files changed
+- Save commit message drafts
+- Enable recovery without losing work
+
+## Naming Convention
+
+```
+<issue-number>.json
+```
+
+Examples:
+- `123.json`
+- `456.json`
+
+## State File Structure
+
+```json
+{
+  "issue_number": 123,
+  "branch": "feature/123-add-auth",
+  "stage": "IMPLEMENT",
+  "stage_progress": {
+    "completed": 3,
+    "total": 8
+  },
+  "files_changed": [
+    "app/Services/AuthService.php",
+    "tests/Feature/AuthTest.php"
+  ],
+  "commit_message_draft": "feat(auth): add user authentication (#123)",
+  "started_at": "2026-03-07T10:30:00Z",
+  "updated_at": "2026-03-07T11:45:00Z"
+}
+```
+
+## Lifecycle
+
+1. **Created:** When `/workflow:issue` starts
+2. **Updated:** After each stage completes
+3. **Deleted:** When workflow completes successfully or user chooses to restart
+
+## Recovery Flow
+
+1. User runs `/workflow:issue N`
+2. System checks for `N.json`
+3. If found, AskUserQuestion: "Found incomplete workflow. Resume or restart?"
+4. If resume, jump to last incomplete stage
+5. If restart, delete state file and start fresh
+
+## Related
+
+- `.claude/agents/master-orchestrator.md` - State tracking implementation
+- `.claude/agents/issue-executor.md` - Checks for existing state

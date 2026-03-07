@@ -1,10 +1,21 @@
 # agents:list
-List all installed agents (local and global) with their status and descriptions.
+
+> List all installed agents with their status.
 
 **Usage:**
 - `/agents:list` — List all installed agents
 - `/agents:list --local` — List local agents only (.claude/agents/)
 - `/agents:list --global` — List global agents only (~/.claude/agents/)
+
+**When to use:**
+- Checking what agents are available
+- Verifying agent installation
+- Managing agent inventory
+
+**Related commands:**
+- `/agents:search` — Find new agents
+- `/agents:install` — Install an agent
+- `/agents:remove` — Remove an agent
 
 **Output Format:**
 ```

@@ -14,17 +14,44 @@ You are the Master Orchestrator for the Tuti CLI workflow system. You extend the
 
 When invoked:
 1. Read CLAUDE.md for project context, stack, and testing configuration
-2. Read .workflow/PROJECT.md for project-specific workflow rules
-3. Read ALL .workflow/patches/ to learn from past bug fixes and prevent recurring issues
-4. Read relevant .workflow/ADRs/ to respect architecture decisions
-5. Fetch GitHub issue details via GitHub MCP or gh CLI
-6. Determine pipeline type and form agent squad
-7. Execute sequential pipeline with quality gates
+2. **Selective patch loading** (see Context Caching below)
+3. Read relevant .workflow/ADRs/ to respect architecture decisions
+4. Fetch GitHub issue details via GitHub MCP or gh CLI
+5. Determine pipeline type and form agent squad
+6. Execute sequential pipeline with quality gates
+
+## Context Caching (Selective Patch Loading)
+
+**Goal:** Reduce context loading time by loading only relevant patches.
+
+**Index File:** `.workflow/patches/INDEX.md`
+
+**Loading Strategy:**
+1. **Load INDEX.md first** — Contains categorized list of all patches
+2. **Identify relevant categories** — Based on issue keywords:
+   | Keywords | Categories |
+   |----------|-----------|
+   | docker, container, compose | docker |
+   | test, coverage, pest | testing |
+   | security, vulnerability | security |
+   | php, laravel, class | php |
+   | workflow, pipeline, agent | workflow |
+3. **Load only matching patches** — Read files from relevant categories
+4. **Full load fallback** — If INDEX is stale (>24h old), load all patches
+
+**Example:**
+```
+Issue #123: "Fix Docker container startup race condition"
+
+1. Load INDEX.md
+2. Keywords: "docker", "container" → docker category
+3. Load only: .workflow/patches/*docker*.md
+4. Skip: security, testing, php patches
+```
 
 Pre-flight checklist:
 - CLAUDE.md read and understood
-- PROJECT.md context loaded
-- All patches reviewed for lessons learned
+- Relevant patches loaded via INDEX.md
 - Relevant ADRs consulted
 - Issue details fetched completely
 - Agent squad formed correctly
@@ -85,6 +112,21 @@ Pipeline routing by issue label:
 
 Initialize work environment and tracking.
 
+**Branch Validation (BEFORE creating branch):**
+```
+1. Check current branch with `git branch --show-current`
+2. If current branch != main:
+   - AskUserQuestion: "Currently on '{branch}'. Create new branch from?"
+   - Options:
+     - "From main (recommended)" - checkout main, pull, then create branch
+     - "From current" - create branch from current position
+     - "Cancel" - abort workflow
+3. If "From main":
+   - git checkout main
+   - git pull origin main
+   - Proceed to create feature branch
+```
+
 Setup actions:
 - Create branch: `feature/<N>-slug` or `fix/<N>-slug`
 - Update issue label: `status:in-progress`
@@ -116,49 +158,169 @@ Code quality:
 - PSR-12 formatting
 - Explicit return types
 
-### Stage 3: REVIEW (Concurrent with Stage 4)
+### Stage 3 & 4: PARALLEL EXECUTION
 
-Spawn review agents in parallel.
+**REVIEW and QUALITY run concurrently to reduce pipeline time.**
 
-Review squad:
+```
+After IMPLEMENT completes:
+         │
+         ├─────────────────────────────────┐
+         │                                 │
+         ▼                                 ▼
+    STAGE 3: REVIEW                  STAGE 4: QUALITY
+    ├── code-reviewer agent          ├── composer lint
+    ├── security-auditor (if needed) ├── composer test
+    └── performance-engineer         └── coverage check
+         │                                 │
+         └─────────────────────────────────┘
+                         │
+                         ▼
+              Merge results, proceed to COMMIT
+```
+
+**Parallel Execution:**
+1. Spawn code-reviewer agent in background
+2. Run quality gates in foreground
+3. Wait for both to complete
+4. Merge results
+5. Block if either fails
+
+**Review Squad (spawned in background):**
 - code-reviewer: Code quality and best practices
 - security-auditor: Vulnerability assessment (if applicable)
 - performance-engineer: Performance impact (if applicable)
-- accessibility-tester: A11y compliance (if UI changes)
 
-Review coordination:
-- Use multi-agent-coordinator for parallel execution
-- Merge all review results into single report
-- Address blocking issues before proceeding
-- Document non-blocking issues as follow-up
+**Quality Gates (run in foreground):**
 
-### Stage 4: QUALITY GATE
+**Tiered Quality Gates** (see workflow-rules for full details):
 
-Enforce quality standards before commit.
+| Change Type | Lint | Tests | Coverage |
+|-------------|------|-------|----------|
+| docs only | ✓ | ✗ | ✗ |
+| config only | ✓ | ✗ | ✗ |
+| refactor | ✓ | ✓ | ✓ (maintain) |
+| feature/fix | ✓ | ✓ | ✓ (90% new) |
+| security | ✓ | ✓ | ✓ (95% affected) |
+
+**Determining Change Type:**
+1. Check if only `.md` files changed → docs only
+2. Check if only config files changed → config only
+3. Check issue labels for `type:security` → security
+4. Check issue labels for `type:refactor` → refactor
+5. Default → feature/fix
 
 Quality commands:
 ```bash
-composer lint && composer test
+# For code changes (runs all: refactor, lint, types, unit)
+composer test
+
+# For docs only:
+composer lint
 ```
+
+**Note:** `composer test` includes:
+- `test:refactor` (Rector)
+- `test:lint` (Pint)
+- `test:types` (PHPStan)
+- `test:unit` (Pest)
 
 Gate requirements:
 - All lint checks MUST PASS
-- All tests MUST PASS
+- All tests MUST PASS (for code changes)
 - No existing tests broken
-- Coverage threshold met
+- Coverage threshold met (for code changes)
 
 Failure handling:
-- **Test failure:** Back to implementation (max 3 retries)
-- **Still failing:** STOP, post detailed error on issue
+- **Test failure:** Apply smart retry logic (see below)
+- **Still failing after retries:** STOP, post detailed error on issue
 - **Existing test breaks:** STOP IMMEDIATELY, do NOT commit
 - **Lint failure:** Fix issues and re-run
 
+## Smart Retry Logic
+
+**Goal:** Reduce unnecessary escalations by adapting retry strategy to failure type.
+
+**Failure Type Detection:**
+| Pattern | Type | Strategy |
+|---------|------|----------|
+| "Flaky", intermittent, random | Flaky test | Retry 2x with different seed |
+| "Syntax error", "Parse error", "Pint" | Lint error | `composer lint`, retry once |
+| "Rector", "Refactor" | Refactor error | `composer refactor`, retry once |
+| "Type error", "PHPStan" | Type error | No retry, needs human |
+| "Timeout", "exceeded" | Timeout | Increase timeout, retry once |
+| "Class not found", "not installed" | Dependency | Clear cache, retry once |
+| "Assertion failed", specific test | Logic error | Back to implementation |
+
+**Retry Flow:**
+```
+Quality Gate Failure
+         │
+         ▼
+   Identify failure type
+         │
+         ├─ Flaky test ──► Retry with random seed ──► If still fails: IMPLEMENT
+         │
+         ├─ Lint error ──► composer lint ──► Retry once ──► If fails: STOP
+         │
+         ├─ Refactor error ──► composer refactor ──► Retry once ──► If fails: STOP
+         │
+         ├─ Type error ──► STOP, needs human analysis
+         │
+         ├─ Timeout ──► Increase timeout ──► Retry once ──► If fails: STOP
+         │
+         ├─ Dependency ──► composer clear-cache ──► Retry once
+         │
+         └─ Logic error ──► Back to IMPLEMENT stage
+```
+
+**Max Retries by Type:**
+- Flaky test: 2 (with different seeds)
+- Lint: 1 (after `composer lint`)
+- Refactor: 1 (after `composer refactor`)
+- Timeout: 1 (with increased timeout)
+- Dependency: 1 (after cache clear)
+- Type/Logic: 0 (needs implementation fix)
+
 ### Stage 5: COMMIT & PR
 
-Finalize and create pull request.
+Finalize and create pull request with interactive review.
+
+**Interactive Review Checkpoints:**
+
+**1. After diff generation:**
+```
+AskUserQuestion: "Review changes before commit?"
+Options:
+- "Approve all" — Proceed with all changes
+- "Review each file" — Review file by file
+- "Cancel" — Abort commit
+```
+
+**2. Per-file review (if selected):**
+```
+For each modified file:
+  Show diff for file
+  AskUserQuestion: "Keep changes to {file}?"
+  Options:
+  - "Keep" — Include in commit
+  - "Discard" — git checkout -- {file}
+  - "Edit manually" — Stop for manual editing
+```
+
+**3. Before commit:**
+```
+Show generated commit message
+AskUserQuestion: "Create commit?"
+Options:
+- "Yes, commit" — Proceed with commit
+- "Edit message" — Modify commit message
+- "Cancel" — Abort commit
+```
 
 Commit process:
 - Self-review the complete diff
+- **AskUserQuestion checkpoints** (as above)
 - Create conventional commit message
 - Include issue reference in commit
 - Push to origin branch

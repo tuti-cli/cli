@@ -1,10 +1,21 @@
 # agents:install
-Install an agent from the awesome-claude-code-subagents catalog to local or global directory.
+
+> Install an agent from the VoltAgent catalog.
 
 **Usage:**
 - `/agents:install <name>` — Install agent locally (default)
 - `/agents:install <name> --global` — Install to ~/.claude/agents/
 - `/agents:install <name> --local` — Install to .claude/agents/
+
+**When to use:**
+- Need a specialist agent for a specific task
+- Want to extend capabilities with domain experts
+- Installing workflow agents (php-pro, docker-expert, etc.)
+
+**Related commands:**
+- `/agents:search` — Find available agents
+- `/agents:list` — See installed agents
+- `/agents:remove` — Remove an agent
 
 **Examples:**
 - `/agents:install php-pro` — Install PHP specialist locally

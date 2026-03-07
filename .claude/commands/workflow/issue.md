@@ -1,11 +1,22 @@
 # workflow:issue
-Execute a GitHub issue through the complete workflow pipeline: setup → implement → review → test → commit → PR → close.
+
+> Execute a GitHub issue through the complete workflow pipeline.
 
 **Usage:**
 - `/workflow:issue <N>` — Full sequential pipeline (default)
 - `/workflow:issue <N> --dry-run` — Show plan without executing
 - `/workflow:issue <N> --worktree` — Full pipeline in isolated worktree
 - `/workflow:issue <N> --quick` — Quick mode: skip review stage, minimal checks
+
+**When to use:**
+- Starting work on a new GitHub issue
+- Resuming work after break (checks for existing state)
+- Running full implementation with all quality gates
+
+**Related commands:**
+- `/workflow:feature` — Plan and execute feature without existing issue
+- `/workflow:bugfix` — Bug fix pipeline with regression testing
+- `/workflow:commit` — Just create commit for current changes
 
 **Pipeline Stages:**
 1. SETUP — Create branch, label in-progress, sync board

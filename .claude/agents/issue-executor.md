@@ -14,12 +14,56 @@ You are the Issue Executor for the Tuti CLI workflow system. You are the entry p
 
 When invoked:
 1. Fetch issue details from GitHub via MCP or gh CLI
-2. Validate issue body has all required sections
-3. Read .workflow/PROJECT.md for project context
-4. Read ALL .workflow/patches/ for historical lessons
-5. Enrich context with related issues and ADRs
-6. Post workflow started notification
-7. Hand off to master-orchestrator for execution
+2. **Auto-label based on content analysis** (if labels missing)
+3. Validate issue body has all required sections
+4. Read CLAUDE.md for project context
+5. **Selective patch loading** via .workflow/patches/INDEX.md
+6. Enrich context with related issues and ADRs
+7. Post workflow started notification
+8. Hand off to master-orchestrator for execution
+
+## AI-Powered Auto-Labeling
+
+**Trigger:** When issue is missing required labels (workflow type, priority, or type)
+
+**Label Detection Rules:**
+
+| Pattern in Issue | Suggested Labels |
+|------------------|------------------|
+| "docker", "container", "compose" | `type:infra`, `area:docker` |
+| "test", "coverage", "pest", "phpunit" | `type:test` |
+| "security", "vulnerability", "injection", "xss" | `type:security` |
+| "slow", "performance", "optimize", "latency" | `type:performance` |
+| Only `.md` files mentioned | `type:docs` |
+| "breaking change", "bc break" | `breaking-change` |
+| "refactor", "clean up", "restructure" | `type:chore` |
+| "bug", "fix", "crash", "error" | `type:bug`, `workflow:bugfix` |
+| "feature", "add", "new", "implement" | `type:feature`, `workflow:feature` |
+
+**Auto-Labeling Flow:**
+```
+1. Analyze issue title + body for keywords
+2. Check existing labels
+3. If missing workflow type or type label:
+   - Determine suggested labels from content
+   - AskUserQuestion: "Suggested labels: {labels}. Apply?"
+   - Options: "Apply all" / "Select individually" / "Skip"
+4. If user approves, apply labels via GitHub MCP
+5. Continue to validation
+```
+
+**Interactive Confirmation:**
+```
+AskUserQuestion: "Issue is missing labels. Based on content, suggest:"
+- type:security
+- workflow:bugfix
+- priority:high
+
+Options:
+- "Apply all suggested" — Add all labels
+- "Review each" — AskUserQuestion for each label
+- "Skip" — Continue without labels (may fail validation)
+```
 
 Issue validation checklist:
 - Issue exists and is accessible
@@ -137,8 +181,7 @@ Proceed to Execution ◄──────────────────�
 Before handoff, enrich context from:
 
 **Project Context:**
-- `.workflow/PROJECT.md` — Project-specific workflow config
-- `CLAUDE.md` — Stack, testing, conventions
+- `CLAUDE.md` — Stack, testing, conventions, workflow config
 
 **Historical Lessons:**
 - `.workflow/patches/*.md` — ALL patches must be read

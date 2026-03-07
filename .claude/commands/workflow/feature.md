@@ -1,10 +1,21 @@
 # workflow:feature
-Plan and execute a feature implementation with task breakdown, agent assignments, and quality gates.
+
+> Plan and execute feature implementation with task breakdown.
 
 **Usage:**
 - `/workflow:feature` — Plan feature from current context
 - `/workflow:feature --plan-only` — Create plan without executing
 - `/workflow:feature <N>` — Plan and execute issue #N
+
+**When to use:**
+- Implementing new feature
+- Need task breakdown before coding
+- Complex multi-step implementation
+
+**Related commands:**
+- `/workflow:issue` — Execute existing issue
+- `/workflow:bugfix` — Bug fix pipeline
+- `/arch:brainstorm` — Architecture planning
 
 **Pipeline:**
 1. **Planning Phase** — feature-planner → task-decomposer

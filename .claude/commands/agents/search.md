@@ -1,9 +1,20 @@
 # agents:search
-Search for agents in the awesome-claude-code-subagents catalog by name or description.
+
+> Search for agents in the VoltAgent catalog.
 
 **Usage:**
 - `/agents:search <query>` — Search agents by keyword
 - `/agents:search <query> --category <cat>` — Search within category
+
+**When to use:**
+- Looking for a specialist agent before installing
+- Exploring available capabilities
+- Finding agents for specific tasks (docker, testing, etc.)
+
+**Related commands:**
+- `/agents:install` — Install found agent
+- `/agents:list` — See installed agents
+- `/agents:remove` — Remove an agent
 
 **Examples:**
 - `/agents:search php` — Find PHP-related agents

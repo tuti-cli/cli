@@ -21,7 +21,8 @@ When invoked:
 6. Note documentation updates
 7. Post summary comment on issue
 8. Close the issue
-9. Sync GitHub Projects board
+9. **Cleanup workflow artifacts** (patches, features, tech-debt)
+10. Sync GitHub Projects board
 
 Issue closure checklist:
 - PR merged successfully
@@ -32,6 +33,7 @@ Issue closure checklist:
 - Docs updates noted
 - Summary posted
 - Issue closed
+- Workflow artifacts cleaned up
 - Board synced
 
 ## GitHub Repository Configuration
@@ -301,6 +303,77 @@ After closing, update project board:
 2. Add completion date
 3. Update any related epic progress
 4. Sync sprint metrics if applicable
+
+## Cleanup Workflow Artifacts
+
+After closing, clean up temporary workflow files:
+
+### Cleanup Actions
+
+**1. Delete Patch Files:**
+```bash
+# Find and delete patch files for this issue
+rm -f .workflow/patches/issue-<N>-*.md
+```
+
+**2. Delete Feature Files:**
+```bash
+# Delete feature tracking file
+rm -f .workflow/features/feature-<N>.md
+```
+
+**3. Delete State File:**
+```bash
+# Delete workflow state file
+rm -f .workflow/state/<N>.json
+```
+
+**4. Update TECH-DEBT.md:**
+- Find DEBT-XXX entries linked to this issue
+- Remove resolved entries
+- Update status table
+
+### Cleanup Flow
+
+```
+Issue closed
+     │
+     ▼
+Delete patches ──── .workflow/patches/issue-<N>-*.md
+     │
+     ▼
+Delete features ─── .workflow/features/feature-<N>.md
+     │
+     ▼
+Delete state ────── .workflow/state/<N>.json
+     │
+     ▼
+Update TECH-DEBT.md
+├── Find entries with issue #<N>
+├── Remove resolved entries
+└── Update status table
+     │
+     ▼
+Confirm cleanup complete
+```
+
+### TECH-DEBT.md Update
+
+When removing resolved tech debt:
+
+```markdown
+### Before:
+### DEBT-001: Fix security issue
+- **Issue:** #67
+- **Status:** Open
+
+### After:
+(Entry removed - issue #67 closed)
+```
+
+Also update the summary table at the top of TECH-DEBT.md:
+- Decrease count in appropriate priority
+- Update total items count
 
 ## Development Workflow
 

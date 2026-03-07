@@ -1,9 +1,20 @@
 # workflow:bugfix
-Execute bug fix through the full pipeline with regression testing and patch documentation.
+
+> Execute bug fix with regression testing and patch documentation.
 
 **Usage:**
 - `/workflow:bugfix <N>` — Execute bug fix pipeline
 - `/workflow:bugfix <N> --hotfix` — Emergency hotfix (expedited pipeline)
+
+**When to use:**
+- Fixing a reported bug
+- Resolving security vulnerability
+- Addressing regression
+
+**Related commands:**
+- `/workflow:issue` — General issue execution
+- `/workflow:fix` — Quick fix without full pipeline
+- `/workflow:audit` — Find bugs through analysis
 
 **Bug Fix Pipeline:**
 1. **ANALYZE** — error-detective finds root cause

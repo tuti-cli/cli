@@ -1,9 +1,21 @@
 # workflow:audit
-Perform deep analysis of existing or legacy codebase. Audits architecture, dependencies, code quality, security, and test coverage.
+
+> Perform deep analysis of codebase quality, security, and technical debt.
 
 **Usage:**
 - `/workflow:audit` — Standard audit for active codebase
 - `/workflow:audit --legacy` — Deep audit for legacy codebase (migration planning)
+
+**When to use:**
+- Before major refactoring
+- Assessing codebase health
+- Planning legacy migration
+- Security review
+
+**Related commands:**
+- `/workflow:feature` — Implement new features
+- `/workflow:bugfix` — Fix identified issues
+- `/arch:brainstorm` — Plan architecture changes
 
 **Audit Areas:**
 1. **Architecture** — Patterns, boundaries, violations
