@@ -69,11 +69,6 @@ final readonly class OptionalServicesBuilder
                 continue;
             }
 
-            // Skip if service already exists in compose
-            if (mb_strpos($content, "  {$serviceName}:") !== false) {
-                continue;
-            }
-
             // Get service config from registry
             $serviceConfig = $this->registryManager->getService($category, $serviceName);
 
@@ -106,6 +101,19 @@ final readonly class OptionalServicesBuilder
                 $serviceYaml = $this->loadServiceYaml($stubPath, $replacements);
 
                 if ($serviceYaml === null) {
+                    continue;
+                }
+
+                // Extract actual service name from stub YAML
+                // The registry key (e.g., 'mariadb') may differ from the actual service name (e.g., 'database')
+                $actualServiceName = $this->extractServiceName($serviceYaml);
+
+                if ($actualServiceName === null) {
+                    continue;
+                }
+
+                // Skip if service already exists in compose (using actual service name from stub)
+                if (mb_strpos($content, "  {$actualServiceName}:") !== false) {
                     continue;
                 }
 
@@ -299,11 +307,6 @@ final readonly class OptionalServicesBuilder
         foreach ($optionalServices as $serviceKey) {
             [$category, $serviceName] = explode('.', $serviceKey);
 
-            // Skip if service already exists in dev compose
-            if (mb_strpos($devContent, "  {$serviceName}:") !== false) {
-                continue;
-            }
-
             // Check if service exists in registry
             if (! $this->registryManager->hasService($category, $serviceName)) {
                 continue;
@@ -317,6 +320,18 @@ final readonly class OptionalServicesBuilder
                     $devSection = $this->stubLoader->loadSection($stubPath, 'dev', $replacements);
 
                     if ($devSection !== null && mb_trim($devSection) !== '') {
+                        // Extract actual service name from dev section
+                        $actualServiceName = $this->extractServiceName($devSection);
+
+                        if ($actualServiceName === null) {
+                            continue;
+                        }
+
+                        // Skip if service already exists in dev compose (using actual service name)
+                        if (mb_strpos($devContent, "  {$actualServiceName}:") !== false) {
+                            continue;
+                        }
+
                         $indentedYaml = $this->indentServiceYaml($devSection);
                         $devServicesToAppend .= "\n" . $indentedYaml;
                     }
@@ -338,6 +353,34 @@ final readonly class OptionalServicesBuilder
 
         $this->validateYaml($devContent, $devComposeFile);
         file_put_contents($devComposeFile, $devContent);
+    }
+
+    /**
+     * Extract the service name from a YAML stub.
+     * Returns the first top-level key in the YAML, which represents the actual service name.
+     *
+     * @return string|null The service name, or null if YAML is invalid or empty
+     */
+    private function extractServiceName(string $yaml): ?string
+    {
+        if (mb_trim($yaml) === '') {
+            return null;
+        }
+
+        try {
+            $parsed = Yaml::parse($yaml);
+
+            if (! is_array($parsed) || $parsed === []) {
+                return null;
+            }
+
+            // Return the first top-level key (the actual service name)
+            $keys = array_keys($parsed);
+
+            return $keys[0];
+        } catch (ParseException) {
+            return null;
+        }
     }
 
     /**

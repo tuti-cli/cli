@@ -91,6 +91,34 @@ redis:
 STUB;
     file_put_contents($this->stackDir . '/services/cache/redis.stub', $redisStub);
 
+    // Create mariadb stub - REGRESSION TEST: registry key is 'mariadb' but service name is 'database'
+    // This tests the fix for the bug where duplicate checks used registry key instead of actual service name
+    $mariadbStub = <<<'STUB'
+# @section: base
+database:
+  image: mariadb:11.4
+  environment:
+    MARIADB_DATABASE: {{PROJECT_NAME}}
+    MARIADB_USER: tuti
+    MARIADB_PASSWORD: secret
+  volumes:
+    - database_data:/var/lib/mysql
+
+# @section: dev
+database:
+  ports:
+    - "3306:3306"
+STUB;
+    file_put_contents($this->stackDir . '/services/databases/mariadb.stub', $mariadbStub);
+
+    // Update registry to include mariadb
+    $registry['services']['databases']['mariadb'] = [
+        'name' => 'MariaDB',
+        'stub' => 'databases/mariadb.stub',
+        'volumes' => ['database_data'],
+    ];
+    file_put_contents($this->stackDir . '/services/registry.json', json_encode($registry));
+
     // Initialize services
     $this->registryManager = new StackRegistryManagerService();
     $this->registryManager->loadForStack($this->stackDir);
@@ -365,6 +393,59 @@ YAML;
         // Should not throw and content should remain unchanged (except possibly trailing whitespace)
         $result = file_get_contents($composeFile);
         expect(mb_trim($result))->toBe(mb_trim($originalContent));
+    });
+
+    it('skips service when stub service name differs from registry key', function (): void {
+        // REGRESSION TEST: Bug where registry key 'mariadb' was used for duplicate check
+        // instead of actual service name 'database' from the stub
+        $composeFile = $this->testDir . '/docker-compose.yml';
+        $devComposeFile = $this->testDir . '/docker-compose.dev.yml';
+
+        // Compose already has a 'database' service (simulating WordPress base compose)
+        $composeContent = <<<'YAML'
+services:
+  app:
+    image: wordpress:6
+  database:
+    image: mariadb:11.4
+
+networks:
+  app_network:
+
+YAML;
+        file_put_contents($composeFile, $composeContent);
+
+        $devComposeContent = <<<'YAML'
+services:
+  app:
+    image: wordpress:6
+
+networks:
+  app_network:
+
+YAML;
+        file_put_contents($devComposeFile, $devComposeContent);
+
+        // Try to add 'databases.mariadb' which defines 'database:' service
+        // This should be skipped because 'database:' already exists
+        $this->builder->appendServices(
+            ['databases.mariadb'],
+            'test-project',
+            'dev',
+            $composeFile,
+            $devComposeFile
+        );
+
+        $result = file_get_contents($composeFile);
+
+        // Count occurrences of 'database:' service key - should only be 1
+        $databaseCount = mb_substr_count($result, '  database:');
+        expect($databaseCount)->toBe(1, 'Expected exactly one database service (no duplicate)');
+
+        // Verify no duplicate 'database:' keys would cause YAML parse error
+        $parsed = Symfony\Component\Yaml\Yaml::parse($result);
+        expect($parsed)->toHaveKey('services')
+            ->and($parsed['services'])->toHaveKey('database');
     });
 });
 
