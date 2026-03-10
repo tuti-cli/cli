@@ -18,6 +18,7 @@ use App\Services\Support\EnvHandlers\BedrockEnvHandler;
 use App\Services\Support\EnvHandlers\LaravelEnvHandler;
 use App\Services\Support\EnvHandlers\WordPressEnvHandler;
 use App\Services\Support\HostsFileService;
+use App\Services\WordPress\WordPressSetupService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
@@ -54,6 +55,9 @@ final class AppServiceProvider extends ServiceProvider
 
         // Register HostsFileService for /etc/hosts management
         $this->app->singleton(HostsFileService::class);
+
+        // Register WordPressSetupService for WordPress setup
+        $this->app->singleton(WordPressSetupService::class);
     }
 
     /**
