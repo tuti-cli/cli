@@ -1,0 +1,48 @@
+name: "Feature Request"
+description: New feature or improvement
+labels: ["workflow:feature", "type:feature", "status:ready"]
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: One-line description
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      placeholder: What user pain or business need does this address?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ] User can...
+        - [ ] System should...
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Technical Notes
+      placeholder: Stack details, constraints, related issues
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "priority: low"
+        - "priority: medium"
+        - "priority: high"
+        - "priority: critical"
+      default: 1
+    validations:
+      required: true

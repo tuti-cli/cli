@@ -14,21 +14,16 @@ Tuti CLI is a unified environment management and deployment tool for web develop
 **One command. Zero config. From local to production.**
 
 ```bash
-# Create a new Laravel project with Docker environment
-tuti stack:laravel my-app
-
-# Start local development (Traefik handles routing, SSL, ports)
-tuti local:start
-
-# Deploy to production (planned)
-tuti deploy production
+tuti stack:laravel my-app    # Create project with Docker environment
+tuti local:start             # Start local development
+tuti deploy production       # Deploy to production (planned)
 ```
 
 ---
 
 ## The Problem
 
-Developers currently juggle 5-10 different tools to develop and ship a single application:
+Developers juggle 5-10 different tools to develop and ship a single application:
 
 | Concern | Current Tools | With Tuti CLI |
 |---------|---------------|---------------|
@@ -37,16 +32,9 @@ Developers currently juggle 5-10 different tools to develop and ship a single ap
 | Port management | Manual tracking, conflicts | Traefik reverse proxy (automatic) |
 | SSL for local dev | mkcert + manual config | Automatic via Traefik |
 | .env configuration | Manual per-environment | Auto-generated with secure passwords |
-| Multi-project switching | `cd` + remember status | `tuti projects:list` (planned) |
 | Deployment | Deployer, Envoyer, scripts | `tuti deploy` (planned) |
-| Environment parity | Hope and prayer | Same configs, guaranteed parity |
 
-This fragmentation causes:
-- Context switching friction between tools
-- Environment drift (local != staging != production)
-- Hidden, undocumented deployment knowledge
-- Port conflicts when running multiple projects
-- 8-12 hours/week wasted on environment management
+This causes context switching friction, environment drift, hidden deployment knowledge, port conflicts, and 8-12 hours/week wasted on environment management.
 
 ---
 
@@ -55,8 +43,8 @@ This fragmentation causes:
 ### Implemented
 
 - **Stack Templates** - Pre-configured Docker environments for Laravel and WordPress with interactive service selection (databases, cache, search, storage, mail, workers)
-- **Docker Compose Generation** - Section-based stub system that generates base + dev overlay compose files with YAML anchors and healthchecks
-- **Traefik Reverse Proxy** - Global infrastructure providing automatic SSL, `*.local.test` domain routing, and zero port conflicts across multiple projects
+- **Docker Compose Generation** - Section-based stub system generating base + dev overlay compose files with YAML anchors and healthchecks
+- **Traefik Reverse Proxy** - Global infrastructure providing automatic SSL, `*.local.test` domain routing, and zero port conflicts
 - **Environment Management** - Single `.env` file strategy shared by framework and Docker, with auto-generated cryptographically secure passwords
 - **Local Lifecycle Commands** - `start`, `stop`, `logs`, `status`, `rebuild` for managing project containers
 - **Infrastructure Management** - `infra:start`, `infra:stop`, `infra:restart`, `infra:status` for the global Traefik proxy
@@ -195,12 +183,6 @@ Both stacks support Standard and Bedrock (Composer) project structures for WordP
 | macOS ARM64 | `tuti-macos-arm64` | Supported |
 | Windows | WSL2 (via Linux binary) | Supported |
 
-Installation is a single command:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.sh | bash
-```
-
 ---
 
 ## Project Status
@@ -208,21 +190,9 @@ curl -fsSL https://raw.githubusercontent.com/tuti-cli/cli/main/scripts/install.s
 Tuti CLI is in **active pre-release development**. Local development features are functional and usable. Deployment features are planned for upcoming phases.
 
 See:
+- [`docs/discovery.md`](discovery.md) - Business discovery and analysis
+- [`docs/user-stories.md`](user-stories.md) - Feature requirements and acceptance criteria
 - [`docs/phases/`](phases/) - Development roadmap and phase breakdown
-- [`docs/user-stories.md`](user-story.md) - Feature requirements and acceptance criteria
-- [`docs/tuti-cli-discovery.md`](project-discovery.md) - Full business discovery document
-
----
-
-## Contributing
-
-The project follows strict PHP standards:
-- All code must pass `composer test` (Rector + Pint + PHPStan + Pest)
-- Classes are `final`, services are `final readonly`
-- Constructor injection only, explicit types everywhere
-- PSR-12 formatting, `declare(strict_types=1)` in every file
-
-See [`CLAUDE.md`](../CLAUDE.md) for complete coding standards, directory structure, and development guidelines.
 
 ---
 
@@ -238,13 +208,9 @@ See [`CLAUDE.md`](../CLAUDE.md) for complete coding standards, directory structu
 | Deployer | No | Yes | No | Basic | No (requires PHP) |
 | Envoyer | No | Yes (SaaS) | Yes | Web UI | N/A (SaaS) |
 
-Tuti CLI's differentiators:
-1. **Unified local + deployment** in a single tool
-2. **Zero dependencies** - single binary with embedded PHP runtime
-3. **Modern CLI UX** - branded output, themes, interactive prompts
-4. **Multi-framework** - Laravel, WordPress, and more planned
-5. **Traefik-based routing** - no port conflicts, automatic SSL
-
----
-
-**Last Updated:** 2026-02-07
+**Differentiators:**
+1. Unified local + deployment in a single tool
+2. Zero dependencies - single binary with embedded PHP runtime
+3. Modern CLI UX - branded output, themes, interactive prompts
+4. Multi-framework - Laravel, WordPress, and more planned
+5. Traefik-based routing - no port conflicts, automatic SSL

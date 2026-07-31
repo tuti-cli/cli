@@ -1,0 +1,83 @@
+name: Auto Label
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  label-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Label PR by branch prefix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.payload.pull_request.head.ref;
+            const labelMap = {
+              'feature/':      'type: feature',
+              'fix/':          'type: bug',
+              'bug/':          'type: bug',
+              'hotfix/':       'type: bug',
+              'chore/':        'type: chore',
+              'docs/':         'type: docs',
+              'security/':     'type: security',
+              'performance/':  'type: performance',
+              'refactor/':     'type: chore',
+            };
+
+            let typeLabel = null;
+            for (const [prefix, label] of Object.entries(labelMap)) {
+              if (branch.startsWith(prefix)) { typeLabel = label; break; }
+            }
+
+            const labels = typeLabel ? [typeLabel, 'status: review'] : ['status: review'];
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels,
+            });
+
+  update-status:
+    if: github.event_name == 'issues' && github.event.action == 'labeled'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Manage status transitions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const added = context.payload.label.name;
+            const issue  = context.payload.issue.number;
+
+            const mutuallyExclusive = [
+              'status: ready',
+              'status: in-progress',
+              'status: blocked',
+              'status: review',
+              'status: needs-confirmation',
+              'status: confirmed',
+              'status: rejected',
+            ];
+
+            // Remove other status labels when a new one is added
+            if (mutuallyExclusive.includes(added)) {
+              const toRemove = mutuallyExclusive.filter(l => l !== added);
+              for (const label of toRemove) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo:  context.repo.repo,
+                    issue_number: issue,
+                    name: label,
+                  });
+                } catch (e) { /* not present, skip */ }
+              }
+            }

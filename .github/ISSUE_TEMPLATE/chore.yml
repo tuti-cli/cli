@@ -1,0 +1,39 @@
+name: "Chore"
+description: Refactor, tooling, dependencies, config
+labels: ["workflow:refactor", "type:chore", "status:ready"]
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: What needs to be done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      placeholder: Why is this needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ] Done when...
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "priority: low"
+        - "priority: medium"
+        - "priority: high"
+        - "priority: critical"
+      default: 1
+    validations:
+      required: true
