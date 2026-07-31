@@ -1,0 +1,32 @@
+name: "Documentation"
+description: Missing, wrong, or outdated docs
+labels: ["workflow:task", "type:docs", "status:ready"]
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: What docs need work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      placeholder: What's wrong or missing?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "priority: low"
+        - "priority: medium"
+        - "priority: high"
+        - "priority: critical"
+      default: 1
+    validations:
+      required: true

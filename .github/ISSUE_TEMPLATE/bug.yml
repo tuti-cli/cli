@@ -1,0 +1,49 @@
+name: "Bug Report"
+description: Something is broken
+labels: ["workflow:bugfix", "type:bug", "status:ready"]
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: What's broken?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Go to...
+        2. Do...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs Actual
+      placeholder: |
+        Expected: ...
+        Actual: ...
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      placeholder: Browser, OS, error logs, stack traces
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "priority: low"
+        - "priority: medium"
+        - "priority: high"
+        - "priority: critical"
+      default: 1
+    validations:
+      required: true
