@@ -56,3 +56,4 @@ __pycache__/
 
 # Worktrees root
 ../tuti-wt/
+.claude/worktrees/
